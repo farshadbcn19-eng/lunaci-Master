@@ -15,7 +15,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: List files in uploads/2026/06
+      - name: Check for WP-CLI and existing Products page (read-only)
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -28,4 +28,9 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" \
-            "ls -la ~/domains/lunacibarcelona.com/public_html/wp-content/uploads/2026/06/"
+            "echo '--- wp-cli check ---'; \
+             which wp || echo 'wp: not found on PATH'; \
+             cd ~/domains/lunacibarcelona.com/public_html && \
+             (php wp-cli.phar --info 2>/dev/null || wp --info 2>/dev/null || echo 'wp-cli: not runnable'); \
+             echo '--- existing pages (slug + status) ---'; \
+             (wp post list --post_type=page --fields=ID,post_title,post_name,post_status 2>/dev/null || echo 'wp post list failed (wp-cli likely unavailable)')"

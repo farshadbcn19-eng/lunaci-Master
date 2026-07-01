@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LUNACI Barcelona — Products (Design Preview)</title>
+</head>
+<body style="margin:0;">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<section class="lunaci-products" id="lunaci-products">
+<style>
+  .lunaci-products, .lunaci-products * { box-sizing: border-box; }
+  .lunaci-products {
+    --lunaci-bg: #0B0B0B;
+    --lunaci-bg-alt: #161616;
+    --lunaci-gold: #D4AF37;
+    --lunaci-gold-soft: rgba(212, 175, 55, 0.35);
+    --lunaci-text: #F2F0EC;
+    --lunaci-text-muted: #B8B4AC;
+    background: var(--lunaci-bg);
+    color: var(--lunaci-text);
+    font-family: 'Montserrat', Arial, sans-serif;
+    padding: 48px 24px 96px;
+  }
+  .lunaci-products h1,
+  .lunaci-products h2,
+  .lunaci-products h3 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    color: var(--lunaci-gold);
+    margin: 0 0 8px;
+    font-weight: 600;
+  }
+  .lunaci-products a { text-decoration: none; }
+
+  /* Nav */
+  .lunaci-nav {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    max-width: 1200px;
+    margin: 0 auto 48px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+  }
+  .lunaci-nav-link {
+    color: var(--lunaci-text-muted);
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 8px 4px;
+    position: relative;
+    transition: color 0.2s ease;
+  }
+  .lunaci-nav-link:hover { color: var(--lunaci-gold); }
+  .lunaci-nav-link.is-active {
+    color: var(--lunaci-gold);
+    border-bottom: 2px solid var(--lunaci-gold);
+  }
+
+  /* Header */
+  .lunaci-header {
+    text-align: center;
+    max-width: 720px;
+    margin: 0 auto 56px;
+  }
+  .lunaci-logo {
+    width: 88px;
+    height: 88px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid var(--lunaci-gold);
+    margin-bottom: 20px;
+  }
+  .lunaci-header h1 {
+    font-size: 42px;
+    letter-spacing: 1px;
+  }
+  .lunaci-subtitle {
+    color: var(--lunaci-text-muted);
+    font-size: 15px;
+    letter-spacing: 0.5px;
+    margin: 0;
+  }
+
+  /* Grid */
+  .lunaci-grid {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 32px;
+  }
+  .lunaci-card {
+    background: var(--lunaci-bg-alt);
+    border: 1px solid rgba(212, 175, 55, 0.18);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.25s ease, transform 0.25s ease;
+  }
+  .lunaci-card:hover {
+    border-color: var(--lunaci-gold-soft);
+    transform: translateY(-4px);
+  }
+  .lunaci-card-media {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: #000;
+    overflow: hidden;
+  }
+  .lunaci-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .lunaci-card-body {
+    padding: 20px 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+  }
+  .lunaci-card-category {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--lunaci-text-muted);
+  }
+  .lunaci-card-name {
+    font-size: 22px;
+    margin: 0;
+  }
+  .lunaci-card-shade-info {
+    font-size: 12px;
+    color: var(--lunaci-text-muted);
+    min-height: 16px;
+  }
+  .lunaci-card-shade-info .lunaci-selected-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: 6px;
+    border: 1px solid rgba(255,255,255,0.4);
+  }
+  .lunaci-card-actions {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 8px;
+  }
+  .lunaci-btn {
+    display: inline-block;
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 11px 16px;
+    border: 1px solid var(--lunaci-gold);
+    color: var(--lunaci-gold);
+    background: transparent;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+    font-family: 'Montserrat', Arial, sans-serif;
+  }
+  .lunaci-btn:hover {
+    background: var(--lunaci-gold);
+    color: var(--lunaci-bg);
+  }
+  .lunaci-btn-solid {
+    background: var(--lunaci-gold);
+    color: var(--lunaci-bg);
+  }
+  .lunaci-btn-solid:hover {
+    background: transparent;
+    color: var(--lunaci-gold);
+  }
+
+  /* Shade modal */
+  .lunaci-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 24px;
+  }
+  .lunaci-modal-overlay.is-open { display: flex; }
+  .lunaci-modal {
+    background: var(--lunaci-bg-alt);
+    border: 1px solid var(--lunaci-gold-soft);
+    max-width: 560px;
+    width: 100%;
+    max-height: 84vh;
+    overflow-y: auto;
+    border-radius: 4px;
+    padding: 32px;
+    position: relative;
+  }
+  .lunaci-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: var(--lunaci-text-muted);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .lunaci-modal-close:hover { color: var(--lunaci-gold); }
+  .lunaci-modal h2 {
+    font-size: 26px;
+    margin-bottom: 4px;
+  }
+  .lunaci-modal-count {
+    color: var(--lunaci-text-muted);
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+  .lunaci-shade-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .lunaci-shade-swatch {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+    padding: 0;
+    position: relative;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .lunaci-shade-swatch:hover { transform: scale(1.08); }
+  .lunaci-shade-swatch.is-selected {
+    border-color: var(--lunaci-gold);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.35);
+  }
+  .lunaci-shade-swatch.is-selected::after {
+    content: "\2713";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    text-shadow: 0 0 3px rgba(0,0,0,0.9);
+    font-size: 16px;
+  }
+  .lunaci-modal-selection {
+    font-size: 14px;
+    color: var(--lunaci-text);
+    margin-bottom: 20px;
+    min-height: 20px;
+  }
+  .lunaci-modal-selection strong { color: var(--lunaci-gold); }
+</style>
+
+  <nav class="lunaci-nav" aria-label="Shop navigation">
+    <a href="/products/" class="lunaci-nav-link is-active" aria-current="page">Products</a>
+    <a href="/shop/" class="lunaci-nav-link">Shop</a>
+  </nav>
+
+  <header class="lunaci-header">
+    <img
+      class="lunaci-logo"
+      src="https://lunacibarcelona.com/wp-content/uploads/2026/05/b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg"
+      alt="LUNACI Barcelona logo"
+      loading="lazy"
+    >
+    <h1>Our Products</h1>
+    <p class="lunaci-subtitle">Vegan luxury cosmetics, crafted in Barcelona.</p>
+  </header>
+
+  <div class="lunaci-grid" id="lunaci-grid"></div>
+
+  <div class="lunaci-modal-overlay" id="lunaci-modal-overlay">
+    <div class="lunaci-modal" role="dialog" aria-modal="true" aria-labelledby="lunaci-modal-title">
+      <button type="button" class="lunaci-modal-close" id="lunaci-modal-close" aria-label="Close shade selector">&times;</button>
+      <h2 id="lunaci-modal-title">Select Your Shade</h2>
+      <p class="lunaci-modal-count" id="lunaci-modal-count"></p>
+      <div class="lunaci-shade-grid" id="lunaci-shade-grid"></div>
+      <p class="lunaci-modal-selection" id="lunaci-modal-selection"></p>
+      <button type="button" class="lunaci-btn lunaci-btn-solid" id="lunaci-modal-confirm">Confirm Shade</button>
+    </div>
+  </div>
+
+<script>
+(function () {
+  var root = document.getElementById('lunaci-products');
+  if (!root) return;
+
+  var IMAGE_BASE = 'https://lunacibarcelona.com/wp-content/uploads/2026/06/';
+
+  // Gold-on-black "image coming soon" placeholder for SKUs without a photo yet.
+  var PLACEHOLDER_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">' +
+    '<rect width="600" height="600" fill="#0B0B0B"/>' +
+    '<rect x="20" y="20" width="560" height="560" fill="none" stroke="#D4AF37" stroke-width="2"/>' +
+    '<text x="300" y="285" font-family="Georgia, serif" font-size="42" fill="#D4AF37" text-anchor="middle">LUNACI</text>' +
+    '<text x="300" y="325" font-family="Arial, sans-serif" font-size="15" letter-spacing="3" fill="#D4AF37" text-anchor="middle">IMAGE COMING SOON</text>' +
+    '</svg>'
+  );
+
+  // ---- Product catalog (14 SKUs — Concealer excluded, not yet in production) ----
+  var PRODUCTS = [
+    // Lips
+    { id: 'lip-pencil',          name: 'Lip Pencil',           category: 'Lips',  image: IMAGE_BASE + 'lunaci-lip-liner.jpg' },
+    { id: 'lipstick-matt-vegan', name: 'Lipstick Matt Vegan',  category: 'Lips',  image: IMAGE_BASE + 'lunaci-lipstick.png', shadeType: 'lipstick' },
+    { id: 'lip-gloss-matt-fix',  name: 'Lip Gloss Matt Fix',   category: 'Lips',  image: IMAGE_BASE + 'lunaci-lip-fix.jpg', shadeType: 'lipfix' },
+    { id: 'lip-velvet',          name: 'Lip Velvet',           category: 'Lips',  image: IMAGE_BASE + 'lunaci-lipgloss-velvet.jpg', shadeType: 'lgvelvet' },
+    // Eyes
+    { id: 'eyebrow-pencil',      name: 'Eyebrow Pencil',       category: 'Eyes',  image: IMAGE_BASE + 'lunaci-eyebrow-pencil.jpg' },
+    { id: 'eye-pencil',          name: 'Eye Pencil',           category: 'Eyes',  image: IMAGE_BASE + 'lunaci-eye-pencil-e1781429622606.jpg' },
+    { id: 'eyeliner-liquid',     name: 'Eyeliner Liquid',      category: 'Eyes',  image: IMAGE_BASE + 'lunaci-eyeliner.jpg' },
+    { id: 'mascara-volume',      name: 'Mascara Volume',       category: 'Eyes',  image: IMAGE_BASE + 'lunaci-mascara-volume.jpg' },
+    { id: 'mascara-length',      name: 'Mascara Length',       category: 'Eyes',  image: IMAGE_BASE + 'lunaci-mascara-length.jpg' },
+    { id: 'shadow',              name: 'Shadow',               category: 'Eyes',  image: null },
+    // Face
+    { id: 'foundation',          name: 'Foundation',           category: 'Face',  image: IMAGE_BASE + 'lunaci-foundation.jpg', shadeType: 'foundation' },
+    { id: 'compact-powder',      name: 'Compact Powder',       category: 'Face',  image: IMAGE_BASE + 'lunaci-compact-powder.jpg', shadeType: 'compactpowder' },
+    { id: 'blusher',             name: 'Blusher',              category: 'Face',  image: IMAGE_BASE + 'lunaci-blush.jpg' },
+    // Nails
+    { id: 'nail-polish-long-lasting', name: 'Nail Polish Long Lasting', category: 'Nails', image: IMAGE_BASE + 'lunaci-nail-polish.jpg', shadeType: 'nailpolish' }
+  ];
+
+  // ---- Shade sets: real per-shade photos where available, placeholder swatches otherwise ----
+  function buildNumberedImageShades(filePrefix, count) {
+    var list = [];
+    for (var i = 1; i <= count; i++) {
+      var num = (i < 10 ? '0' + i : '' + i);
+      list.push({
+        id: filePrefix + '-' + num,
+        label: 'Shade ' + num,
+        image: IMAGE_BASE + filePrefix + '-' + num + '.png'
+      });
+    }
+    return list;
+  }
+
+  function buildCodedImageShades(filePrefix, codes) {
+    return codes.map(function (code) {
+      return { id: filePrefix + '-' + code, label: code, image: IMAGE_BASE + filePrefix + '-' + code + '.png' };
+    });
+  }
+
+  function buildColorShades(hexList) {
+    return hexList.map(function (hex, i) {
+      var n = i + 1;
+      return { id: 'shade-' + (n < 10 ? '0' + n : n), label: 'Shade ' + (n < 10 ? '0' + n : n), color: hex };
+    });
+  }
+
+  var SHADE_SETS = {
+    lipstick: buildNumberedImageShades('LUNACI-LS', 12),
+    lipfix: buildNumberedImageShades('LUNACI-LIPFIX', 6),
+    foundation: buildNumberedImageShades('LUNACI-FOUND', 6),
+    lgvelvet: buildNumberedImageShades('LUNACI-LGVELVET', 4),
+    compactpowder: buildCodedImageShades('LUNACI-COMPACT', ['B011', 'BRONCE', 'D010', 'R01']),
+    // TODO: replace with LUNACI-NP-01.png through LUNACI-NP-12.png when ready
+    nailpolish: (function () {
+      var list = [];
+      for (var i = 0; i < 12; i++) {
+        var hue = Math.round((i * 360) / 12);
+        var lightness = i % 2 === 0 ? 50 : 40;
+        list.push('hsl(' + hue + ', 65%, ' + lightness + '%)');
+      }
+      return buildColorShades(list);
+    })()
+  };
+
+  var SHADE_COUNT_LABEL = {
+    lipstick: 12, lipfix: 6, foundation: 6, lgvelvet: 4, compactpowder: 4, nailpolish: 12
+  };
+  var selections = {}; // productId -> shade object
+
+  function swatchStyle(shade) {
+    return shade.image
+      ? "background-image:url('" + shade.image + "');background-size:cover;background-position:center;"
+      : 'background:' + shade.color + ';';
+  }
+
+  // ---- Render product grid ----
+  var grid = root.querySelector('#lunaci-grid');
+  var cardsHtml = PRODUCTS.map(function (p) {
+    var imgSrc = p.image || PLACEHOLDER_IMG;
+    var shadeButton = p.shadeType
+      ? '<button type="button" class="lunaci-btn" data-action="open-shades" data-product="' + p.id + '">Select Shade</button>'
+      : '';
+    var shadeInfo = p.shadeType
+      ? '<div class="lunaci-card-shade-info" data-shade-info="' + p.id + '">' + SHADE_COUNT_LABEL[p.shadeType] + ' shades available</div>'
+      : '<div class="lunaci-card-shade-info"></div>';
+
+    return (
+      '<article class="lunaci-card" data-product-id="' + p.id + '">' +
+        '<div class="lunaci-card-media">' +
+          '<img src="' + imgSrc + '" alt="' + p.name + '" loading="lazy" decoding="async" ' +
+          'onerror="this.onerror=null;this.src=\'' + PLACEHOLDER_IMG + '\';">' +
+        '</div>' +
+        '<div class="lunaci-card-body">' +
+          '<div class="lunaci-card-category">' + p.category + '</div>' +
+          '<h3 class="lunaci-card-name">' + p.name + '</h3>' +
+          shadeInfo +
+          '<div class="lunaci-card-actions">' +
+            shadeButton +
+            '<a class="lunaci-btn lunaci-btn-solid" href="/shop/#' + p.id + '">View in Shop</a>' +
+          '</div>' +
+        '</div>' +
+      '</article>'
+    );
+  }).join('');
+  grid.innerHTML = cardsHtml;
+
+  // ---- Shade selector modal ----
+  var overlay = root.querySelector('#lunaci-modal-overlay');
+  var modalTitle = root.querySelector('#lunaci-modal-title');
+  var modalCount = root.querySelector('#lunaci-modal-count');
+  var shadeGrid = root.querySelector('#lunaci-shade-grid');
+  var modalSelection = root.querySelector('#lunaci-modal-selection');
+  var confirmBtn = root.querySelector('#lunaci-modal-confirm');
+  var closeBtn = root.querySelector('#lunaci-modal-close');
+  var activeProduct = null;
+  var pendingShade = null;
+
+  function openModal(productId) {
+    var product = PRODUCTS.filter(function (p) { return p.id === productId; })[0];
+    if (!product || !product.shadeType) return;
+    activeProduct = product;
+    pendingShade = selections[productId] || null;
+
+    modalTitle.textContent = product.name + ' — Select Your Shade';
+    modalCount.textContent = SHADE_COUNT_LABEL[product.shadeType] + ' shades available';
+
+    var shades = SHADE_SETS[product.shadeType];
+    shadeGrid.innerHTML = shades.map(function (s) {
+      var selectedClass = pendingShade && pendingShade.id === s.id ? ' is-selected' : '';
+      return '<button type="button" class="lunaci-shade-swatch' + selectedClass + '" ' +
+        'style="' + swatchStyle(s) + '" data-shade-id="' + s.id + '" title="' + s.label + '" aria-label="' + s.label + '"></button>';
+    }).join('');
+
+    updateSelectionText();
+    overlay.classList.add('is-open');
+    document.addEventListener('keydown', onKeydown);
+  }
+
+  function closeModal() {
+    overlay.classList.remove('is-open');
+    activeProduct = null;
+    pendingShade = null;
+    document.removeEventListener('keydown', onKeydown);
+  }
+
+  function onKeydown(e) {
+    if (e.key === 'Escape') closeModal();
+  }
+
+  function updateSelectionText() {
+    modalSelection.innerHTML = pendingShade
+      ? 'Selected: <strong>' + pendingShade.label + '</strong>'
+      : 'No shade selected yet.';
+  }
+
+  function updateCardShadeInfo(productId) {
+    var infoEl = root.querySelector('[data-shade-info="' + productId + '"]');
+    if (!infoEl) return;
+    var shade = selections[productId];
+    if (shade) {
+      infoEl.innerHTML = '<span class="lunaci-selected-dot" style="' + swatchStyle(shade) + '"></span>Selected: ' + shade.label;
+    }
+  }
+
+  grid.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-action="open-shades"]');
+    if (btn) openModal(btn.getAttribute('data-product'));
+  });
+
+  shadeGrid.addEventListener('click', function (e) {
+    var swatch = e.target.closest('.lunaci-shade-swatch');
+    if (!swatch || !activeProduct) return;
+    var shadeId = swatch.getAttribute('data-shade-id');
+    pendingShade = SHADE_SETS[activeProduct.shadeType].filter(function (s) { return s.id === shadeId; })[0];
+    shadeGrid.querySelectorAll('.lunaci-shade-swatch').forEach(function (el) {
+      el.classList.toggle('is-selected', el === swatch);
+    });
+    updateSelectionText();
+  });
+
+  confirmBtn.addEventListener('click', function () {
+    if (activeProduct && pendingShade) {
+      selections[activeProduct.id] = pendingShade;
+      updateCardShadeInfo(activeProduct.id);
+    }
+    closeModal();
+  });
+
+  closeBtn.addEventListener('click', closeModal);
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) closeModal();
+  });
+})();
+</script>
+</section>
+</body>
+</html>

@@ -12,10 +12,14 @@
   4. Publish. The "Shop" nav link points to /shop/ — create that page
      (slug "shop") so the link resolves.
 
-  PLACEHOLDER DATA:
-  - Shade swatches (lipstick/nail polish/lip fix) use generic labels
-    ("Shade 01", etc.) and placeholder colors. Swap in real shade
-    names + hex codes in the SHADE_SETS object in the script below.
+  SHADE DATA:
+  - Lipstick (12), Lip Fix (6), Foundation (6), Lip Gloss Velvet (4), and
+    Compact Powder (4) shade swatches use real per-shade photos from the
+    media library. Labels are generic ("Shade 01", etc., or the shade
+    code for Compact Powder) since no shade names were provided yet —
+    swap them in the SHADE_SETS object in the script below.
+  - Nail Polish (40) still uses generated placeholder color swatches;
+    no per-shade photos exist for it yet.
   - Concealer and Shadow have no product photo yet, so they fall back
     to the gold-on-black "Image Coming Soon" placeholder graphic.
 -->
@@ -330,25 +334,44 @@
 
   // ---- Product catalog (15 SKUs) ------------------------------------
   var PRODUCTS = [
-    { id: 'lip-gloss-velvet',   name: 'Lip Gloss Velvet',    category: 'Lips',  image: IMAGE_BASE + 'lunaci-lipgloss-velvet.jpg' },
+    { id: 'lip-gloss-velvet',   name: 'Lip Gloss Velvet',    category: 'Lips',  image: IMAGE_BASE + 'lunaci-lipgloss-velvet.jpg', shadeType: 'lgvelvet' },
     { id: 'blusher',            name: 'Blusher',              category: 'Face',  image: IMAGE_BASE + 'lunaci-blush.jpg' },
-    { id: 'compact-powder',     name: 'Compact Powder',       category: 'Face',  image: IMAGE_BASE + 'lunaci-compact-powder.jpg' },
+    { id: 'compact-powder',     name: 'Compact Powder',       category: 'Face',  image: IMAGE_BASE + 'lunaci-compact-powder.jpg', shadeType: 'compactpowder' },
     { id: 'eyebrow-pencil',     name: 'Eyebrow Pencil',       category: 'Brows', image: IMAGE_BASE + 'lunaci-eyebrow-pencil.jpg' },
     { id: 'eye-pencil',         name: 'Eye Pencil',           category: 'Eyes',  image: IMAGE_BASE + 'lunaci-eye-pencil-e1781429622606.jpg' },
     { id: 'nail-polish',        name: 'Nail Polish',          category: 'Nails', image: IMAGE_BASE + 'lunaci-nail-polish.jpg', shadeType: 'nailpolish' },
     { id: 'mascara-volume',     name: 'Mascara Volume',       category: 'Eyes',  image: IMAGE_BASE + 'lunaci-mascara-volume.jpg' },
     { id: 'mascara-length',     name: 'Mascara Length',       category: 'Eyes',  image: IMAGE_BASE + 'lunaci-mascara-length.jpg' },
-    { id: 'lipstick-matt-vegan', name: 'Lipstick Matt Vegan', category: 'Lips',  image: IMAGE_BASE + 'lunaci-lipstick.jpg', shadeType: 'lipstick' },
+    { id: 'lipstick-matt-vegan', name: 'Lipstick Matt Vegan', category: 'Lips',  image: IMAGE_BASE + 'lunaci-lipstick.png', shadeType: 'lipstick' },
     { id: 'lip-liner',          name: 'Lip Liner',            category: 'Lips',  image: IMAGE_BASE + 'lunaci-lip-liner.jpg' },
     { id: 'lip-fix',            name: 'Lip Fix',              category: 'Lips',  image: IMAGE_BASE + 'lunaci-lip-fix.jpg', shadeType: 'lipfix' },
-    { id: 'foundation',         name: 'Foundation',           category: 'Face',  image: IMAGE_BASE + 'lunaci-foundation.jpg' },
+    { id: 'foundation',         name: 'Foundation',           category: 'Face',  image: IMAGE_BASE + 'lunaci-foundation.jpg', shadeType: 'foundation' },
     { id: 'eyeliner',           name: 'Eyeliner',             category: 'Eyes',  image: IMAGE_BASE + 'lunaci-eyeliner.jpg' },
     { id: 'concealer',          name: 'Concealer',            category: 'Face',  image: null },
     { id: 'shadow',             name: 'Shadow',               category: 'Eyes',  image: null }
   ];
 
-  // ---- Placeholder shade sets (swap in real names/hex when available) ----
-  function buildShades(hexList) {
+  // ---- Shade sets: real per-shade photos where available, placeholder swatches otherwise ----
+  function buildNumberedImageShades(filePrefix, count) {
+    var list = [];
+    for (var i = 1; i <= count; i++) {
+      var num = (i < 10 ? '0' + i : '' + i);
+      list.push({
+        id: filePrefix + '-' + num,
+        label: 'Shade ' + num,
+        image: IMAGE_BASE + filePrefix + '-' + num + '.png'
+      });
+    }
+    return list;
+  }
+
+  function buildCodedImageShades(filePrefix, codes) {
+    return codes.map(function (code) {
+      return { id: filePrefix + '-' + code, label: code, image: IMAGE_BASE + filePrefix + '-' + code + '.png' };
+    });
+  }
+
+  function buildColorShades(hexList) {
     return hexList.map(function (hex, i) {
       var n = i + 1;
       return { id: 'shade-' + (n < 10 ? '0' + n : n), label: 'Shade ' + (n < 10 ? '0' + n : n), color: hex };
@@ -356,13 +379,11 @@
   }
 
   var SHADE_SETS = {
-    lipstick: buildShades([
-      '#C97064', '#A83240', '#7B1E3A', '#D9A08C', '#E2725B', '#8B2635',
-      '#C9707F', '#5C1A2B', '#E8998D', '#9C3D54', '#B5495B', '#D8879A'
-    ]),
-    lipfix: buildShades([
-      '#F2D9CE', '#EAC9C1', '#D9B8A3', '#F5E6DA', '#E0AFA0', '#C99A8E'
-    ]),
+    lipstick: buildNumberedImageShades('LUNACI-LS', 12),
+    lipfix: buildNumberedImageShades('LUNACI-LIPFIX', 6),
+    foundation: buildNumberedImageShades('LUNACI-FOUND', 6),
+    lgvelvet: buildNumberedImageShades('LUNACI-LGVELVET', 4),
+    compactpowder: buildCodedImageShades('LUNACI-COMPACT', ['B011', 'BRONCE', 'D010', 'R01']),
     nailpolish: (function () {
       var list = [];
       for (var i = 0; i < 40; i++) {
@@ -370,12 +391,20 @@
         var lightness = i % 2 === 0 ? 50 : 40;
         list.push('hsl(' + hue + ', 65%, ' + lightness + '%)');
       }
-      return buildShades(list);
+      return buildColorShades(list);
     })()
   };
 
-  var SHADE_COUNT_LABEL = { lipstick: 12, nailpolish: 40, lipfix: 6 };
+  var SHADE_COUNT_LABEL = {
+    lipstick: 12, lipfix: 6, foundation: 6, lgvelvet: 4, compactpowder: 4, nailpolish: 40
+  };
   var selections = {}; // productId -> shade object
+
+  function swatchStyle(shade) {
+    return shade.image
+      ? "background-image:url('" + shade.image + "');background-size:cover;background-position:center;"
+      : 'background:' + shade.color + ';';
+  }
 
   // ---- Render product grid ----
   var grid = root.querySelector('#lunaci-grid');
@@ -432,7 +461,7 @@
     shadeGrid.innerHTML = shades.map(function (s) {
       var selectedClass = pendingShade && pendingShade.id === s.id ? ' is-selected' : '';
       return '<button type="button" class="lunaci-shade-swatch' + selectedClass + '" ' +
-        'style="background:' + s.color + '" data-shade-id="' + s.id + '" title="' + s.label + '" aria-label="' + s.label + '"></button>';
+        'style="' + swatchStyle(s) + '" data-shade-id="' + s.id + '" title="' + s.label + '" aria-label="' + s.label + '"></button>';
     }).join('');
 
     updateSelectionText();
@@ -462,7 +491,7 @@
     if (!infoEl) return;
     var shade = selections[productId];
     if (shade) {
-      infoEl.innerHTML = '<span class="lunaci-selected-dot" style="background:' + shade.color + '"></span>Selected: ' + shade.label;
+      infoEl.innerHTML = '<span class="lunaci-selected-dot" style="' + swatchStyle(shade) + '"></span>Selected: ' + shade.label;
     }
   }
 

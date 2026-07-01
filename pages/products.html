@@ -12,16 +12,21 @@
   4. Publish. The "Shop" nav link points to /shop/ — create that page
      (slug "shop") so the link resolves.
 
+  PRODUCTS: 14 SKUs. Concealer is intentionally excluded (not yet in
+  production) — do not re-add it without confirming it's ready.
+
   SHADE DATA:
-  - Lipstick (12), Lip Fix (6), Foundation (6), Lip Gloss Velvet (4), and
-    Compact Powder (4) shade swatches use real per-shade photos from the
-    media library. Labels are generic ("Shade 01", etc., or the shade
+  - Lipstick (12), Lip Gloss Matt Fix (6), Foundation (6), Lip Velvet (4),
+    and Compact Powder (4) shade swatches use real per-shade photos from
+    the media library. Labels are generic ("Shade 01", etc., or the shade
     code for Compact Powder) since no shade names were provided yet —
     swap them in the SHADE_SETS object in the script below.
-  - Nail Polish (40) still uses generated placeholder color swatches;
-    no per-shade photos exist for it yet.
-  - Concealer and Shadow have no product photo yet, so they fall back
-    to the gold-on-black "Image Coming Soon" placeholder graphic.
+  - Nail Polish Long Lasting (12) uses generated placeholder color
+    swatches — see the TODO comment above its entry in SHADE_SETS for
+    the real filenames to swap in once available.
+  - Shadow has no product photo yet, so it falls back to the
+    gold-on-black "Image Coming Soon" placeholder graphic, and has no
+    shade selector.
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -332,23 +337,26 @@
     '</svg>'
   );
 
-  // ---- Product catalog (15 SKUs) ------------------------------------
+  // ---- Product catalog (14 SKUs — Concealer excluded, not yet in production) ----
   var PRODUCTS = [
-    { id: 'lip-gloss-velvet',   name: 'Lip Gloss Velvet',    category: 'Lips',  image: IMAGE_BASE + 'lunaci-lipgloss-velvet.jpg', shadeType: 'lgvelvet' },
-    { id: 'blusher',            name: 'Blusher',              category: 'Face',  image: IMAGE_BASE + 'lunaci-blush.jpg' },
-    { id: 'compact-powder',     name: 'Compact Powder',       category: 'Face',  image: IMAGE_BASE + 'lunaci-compact-powder.jpg', shadeType: 'compactpowder' },
-    { id: 'eyebrow-pencil',     name: 'Eyebrow Pencil',       category: 'Brows', image: IMAGE_BASE + 'lunaci-eyebrow-pencil.jpg' },
-    { id: 'eye-pencil',         name: 'Eye Pencil',           category: 'Eyes',  image: IMAGE_BASE + 'lunaci-eye-pencil-e1781429622606.jpg' },
-    { id: 'nail-polish',        name: 'Nail Polish',          category: 'Nails', image: IMAGE_BASE + 'lunaci-nail-polish.jpg', shadeType: 'nailpolish' },
-    { id: 'mascara-volume',     name: 'Mascara Volume',       category: 'Eyes',  image: IMAGE_BASE + 'lunaci-mascara-volume.jpg' },
-    { id: 'mascara-length',     name: 'Mascara Length',       category: 'Eyes',  image: IMAGE_BASE + 'lunaci-mascara-length.jpg' },
-    { id: 'lipstick-matt-vegan', name: 'Lipstick Matt Vegan', category: 'Lips',  image: IMAGE_BASE + 'lunaci-lipstick.png', shadeType: 'lipstick' },
-    { id: 'lip-liner',          name: 'Lip Liner',            category: 'Lips',  image: IMAGE_BASE + 'lunaci-lip-liner.jpg' },
-    { id: 'lip-fix',            name: 'Lip Fix',              category: 'Lips',  image: IMAGE_BASE + 'lunaci-lip-fix.jpg', shadeType: 'lipfix' },
-    { id: 'foundation',         name: 'Foundation',           category: 'Face',  image: IMAGE_BASE + 'lunaci-foundation.jpg', shadeType: 'foundation' },
-    { id: 'eyeliner',           name: 'Eyeliner',             category: 'Eyes',  image: IMAGE_BASE + 'lunaci-eyeliner.jpg' },
-    { id: 'concealer',          name: 'Concealer',            category: 'Face',  image: null },
-    { id: 'shadow',             name: 'Shadow',               category: 'Eyes',  image: null }
+    // Lips
+    { id: 'lip-pencil',          name: 'Lip Pencil',           category: 'Lips',  image: IMAGE_BASE + 'lunaci-lip-liner.jpg' },
+    { id: 'lipstick-matt-vegan', name: 'Lipstick Matt Vegan',  category: 'Lips',  image: IMAGE_BASE + 'lunaci-lipstick.png', shadeType: 'lipstick' },
+    { id: 'lip-gloss-matt-fix',  name: 'Lip Gloss Matt Fix',   category: 'Lips',  image: IMAGE_BASE + 'lunaci-lip-fix.jpg', shadeType: 'lipfix' },
+    { id: 'lip-velvet',          name: 'Lip Velvet',           category: 'Lips',  image: IMAGE_BASE + 'lunaci-lipgloss-velvet.jpg', shadeType: 'lgvelvet' },
+    // Eyes
+    { id: 'eyebrow-pencil',      name: 'Eyebrow Pencil',       category: 'Eyes',  image: IMAGE_BASE + 'lunaci-eyebrow-pencil.jpg' },
+    { id: 'eye-pencil',          name: 'Eye Pencil',           category: 'Eyes',  image: IMAGE_BASE + 'lunaci-eye-pencil-e1781429622606.jpg' },
+    { id: 'eyeliner-liquid',     name: 'Eyeliner Liquid',      category: 'Eyes',  image: IMAGE_BASE + 'lunaci-eyeliner.jpg' },
+    { id: 'mascara-volume',      name: 'Mascara Volume',       category: 'Eyes',  image: IMAGE_BASE + 'lunaci-mascara-volume.jpg' },
+    { id: 'mascara-length',      name: 'Mascara Length',       category: 'Eyes',  image: IMAGE_BASE + 'lunaci-mascara-length.jpg' },
+    { id: 'shadow',              name: 'Shadow',               category: 'Eyes',  image: null },
+    // Face
+    { id: 'foundation',          name: 'Foundation',           category: 'Face',  image: IMAGE_BASE + 'lunaci-foundation.jpg', shadeType: 'foundation' },
+    { id: 'compact-powder',      name: 'Compact Powder',       category: 'Face',  image: IMAGE_BASE + 'lunaci-compact-powder.jpg', shadeType: 'compactpowder' },
+    { id: 'blusher',             name: 'Blusher',              category: 'Face',  image: IMAGE_BASE + 'lunaci-blush.jpg' },
+    // Nails
+    { id: 'nail-polish-long-lasting', name: 'Nail Polish Long Lasting', category: 'Nails', image: IMAGE_BASE + 'lunaci-nail-polish.jpg', shadeType: 'nailpolish' }
   ];
 
   // ---- Shade sets: real per-shade photos where available, placeholder swatches otherwise ----
@@ -384,10 +392,11 @@
     foundation: buildNumberedImageShades('LUNACI-FOUND', 6),
     lgvelvet: buildNumberedImageShades('LUNACI-LGVELVET', 4),
     compactpowder: buildCodedImageShades('LUNACI-COMPACT', ['B011', 'BRONCE', 'D010', 'R01']),
+    // TODO: replace with LUNACI-NP-01.png through LUNACI-NP-12.png when ready
     nailpolish: (function () {
       var list = [];
-      for (var i = 0; i < 40; i++) {
-        var hue = Math.round((i * 360) / 40);
+      for (var i = 0; i < 12; i++) {
+        var hue = Math.round((i * 360) / 12);
         var lightness = i % 2 === 0 ? 50 : 40;
         list.push('hsl(' + hue + ', 65%, ' + lightness + '%)');
       }
@@ -396,7 +405,7 @@
   };
 
   var SHADE_COUNT_LABEL = {
-    lipstick: 12, lipfix: 6, foundation: 6, lgvelvet: 4, compactpowder: 4, nailpolish: 40
+    lipstick: 12, lipfix: 6, foundation: 6, lgvelvet: 4, compactpowder: 4, nailpolish: 12
   };
   var selections = {}; // productId -> shade object
 

@@ -1,0 +1,49 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "lunaci-Master README",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "community": 0,
+      "norm_label": "lunaci-master readme",
+      "id": "readme",
+      "community_name": "LUNACI Brand Overview"
+    },
+    {
+      "label": "LUNACI Brand",
+      "file_type": "concept",
+      "source_file": "README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "community": 0,
+      "norm_label": "lunaci brand",
+      "id": "lunaci_brand",
+      "community_name": "LUNACI Brand Overview"
+    }
+  ],
+  "links": [
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.9,
+      "source_file": "README.md",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "readme",
+      "target": "lunaci_brand"
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "aab6e18d8622390cfd8855fd883937f2eaa8ee2c"
+}

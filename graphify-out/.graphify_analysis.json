@@ -1,0 +1,28 @@
+{
+  "communities": {
+    "0": [
+      "lunaci_brand",
+      "readme"
+    ]
+  },
+  "cohesion": {
+    "0": 1.0
+  },
+  "gods": [
+    {
+      "id": "readme",
+      "label": "lunaci-Master README",
+      "degree": 1
+    },
+    {
+      "id": "lunaci_brand",
+      "label": "LUNACI Brand",
+      "degree": 1
+    }
+  ],
+  "surprises": [],
+  "tokens": {
+    "input": 25400,
+    "output": 283
+  }
+}

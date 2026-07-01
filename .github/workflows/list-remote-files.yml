@@ -28,9 +28,4 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" \
-            "echo '--- pwd ---'; pwd; \
-             echo '--- home listing ---'; ls -la; \
-             echo '--- searching for public_html ---'; \
-             find / -maxdepth 6 -iname 'public_html' -type d 2>/dev/null; \
-             echo '--- searching for uploads/2026/06 ---'; \
-             find / -maxdepth 8 -path '*uploads/2026/06' -type d 2>/dev/null"
+            "ls -la ~/domains/lunacibarcelona.com/public_html/wp-content/uploads/2026/06/"

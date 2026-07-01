@@ -2,6 +2,11 @@ name: List Remote Uploads (diagnostic)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - claude/lunacibarcelona-head-request-i5bla2
+    paths:
+      - '.github/workflows/list-remote-files.yml'
 
 jobs:
   list-files:

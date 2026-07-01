@@ -1,0 +1,31 @@
+name: List Remote Uploads (diagnostic)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - claude/lunacibarcelona-head-request-i5bla2
+    paths:
+      - '.github/workflows/list-remote-files.yml'
+
+jobs:
+  list-files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get update -y && sudo apt-get install -y sshpass
+
+      - name: List files in uploads/2026/06
+        env:
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile=~/.ssh/known_hosts \
+            "$SSH_USER@$SSH_HOST" \
+            "ls -la ~/domains/lunacibarcelona.com/public_html/wp-content/uploads/2026/06/"

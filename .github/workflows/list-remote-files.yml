@@ -34,7 +34,7 @@ jobs:
             echo ""
           done
 
-      - name: Inspect shortcode registration and deployed theme file on server
+      - name: List actual WP pages and search for the shortcode in content
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -47,9 +47,7 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" \
-            'echo "--- mu-plugins dir ---"; ls -la ~/domains/lunacibarcelona.com/public_html/wp-content/mu-plugins/ 2>&1; \
-             echo "--- mu-plugin shortcode file content ---"; cat ~/domains/lunacibarcelona.com/public_html/wp-content/mu-plugins/lunaci-products.php 2>&1 || find ~/domains/lunacibarcelona.com/public_html/wp-content/mu-plugins -iname "*lunaci*" -exec cat {} \; ; \
-             echo "--- deployed theme products.html size ---"; ls -la ~/domains/lunacibarcelona.com/public_html/wp-content/themes/lunaci/pages/products.html 2>&1; \
-             echo "--- active theme ---"; cat ~/domains/lunacibarcelona.com/public_html/wp-content/themes/*/style.css 2>/dev/null | head -20; \
-             echo "--- wp-cli check ---"; command -v wp; \
-             echo "--- try wp post list for product/products page ---"; wp post list --post_type=page --fields=ID,post_title,post_name,post_status --path=~/domains/lunacibarcelona.com/public_html 2>&1 | head -30'
+            'cd ~/domains/lunacibarcelona.com/public_html && \
+             echo "--- all pages (ID, title, slug, status) ---"; wp post list --post_type=page --fields=ID,post_title,post_name,post_status --allow-root 2>&1; \
+             echo "--- pages containing [lunaci_products] shortcode ---"; wp post list --post_type=page --s="lunaci_products" --fields=ID,post_title,post_name,post_status --allow-root 2>&1; \
+             echo "--- pages containing any lunaci_ shortcode ---"; wp db query "SELECT ID, post_title, post_name, post_status FROM wp_posts WHERE post_type=\"page\" AND post_content LIKE \"%lunaci_%\"" --allow-root 2>&1'

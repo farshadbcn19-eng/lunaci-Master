@@ -15,7 +15,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: List June 2026 uploads (read-only)
+      - name: Check for .png variants of product images (read-only)
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -28,4 +28,4 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" \
-            'ls ~/domains/lunacibarcelona.com/public_html/wp-content/uploads/2026/06/ | sort'
+            'cd ~/domains/lunacibarcelona.com/public_html/wp-content/uploads && for base in lunaci-lip-liner lunaci-lip-fix lunaci-lipgloss-velvet lunaci-eyebrow-pencil lunaci-eye-pencil-e1781429622606 lunaci-eyeliner lunaci-mascara-volume lunaci-mascara-length lunaci-foundation lunaci-compact-powder lunaci-blush lunaci-nail-polish; do echo "=== $base ==="; find . -iname "$base.png" -o -iname "$base.jpg" 2>/dev/null; done'

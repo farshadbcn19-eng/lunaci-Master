@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - claude/lunacibarcelona-head-request-i5bla2
+      - claude/hostinger-ssh-setup-w4cmpa
     paths:
       - '.github/workflows/list-remote-files.yml'
 
@@ -15,7 +15,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Check for WP-CLI (read-only)
+      - name: List June 2026 uploads (read-only)
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -28,4 +28,4 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" \
-            'command -v wp; echo "wp exit: $?"' || true
+            'ls ~/domains/lunacibarcelona.com/public_html/wp-content/uploads/2026/06/ | sort'

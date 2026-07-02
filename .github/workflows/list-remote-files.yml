@@ -15,7 +15,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Verify deployed products.html logo markup (read-only)
+      - name: Check for lip pencil filename variants on server (read-only)
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -28,4 +28,29 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" \
-            'grep -n -A5 "lunaci-nav-logo" ~/domains/lunacibarcelona.com/public_html/wp-content/themes/lunaci/pages/products.html'
+            'cd ~/domains/lunacibarcelona.com/public_html/wp-content/uploads/2026/06 && ls -la | grep -iE "lip-pencil|lipliner|lip-liner|lipstick"'
+
+      - name: Curl -I test all product image URLs
+        run: |
+          urls=(
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-lip-liner.jpg"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-lip-pencil.jpg"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-lipliner.jpg"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-lipstick.jpg"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-lipstick.png"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-lip-fix.jpg"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-lipgloss-velvet.jpg"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-eyebrow-pencil.jpg"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-eye-pencil-e1781429622606.jpg"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-eyeliner.jpg"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-mascara-volume.jpg"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-mascara-length.jpg"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-foundation.jpg"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-compact-powder.jpg"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-blush.jpg"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-nail-polish.jpg"
+          )
+          for url in "${urls[@]}"; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" -I "$url")
+            echo "$code $url"
+          done

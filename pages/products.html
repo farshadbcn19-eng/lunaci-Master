@@ -15,9 +15,8 @@
 
   DESIGN SYSTEM: brand tokens (colors, fonts, nav/footer/card styling)
   per the LUNACI design spec — background #0F0F10, gold #D4AF37,
-  Cormorant Garamond headings, Montserrat body. The hero background
-  uses lunaci-about-hero.png (a real asset already in the media
-  library) rather than a placeholder stock photo.
+  Cormorant Garamond headings, Montserrat body. The hero has no
+  background image — it shows the solid dark background (#0F0F10).
 
   PRODUCTS: 14 SKUs. Concealer is intentionally excluded (not yet in
   production) — do not re-add it without confirming it's ready.
@@ -143,11 +142,6 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    background-image:
-      linear-gradient(180deg, rgba(15,15,16,0.55) 0%, rgba(15,15,16,0.85) 100%),
-      var(--lunaci-hero-image);
-    background-size: cover;
-    background-position: center;
   }
   .lunaci-hero-inner {
     max-width: 640px;
@@ -602,9 +596,7 @@
 
   var IMAGE_BASE = 'https://lunacibarcelona.com/wp-content/uploads/2026/06/';
 
-  // Real LUNACI-branded hero image already in the media library (not a stock photo).
-  var HERO_IMAGE = IMAGE_BASE + 'lunaci-about-hero.png';
-  root.style.setProperty('--lunaci-hero-image', "url('" + HERO_IMAGE + "')");
+  var HERO_IMAGE = '';
 
   // Gold-on-black "image coming soon" placeholder for SKUs without a photo yet.
   var PLACEHOLDER_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent(

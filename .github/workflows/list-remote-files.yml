@@ -15,7 +15,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: md5sum deployed products.html on server
+      - name: wp cache flush (server file matched repo commit 4fc760a)
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -28,4 +28,4 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" \
-            'md5sum ~/domains/lunacibarcelona.com/public_html/wp-content/themes/lunaci/pages/products.html'
+            'wp cache flush --path="$HOME/domains/lunacibarcelona.com/public_html" --allow-root'

@@ -15,26 +15,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Fetch live product page(s) and inspect rendering
-        run: |
-          for path in "product" "products"; do
-            url="https://lunacibarcelona.com/$path/"
-            echo "=== $url ==="
-            code=$(curl -sL -o "/tmp/page-$path.html" -w "%{http_code}" "$url")
-            echo "HTTP status: $code"
-            echo "Bytes: $(wc -c < /tmp/page-$path.html)"
-            echo "Title: $(grep -o '<title>[^<]*</title>' /tmp/page-$path.html || echo NONE)"
-            echo "Contains raw shortcode text [lunaci_products]: $(grep -c '\[lunaci_products\]' /tmp/page-$path.html || echo 0)"
-            echo "Contains lunaci-products container id: $(grep -c 'id=\"lunaci-products\"' /tmp/page-$path.html || echo 0)"
-            echo "Contains lunaci-card product cards: $(grep -c 'lunaci-card' /tmp/page-$path.html || echo 0)"
-            echo "Contains lunaci-nav-logo: $(grep -c 'lunaci-nav-logo' /tmp/page-$path.html || echo 0)"
-            echo "First 500 chars of <body>:"
-            sed -n 's/.*<body[^>]*>//p' "/tmp/page-$path.html" | head -c 500
-            echo ""
-            echo ""
-          done
-
-      - name: List actual WP pages and search for the shortcode in content
+      - name: md5sum deployed products.html on server
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -47,7 +28,4 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" \
-            'cd ~/domains/lunacibarcelona.com/public_html && \
-             echo "--- all pages (ID, title, slug, status) ---"; wp post list --post_type=page --fields=ID,post_title,post_name,post_status --allow-root 2>&1; \
-             echo "--- pages containing [lunaci_products] shortcode ---"; wp post list --post_type=page --s="lunaci_products" --fields=ID,post_title,post_name,post_status --allow-root 2>&1; \
-             echo "--- pages containing any lunaci_ shortcode ---"; wp db query "SELECT ID, post_title, post_name, post_status FROM wp_posts WHERE post_type=\"page\" AND post_content LIKE \"%lunaci_%\"" --allow-root 2>&1'
+            'md5sum ~/domains/lunacibarcelona.com/public_html/wp-content/themes/lunaci/pages/products.html'

@@ -15,7 +15,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: md5sum deployed products.html and check live hero markup
+      - name: wp post get 61 post_content (first 500 chars)
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -28,12 +28,5 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" \
-            'md5sum ~/domains/lunacibarcelona.com/public_html/wp-content/themes/lunaci/pages/products.html'
-
-          echo "--- live /products/ hero check ---"
-          url="https://lunacibarcelona.com/products/"
-          curl -sL -o /tmp/products-live.html "$url"
-          echo "Bytes: $(wc -c < /tmp/products-live.html)"
-          echo "lunaci-card count: $(grep -c 'lunaci-card' /tmp/products-live.html || echo 0)"
-          echo "about-hero occurrences: $(grep -c 'about-hero' /tmp/products-live.html || echo 0)"
-          echo "background-image: var(--lunaci-hero-image) occurrences: $(grep -c 'lunaci-hero-image' /tmp/products-live.html || echo 0)"
+            'wp post get 61 --fields=post_content --path="$HOME/domains/lunacibarcelona.com/public_html" --allow-root' \
+            | head -c 500

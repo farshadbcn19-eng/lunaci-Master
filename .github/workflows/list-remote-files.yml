@@ -15,7 +15,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: wp post get 61 post_content (first 500 chars)
+      - name: Check active plugins and purge cache
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -28,5 +28,7 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" \
-            'wp post get 61 --fields=post_content --path="$HOME/domains/lunacibarcelona.com/public_html" --allow-root' \
-            | head -c 500
+            'echo "--- wp plugin list ---"; \
+             wp plugin list --path="$HOME/domains/lunacibarcelona.com/public_html" --fields=name,status --allow-root; \
+             echo "--- cache purge ---"; \
+             wp litespeed-purge all --path="$HOME/domains/lunacibarcelona.com/public_html" --allow-root 2>/dev/null || wp cache flush --path="$HOME/domains/lunacibarcelona.com/public_html" --allow-root'

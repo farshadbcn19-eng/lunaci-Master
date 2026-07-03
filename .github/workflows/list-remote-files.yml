@@ -15,17 +15,33 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: wp cache flush (server file matched repo commit 4fc760a)
-        env:
-          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
-          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
-          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
-          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+      - name: Re-check live /products/ page after cache flush
         run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
-            -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SSH_USER@$SSH_HOST" \
-            'wp cache flush --path="$HOME/domains/lunacibarcelona.com/public_html" --allow-root'
+          url="https://lunacibarcelona.com/products/"
+          echo "=== $url ==="
+          code=$(curl -sL -o /tmp/products-live.html -w "%{http_code}" "$url")
+          echo "HTTP status: $code"
+          echo "Bytes: $(wc -c < /tmp/products-live.html)"
+          echo "Title: $(grep -o '<title>[^<]*</title>' /tmp/products-live.html || echo NONE)"
+          echo "Contains lunaci-products container id: $(grep -c 'id=\"lunaci-products\"' /tmp/products-live.html || echo 0)"
+          echo "Contains lunaci-card product cards: $(grep -c 'lunaci-card' /tmp/products-live.html || echo 0)"
+          echo "Contains logo src with b320427b: $(grep -c 'b320427b' /tmp/products-live.html || echo 0)"
+          echo "--- logo img tag if present ---"
+          grep -o '<img[^>]*lunaci-nav-logo[^>]*>' /tmp/products-live.html || echo "NOT FOUND"
+          echo ""
+          echo "--- product image src URLs found in page ---"
+          grep -o 'src="[^"]*uploads/2026/06/[^"]*"' /tmp/products-live.html | sort -u | head -20
+
+          echo ""
+          echo "--- curl -I test on product image URLs ---"
+          urls=(
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-lip-liner.jpg"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-lipstick.png"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-lip-fix.jpg"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-eyebrow-pencil.jpg"
+            "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-foundation.jpg"
+          )
+          for u in "${urls[@]}"; do
+            c=$(curl -s -o /dev/null -w "%{http_code}" -I "$u")
+            echo "$c $u"
+          done

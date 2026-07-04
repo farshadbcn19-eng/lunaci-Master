@@ -43,12 +43,23 @@ jobs:
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_check.sh
 
-      - name: Fetch live homepage nav region for manual inspection
+      - name: Extract exact nav <ul> contents from post 57 _elementor_data
+        env:
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
         run: |
-          curl -s https://lunacibarcelona.com/ -o /tmp/home_live.html
-          echo "=== bytes: $(wc -c < /tmp/home_live.html) ==="
-          echo "=== context around ln-nav (400 chars before/after) ==="
-          grep -o '.\{200\}ln-nav\".\{2000\}' /tmp/home_live.html | head -c 3000
-          echo
-          echo "=== context around any 'Shop' text on the page (with surrounding tags) ==="
-          grep -o '.\{60\}[Ss][Hh][Oo][Pp].\{60\}' /tmp/home_live.html | head -20
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          cat > /tmp/remote_check2.sh <<'REMOTE_EOF'
+          set -e
+          WPPATH="$HOME/domains/lunacibarcelona.com/public_html"
+          wp post meta get 57 _elementor_data --path="$WPPATH" --allow-root > /tmp/57_edata.json 2>/dev/null
+          echo "=== raw text around ln-nav__links (500 chars) ==="
+          grep -o 'ln-nav__links.\{500\}' /tmp/57_edata.json | head -1
+          REMOTE_EOF
+          sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile=~/.ssh/known_hosts \
+            "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_check2.sh

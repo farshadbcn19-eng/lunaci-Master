@@ -56,8 +56,8 @@ jobs:
           set -e
           WPPATH="$HOME/domains/lunacibarcelona.com/public_html"
           wp post meta get 57 _elementor_data --path="$WPPATH" --allow-root > /tmp/57_edata.json 2>/dev/null
-          echo "=== raw text around ln-nav__links (500 chars) ==="
-          grep -o 'ln-nav__links.\{500\}' /tmp/57_edata.json | head -1
+          echo "=== raw text starting at the <ul class=\"ln-nav__links\"> tag (600 chars) ==="
+          grep -o 'ul class=\\"ln-nav__links\\".\{600\}' /tmp/57_edata.json | head -1
           REMOTE_EOF
           sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
             -o StrictHostKeyChecking=yes \

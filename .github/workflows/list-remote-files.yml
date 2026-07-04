@@ -15,7 +15,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Verify deployed mu-plugin, purge cache, check live markers
+      - name: Check contact page source and post record
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -24,24 +24,31 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          cat > /tmp/remote_check.sh <<'REMOTE_EOF'
+          cat > /tmp/remote_contact.sh <<'REMOTE_EOF'
           set -e
           WPPATH="$HOME/domains/lunacibarcelona.com/public_html"
-          echo "=== mu-plugin file size/timestamp ==="
-          ls -la "$WPPATH/wp-content/mu-plugins/lunaci-mobile-nav-fix.php"
-          echo "=== deployed file contains fixStaleLinks / collections-2 rewrite? ==="
-          grep -c "fixStaleLinks\|collections-2\|about-us" "$WPPATH/wp-content/mu-plugins/lunaci-mobile-nav-fix.php"
-          echo "=== purge LiteSpeed cache ==="
-          wp litespeed-purge all --path="$WPPATH" --allow-root
+          echo "=== does theme pages/contact.html exist on server? ==="
+          ls -la "$WPPATH/wp-content/themes/lunaci/pages/contact.html" 2>&1 || echo "NOT FOUND"
+          echo "=== find the Contact page post by slug ==="
+          wp post list --post_type=page --pagename=contact --fields=ID,post_title,post_name,post_status --path="$WPPATH" --allow-root
+          echo "=== is it in Elementor builder mode? ==="
+          wp post list --post_type=page --pagename=contact --field=ID --path="$WPPATH" --allow-root | while read -r ID; do
+            echo "-- post $ID edit mode:"
+            wp post meta get "$ID" _elementor_edit_mode --path="$WPPATH" --allow-root 2>/dev/null || echo "(not set)"
+            echo "-- post $ID content contains shortcode?"
+            wp post get "$ID" --field=post_content --path="$WPPATH" --allow-root | grep -o "\[lunaci_[a-z]*\]" || echo "(no lunaci shortcode)"
+          done
           REMOTE_EOF
           sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_check.sh
+            "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_contact.sh
 
-      - name: Check injected JS is present on live pages
+      - name: Fetch live contact page nav markup
         run: |
-          echo "=== Home page: fixStaleLinks / full-viewport overlay markers ==="
-          curl -s https://lunacibarcelona.com/ | grep -o "fixStaleLinks\|position: fixed\|lunaci-nav-open" | sort | uniq -c
-          echo "=== About page: same markers ==="
-          curl -sL https://lunacibarcelona.com/about-us/ | grep -o "fixStaleLinks\|position: fixed\|lunaci-nav-open" | sort | uniq -c
+          curl -sL https://lunacibarcelona.com/contact/ -o /tmp/contact.html
+          echo "=== bytes: $(wc -c < /tmp/contact.html) ==="
+          echo "=== title ==="
+          grep -o -i '<title>[^<]*</title>' /tmp/contact.html | head -1
+          echo "=== nav/header/menu/toggle tags ==="
+          grep -n -i -o '<[a-z0-9]*[^>]*\(nav\|header\|menu\|toggle\|hamburger\|burger\)[^>]*>' /tmp/contact.html | head -40

@@ -1,0 +1,212 @@
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;}
+#ln{width:100%;background:#0B0B0B;overflow:hidden;}
+#ln img{max-width:100%;display:block;}
+.ln-nav{position:fixed;top:0;left:0;right:0;z-index:9999;display:flex;align-items:center;justify-content:space-between;padding:16px 5%;background:linear-gradient(to bottom,rgba(11,11,11,.95),transparent);transition:background .4s;border-bottom:1px solid transparent;}
+.ln-nav.scrolled{background:rgba(11,11,11,.97);border-bottom-color:rgba(212,175,55,.15);}
+.ln-nav__logo img{height:90px;width:auto;display:block;mix-blend-mode:lighten;}
+.ln-nav__links{display:flex;gap:36px;list-style:none;margin:0;padding:0;}
+.ln-nav__links a{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:400;letter-spacing:.3em;text-transform:uppercase;color:rgba(247,244,238,.9);text-decoration:none;transition:color .3s;}
+.ln-nav__links a:hover{color:#D4AF37;}
+.ln-nav__cart a{color:rgba(247,244,238,.9);text-decoration:none;}
+@media(max-width:768px){.ln-nav__links{display:none;}.ln-nav{padding:14px 5%;}}
+.ln-hero{position:relative;width:100%;height:100vh;min-height:600px;overflow:hidden;background:#0B0B0B;display:flex;align-items:flex-end;}
+.ln-hero__bg{position:absolute;inset:0;}
+.ln-hero__bg img{width:100%;height:100%;object-fit:cover;object-position:70% center;animation:lnKB 20s ease-in-out infinite alternate;}
+@keyframes lnKB{0%{transform:scale(1);}100%{transform:scale(1.08) translate(-1%,-1%);}}
+.ln-hero__ov{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(11,11,11,0) 0%,rgba(11,11,11,.5) 55%,rgba(11,11,11,.92) 100%);}
+.ln-hero__ov2{position:absolute;inset:0;background:linear-gradient(to right,rgba(11,11,11,.55) 0%,transparent 60%);}
+.ln-hero__content{position:relative;z-index:5;padding:0 5% 8vh;width:100%;}
+.ln-hero__eye{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:400;letter-spacing:.4em;text-transform:uppercase;color:#D4AF37;margin-bottom:16px;display:block;opacity:0;animation:lnFU .9s ease .3s forwards;}
+.ln-hero__bar{width:0;height:1px;background:#D4AF37;margin-bottom:20px;animation:lnW .8s ease .5s forwards;}
+.ln-hero__h1{font-family:'Cormorant Garamond',serif;font-weight:300;line-height:1;color:#F7F4EE;margin:0 0 8px;opacity:0;animation:lnFU 1s ease .6s forwards;}
+.ln-hero__h1 .big{display:block;font-size:clamp(64px,8vw,110px);letter-spacing:.12em;text-transform:uppercase;}
+.ln-hero__h1 .small{display:block;font-family:'Cormorant Garamond',serif;font-size:clamp(16px,2vw,26px);font-style:italic;font-weight:300;color:#D4AF37;letter-spacing:.5em;margin-top:6px;}
+.ln-hero__tag{font-family:'Cormorant Garamond',serif;font-size:clamp(18px,2.2vw,26px);font-style:italic;color:rgba(247,244,238,.75);margin-bottom:10px;opacity:0;animation:lnFU 1s ease .8s forwards;}
+.ln-hero__desc{font-family:'Montserrat',sans-serif;font-size:12px;font-weight:300;letter-spacing:.12em;line-height:1.9;color:rgba(247,244,238,.6);margin-bottom:36px;opacity:0;animation:lnFU .9s ease .95s forwards;}
+.ln-hero__btns{display:flex;gap:12px;flex-wrap:wrap;opacity:0;animation:lnFU .9s ease 1.1s forwards;}
+.btn-gold{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:500;letter-spacing:.3em;text-transform:uppercase;color:#0B0B0B;background:#D4AF37;padding:14px 32px;text-decoration:none;border:1px solid #D4AF37;transition:all .3s;display:inline-block;}
+.btn-out{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:400;letter-spacing:.3em;text-transform:uppercase;color:#F7F4EE;background:transparent;padding:14px 32px;text-decoration:none;border:1px solid rgba(247,244,238,.5);transition:all .3s;display:inline-block;}
+@media(max-width:768px){.ln-hero__desc{display:none;}.ln-hero__btns{flex-direction:column;max-width:220px;}}
+.ln-mq{background:#0f0f0f;padding:12px 0;border-top:1px solid rgba(212,175,55,.1);border-bottom:1px solid rgba(212,175,55,.1);overflow:hidden;}
+.ln-mq__t{display:flex;animation:lnMQ 30s linear infinite;white-space:nowrap;}
+.ln-mq__t span{font-family:'Cormorant Garamond',serif;font-size:14px;font-style:italic;letter-spacing:.2em;color:rgba(212,175,55,.6);padding:0 32px;}
+.ln-mq__t .d{color:#D4AF37;font-style:normal;}
+@keyframes lnMQ{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+.ln-story{display:grid;grid-template-columns:1fr 1fr;background:#0B0B0B;}
+.ln-story__img{overflow:hidden;min-height:600px;}
+.ln-story__img img{width:100%;height:100%;object-fit:cover;object-position:center top;}
+.ln-story__txt{padding:80px 6%;display:flex;flex-direction:column;justify-content:center;border-left:1px solid rgba(212,175,55,.1);}
+.ln-lbl{font-family:'Montserrat',sans-serif;font-size:10px;letter-spacing:.38em;text-transform:uppercase;color:#D4AF37;margin-bottom:14px;display:block;}
+.ln-bar{width:44px;height:1px;background:#D4AF37;margin-bottom:26px;}
+.ln-story__q{font-family:'Cormorant Garamond',serif;font-size:clamp(22px,2.5vw,34px);font-weight:300;font-style:italic;line-height:1.5;color:#F7F4EE;margin-bottom:24px;}
+.ln-story__q em{color:#E5C76B;font-style:normal;}
+.ln-story__p{font-family:'Montserrat',sans-serif;font-size:12px;font-weight:300;letter-spacing:.08em;line-height:2;color:rgba(247,244,238,.65);margin-bottom:32px;}
+@media(max-width:768px){.ln-story{grid-template-columns:1fr;}.ln-story__img{min-height:320px;}.ln-story__txt{padding:48px 6%;border-left:none;border-top:1px solid rgba(212,175,55,.1);}}
+.ln-why{padding:90px 5% 60px;background:#111;}
+.ln-sec-h{text-align:center;margin-bottom:52px;}
+.ln-sec-hline{width:44px;height:1px;background:#D4AF37;margin:0 auto 20px;}
+.ln-sec-title{font-family:'Cormorant Garamond',serif;font-size:clamp(32px,4vw,48px);font-weight:300;letter-spacing:.08em;text-transform:uppercase;color:#F7F4EE;}
+.ln-sec-title em{font-style:italic;color:#E5C76B;}
+.ln-why__g{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:40px;}
+.ln-why__i{padding:48px 32px;text-align:center;background:#0B0B0B;border-top:2px solid rgba(212,175,55,.1);transition:border-color .4s;}
+.ln-why__i:hover{border-top-color:#D4AF37;}
+.ln-why__n{font-family:'Cormorant Garamond',serif;font-size:13px;font-style:italic;letter-spacing:.2em;color:#D4AF37;margin-bottom:18px;display:block;}
+.ln-why__name{font-family:'Cormorant Garamond',serif;font-size:20px;letter-spacing:.1em;text-transform:uppercase;color:#F7F4EE;margin-bottom:12px;}
+.ln-why__p{font-family:'Montserrat',sans-serif;font-size:12px;font-weight:300;letter-spacing:.06em;line-height:1.9;color:rgba(247,244,238,.6);}
+@media(max-width:768px){.ln-why__g{grid-template-columns:1fr;}}
+.ln-news{padding:90px 5%;background:#0B0B0B;text-align:center;}
+.ln-news__h{font-family:'Cormorant Garamond',serif;font-size:clamp(28px,3.5vw,46px);font-weight:300;letter-spacing:.08em;text-transform:uppercase;color:#F7F4EE;margin-bottom:8px;}
+.ln-news__h em{font-style:italic;color:#E5C76B;}
+.ln-news__s{font-family:'Montserrat',sans-serif;font-size:12px;font-weight:300;letter-spacing:.15em;color:rgba(247,244,238,.6);margin-bottom:36px;}
+.ln-news__f{display:flex;max-width:480px;margin:0 auto;}
+.ln-news__in{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(212,175,55,.2);border-right:none;padding:13px 16px;color:#F7F4EE;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:.12em;outline:none;}
+.ln-news__in::placeholder{color:rgba(247,244,238,.4);}
+.ln-news__btn{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;background:#D4AF37;color:#0B0B0B;border:1px solid #D4AF37;padding:13px 24px;cursor:pointer;white-space:nowrap;}
+@media(max-width:768px){.ln-news__f{flex-direction:column;}.ln-news__in{border-right:1px solid rgba(212,175,55,.2);border-bottom:none;}}
+.ln-foot{background:#0B0B0B;border-top:1px solid rgba(212,175,55,.1);padding:60px 5% 30px;}
+.ln-foot__g{display:grid;grid-template-columns:1.8fr 1fr 1fr 1fr;gap:32px;margin-bottom:40px;}
+.ln-foot__bn{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:300;letter-spacing:.45em;text-transform:uppercase;color:#F7F4EE;display:block;margin-bottom:4px;}
+.ln-foot__bs{font-family:'Montserrat',sans-serif;font-size:9px;font-weight:300;letter-spacing:.4em;text-transform:uppercase;color:#D4AF37;display:block;margin-bottom:14px;}
+.ln-foot__bd{font-family:'Montserrat',sans-serif;font-size:12px;font-weight:300;letter-spacing:.06em;line-height:1.9;color:rgba(247,244,238,.5);max-width:240px;}
+.ln-foot__ct{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:500;letter-spacing:.28em;text-transform:uppercase;color:#D4AF37;margin-bottom:16px;display:block;}
+.ln-foot__l{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px;}
+.ln-foot__l a{font-family:'Montserrat',sans-serif;font-size:12px;font-weight:300;letter-spacing:.08em;color:rgba(247,244,238,.55);text-decoration:none;transition:color .3s;}
+.ln-foot__l a:hover{color:#D4AF37;}
+.ln-foot__b{padding-top:22px;border-top:1px solid rgba(212,175,55,.08);display:flex;align-items:center;justify-content:space-between;}
+.ln-foot__c{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:300;letter-spacing:.15em;color:rgba(247,244,238,.35);}
+.ln-foot__s{display:flex;gap:10px;}
+.ln-foot__s a{width:28px;height:28px;border:1px solid rgba(212,175,55,.18);display:flex;align-items:center;justify-content:center;color:rgba(247,244,238,.55);text-decoration:none;font-size:10px;font-family:'Montserrat',sans-serif;transition:all .3s;}
+.ln-foot__s a:hover{border-color:#D4AF37;color:#D4AF37;}
+@media(max-width:768px){.ln-foot__g{grid-template-columns:1fr 1fr;gap:24px;}.ln-foot__b{flex-direction:column;gap:14px;text-align:center;}}
+@keyframes lnFU{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+@keyframes lnW{from{width:0;}to{width:44px;}}
+.ln-rv{opacity:0;transform:translateY(24px);transition:opacity .8s ease,transform .8s ease;}
+.ln-rv.on{opacity:1;transform:translateY(0);}
+.d1{transition-delay:.1s;}.d2{transition-delay:.2s;}.d3{transition-delay:.3s;}
+
+/* ===== MOBILE MENU FIX ===== */
+.ln-nav-toggle{display:none;background:none;border:none;}
+@media(max-width:768px){
+  .ln-nav__links.open{display:flex!important;flex-direction:column;position:absolute;top:100%;left:0;right:0;background:#0B0B0B;padding:20px 32px;border-top:1px solid rgba(212,175,55,.2);z-index:9999;}
+  .ln-nav-toggle{display:flex!important;flex-direction:column;gap:5px;cursor:pointer;padding:8px;background:none;border:none;}
+  .ln-nav-toggle span{display:block;width:24px;height:2px;background:#D4AF37;}
+}
+</style>
+<nav id="lnNav">
+  <a href="https://lunacibarcelona.com/">
+    <img src="https://lunacibarcelona.com/wp-content/uploads/2026/05/b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg" alt="LUNACI Barcelona" style="height:90px;width:auto;mix-blend-mode:lighten;">
+  </a>
+  <ul class="ln-nav__links" id="lnNavLinks">
+    <li><a href="https://lunacibarcelona.com/">Home</a></li>
+    <li><a href="https://lunacibarcelona.com/collections-2">Products</a></li>
+    <li><a href="https://lunacibarcelona.com/about">About</a></li>
+    <li><a href="https://lunacibarcelona.com/contact">Contact</a></li>
+  </ul>
+    <a href="https://lunacibarcelona.com/cart">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(247,244,238,.9)" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+    </a>
+    <button type="button" class="ln-nav-toggle" id="lnNavToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="lnNavLinks">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+</nav>
+
+<script>
+(function () {
+  var navToggle = document.getElementById('lnNavToggle');
+  var navLinks = document.getElementById('lnNavLinks');
+  if (navToggle && navLinks) {
+    navToggle.addEventListener('click', function () {
+      var isOpen = navLinks.classList.toggle('open');
+      navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+    navLinks.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        navLinks.classList.remove('open');
+        navToggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+  }
+})();
+</script>
+<section>
+    <img src="https://lunacibarcelona.com/wp-content/uploads/2026/05/lunaci_hero_retouched-1-scaled.jpg" alt="LUNACI"/>
+    Luxury Beauty · Barcelona
+    <h1>
+      Lunaci
+      Barcelona
+    </h1>
+    <p>Timeless Beauty. Modern Luxury.</p>
+    <p>Luxury cosmetics inspired by Mediterranean elegance,<br>crafted for women of timeless sophistication.</p>
+      <a href="https://lunacibarcelona.com/collections-2">Shop Collection</a>
+      <a href="https://lunacibarcelona.com/about">Discover Lunaci</a>
+</section>
+    Mediterranean Luxury✦
+    European Craftsmanship✦
+    Sophisticated Femininity✦
+    Timeless Beauty✦
+    Barcelona Elegance✦
+    Premium Formulas✦
+    Mediterranean Luxury✦
+    European Craftsmanship✦
+    Sophisticated Femininity✦
+    Timeless Beauty✦
+    Barcelona Elegance✦
+    Premium Formulas✦
+<section>
+    <img src="https://lunacibarcelona.com/wp-content/uploads/2026/05/lunaci_3462_retouched-1-scaled.jpg" alt="LUNACI Story"/>
+    Our Story
+    <blockquote>"Born from the <em>golden light</em> of Barcelona, crafted for women who carry elegance in every gesture."</blockquote>
+    <p>LUNACI Barcelona was born from a passion for Mediterranean beauty and European craftsmanship. Every formula is meticulously developed to honour the sophistication of modern femininity — timeless, confident, and unmistakably luxurious.<br><br>From the sun-drenched shores of the Mediterranean to the elegant boulevards of Barcelona, our ingredients are selected with the same precision that defines great European beauty houses.</p>
+    <a href="https://lunacibarcelona.com/about">Discover Our Story</a>
+</section>
+<section>
+    Our Promise
+    <h2>Why <em>Lunaci</em></h2>
+      01
+      <h3>Premium Formula</h3>
+      <p>Every product is developed with the finest ingredients, tested to the highest European standards for performance and skin safety.</p>
+      02
+      <h3>Cruelty Free</h3>
+      <p>Beauty without compromise. All LUNACI products are 100% cruelty-free, never tested on animals, certified and verified.</p>
+      03
+      <h3>European Quality</h3>
+      <p>Crafted in Europe with the precision and dedication that defines the continent's greatest luxury beauty houses.</p>
+</section>
+<section>
+  Exclusive Access
+  <h2>Join The <em>Lunaci</em> World</h2>
+  <p>Discover new collections, beauty rituals & exclusive offers.</p>
+    <input type="email" placeholder="Your email address">
+    <button>Subscribe</button>
+</section>
+<footer>
+      Lunaci
+      Barcelona
+      <p>Luxury cosmetics inspired by Mediterranean elegance. Crafted for women of timeless sophistication.</p>
+      Shop
+      <ul>
+        <li><a href="https://lunacibarcelona.com/collections-2">All Products</a></li>
+        <li><a href="https://lunacibarcelona.com/collections-2">Lip</a></li>
+        <li><a href="https://lunacibarcelona.com/collections-2">Face</a></li>
+        <li><a href="https://lunacibarcelona.com/collections-2">Eye</a></li>
+      </ul>
+      Brand
+      <ul>
+        <li><a href="https://lunacibarcelona.com/about">About Lunaci</a></li>
+        <li><a href="https://lunacibarcelona.com/contact">Contact</a></li>
+      </ul>
+      Support
+      <ul>
+        <li><a href="https://lunacibarcelona.com/shipping">Shipping</a></li>
+        <li><a href="https://lunacibarcelona.com/returns">Returns</a></li>
+        <li><a href="https://lunacibarcelona.com/privacy-policy">Privacy Policy</a></li>
+      </ul>
+    <p>© 2026 LUNACI Barcelona. All rights reserved.</p>
+      <a href="#">IG</a>
+      <a href="#">TK</a>
+      <a href="#">PT</a>
+</footer>

@@ -15,37 +15,26 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Verify deployed mu-plugin and purge cache
-        env:
-          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
-          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
-          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
-          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+      - name: Home page - full nav block incl cart icon
         run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          cat > /tmp/remote_verify.sh <<'REMOTE_EOF'
-          set -e
-          WPPATH="$HOME/domains/lunacibarcelona.com/public_html"
-          echo "=== mu-plugin file size/timestamp ==="
-          ls -la "$WPPATH/wp-content/mu-plugins/lunaci-mobile-nav-fix.php"
-          echo "=== deployed file contains new markers? ==="
-          grep -c "lunaci-collapsible-links\|header > nav\|filenameMap" "$WPPATH/wp-content/mu-plugins/lunaci-mobile-nav-fix.php"
-          echo "=== products.html contains Contact link? ==="
-          grep -c 'href="/contact/" class="lunaci-nav-link"' "$WPPATH/wp-content/themes/lunaci/pages/products.html"
-          echo "=== purge LiteSpeed cache ==="
-          wp litespeed-purge all --path="$WPPATH" --allow-root
-          REMOTE_EOF
-          sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
-            -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_verify.sh
+          curl -s https://lunacibarcelona.com/ -o /tmp/home.html
+          echo "=== lines around <nav id=\"lnNav\"> through </nav> ==="
+          awk '/<nav id="lnNav"/{f=1} f{print} /<\/nav>/{if(f){exit}}' /tmp/home.html
 
-      - name: Check live pages for new markers
+      - name: Products page - all anchors inside nav
         run: |
-          echo "=== Home: collapsible-links / header>nav markers ==="
-          curl -s https://lunacibarcelona.com/ | grep -o "lunaci-collapsible-links\|filenameMap" | sort | uniq -c
-          echo "=== Contact: same markers, plus Contact link in nav ul ==="
-          curl -sL https://lunacibarcelona.com/contact/ | grep -o "lunaci-collapsible-links\|filenameMap" | sort | uniq -c
-          echo "=== Products page: Contact link present, CTA hide rule present ==="
-          curl -sL https://lunacibarcelona.com/products/ | grep -o 'href="/contact/" class="lunaci-nav-link"\|lunaci-nav-cta' | sort | uniq -c
+          curl -sL https://lunacibarcelona.com/products/ -o /tmp/products.html
+          echo "=== bytes: $(wc -c < /tmp/products.html) ==="
+          echo "=== full nav block ==="
+          awk '/<nav class="lunaci-nav"/{f=1} f{print} /<\/nav>/{if(f){exit}}' /tmp/products.html
+          echo "=== all <a> tags inside nav (text + href), extracted ==="
+          awk '/<nav class="lunaci-nav"/{f=1} f{print} /<\/nav>/{if(f){exit}}' /tmp/products.html | grep -o '<a [^>]*>[^<]*</a>'
+
+      - name: Contact page - full nav block and toggle state
+        run: |
+          curl -sL https://lunacibarcelona.com/contact/ -o /tmp/contact.html
+          echo "=== bytes: $(wc -c < /tmp/contact.html) ==="
+          echo "=== lines 805-835 raw ==="
+          sed -n '805,835p' /tmp/contact.html
+          echo "=== does lunaci-mobile-toggle appear near this nav? ==="
+          grep -c "lunaci-mobile-toggle\|lunaci-collapsible-links" /tmp/contact.html

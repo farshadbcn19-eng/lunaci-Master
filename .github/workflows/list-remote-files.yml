@@ -15,23 +15,26 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Inspect Elementor nav markup on Home and About pages
+      - name: Inspect nav markup on About, Contact, Shop, Collections pages
         run: |
-          for path in "" "about-us/"; do
-            label="${path:-home}"
+          declare -A pages=( [about]="about-us/" [contact]="contact/" [shop]="shop/" [collections]="collections/" )
+          for label in "${!pages[@]}"; do
+            path="${pages[$label]}"
             url="https://lunacibarcelona.com/$path"
             echo "=== $label ($url) ==="
             curl -sL -o "/tmp/page-$label.html" "$url"
             echo "Bytes: $(wc -c < /tmp/page-$label.html)"
             echo "-- <nav> tags --"
             grep -o '<nav[^>]*>' "/tmp/page-$label.html" | sort -u
+            echo "-- lunaci-nav-toggle present? --"
+            grep -c 'lunaci-nav-toggle' "/tmp/page-$label.html" || echo 0
+            echo "-- ln-nav-toggle / ln- toggle hints --"
+            grep -ioE 'class="[^"]*(ln-[a-z-]*toggle|toggle[a-z-]*)[^"]*"' "/tmp/page-$label.html" | sort -u | head -10
             echo "-- elementor menu toggle indicators --"
             grep -oE 'elementor-menu-toggle[a-zA-Z_-]*' "/tmp/page-$label.html" | sort -u
-            echo "-- hamburger/toggle/burger class hints --"
-            grep -ioE 'class="[^"]*(toggle|hamburger|burger|mobile-menu)[^"]*"' "/tmp/page-$label.html" | sort -u | head -20
+            echo "-- hamburger/burger/mobile-menu class hints --"
+            grep -ioE 'class="[^"]*(hamburger|burger|mobile-menu)[^"]*"' "/tmp/page-$label.html" | sort -u | head -10
             echo "-- header tag --"
             grep -o '<header[^>]*>' "/tmp/page-$label.html" | sort -u
-            echo "-- nav menu widget markers --"
-            grep -oE 'elementor-nav-menu[a-zA-Z_-]*|elementor-widget-nav-menu' "/tmp/page-$label.html" | sort -u
             echo ""
           done

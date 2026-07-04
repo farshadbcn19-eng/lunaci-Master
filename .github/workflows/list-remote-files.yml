@@ -15,28 +15,12 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Check Elementor edit mode and data for posts 57 and 59
-        env:
-          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
-          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
-          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
-          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+      - name: Extract live nav markup structure from homepage
         run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          cat > /tmp/remote_check.sh <<'REMOTE_EOF'
-          set -e
-          WPPATH="$HOME/domains/lunacibarcelona.com/public_html"
-          for ID in 57 59; do
-            echo "=== post $ID: _elementor_edit_mode ==="
-            wp post meta get "$ID" _elementor_edit_mode --path="$WPPATH" --allow-root || echo "(not set)"
-            echo "=== post $ID: _elementor_data present? (length) ==="
-            wp post meta get "$ID" _elementor_data --path="$WPPATH" --allow-root 2>/dev/null | wc -c || echo "(not set)"
-            echo "=== post $ID: _elementor_template_type ==="
-            wp post meta get "$ID" _elementor_template_type --path="$WPPATH" --allow-root 2>/dev/null || echo "(not set)"
-          done
-          REMOTE_EOF
-          sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
-            -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_check.sh
+          echo "=== Fetch homepage, isolate <header>/<nav> region ==="
+          curl -s https://lunacibarcelona.com/ -o /tmp/home.html
+          echo "--- Bytes fetched: $(wc -c < /tmp/home.html) ---"
+          echo "=== Lines mentioning nav/header/menu/toggle/hamburger/burger (with line numbers) ==="
+          grep -n -i -o '<[a-z0-9]*[^>]*\(nav\|header\|menu\|toggle\|hamburger\|burger\)[^>]*>' /tmp/home.html | head -60
+          echo "=== elementor-location-header marker context ==="
+          grep -n -o '.\{80\}elementor-location-header.\{80\}' /tmp/home.html | head -5

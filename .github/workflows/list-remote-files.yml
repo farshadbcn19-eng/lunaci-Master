@@ -15,21 +15,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Verify live pages via curl (no cache)
-        run: |
-          echo "=== Home ==="
-          curl -s -H "Cache-Control: no-cache" https://lunacibarcelona.com/ -o /tmp/home_live.html
-          echo "lunaci-nav-toggle|ln-nav__toggle count: $(grep -c 'lunaci-nav-toggle\|ln-nav__toggle' /tmp/home_live.html || echo 0)"
-          echo "(actual class ln-nav-toggle count: $(grep -c 'ln-nav-toggle' /tmp/home_live.html || echo 0))"
-          echo "=== About ==="
-          curl -s -H "Cache-Control: no-cache" https://lunacibarcelona.com/about-us/ -o /tmp/about_live.html
-          echo "lunaci-nav-toggle|lna-nav__toggle count: $(grep -c 'lunaci-nav-toggle\|lna-nav__toggle' /tmp/about_live.html || echo 0)"
-          echo "(actual class lna-nav-toggle count: $(grep -c 'lna-nav-toggle' /tmp/about_live.html || echo 0))"
-          echo "=== Products ==="
-          curl -s -H "Cache-Control: no-cache" https://lunacibarcelona.com/products/ -o /tmp/products_live.html
-          echo "lunaci-nav-toggle count: $(grep -c 'lunaci-nav-toggle' /tmp/products_live.html || echo 0)"
-
-      - name: Check WordPress post_content directly via wp-cli
+      - name: Check WordPress front-page settings and post 57 content
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -41,12 +27,21 @@ jobs:
           cat > /tmp/remote_check.sh <<'REMOTE_EOF'
           set -e
           WPPATH="$HOME/domains/lunacibarcelona.com/public_html"
-          echo "=== post 57 (Home) toggle count ==="
-          wp post get 57 --field=post_content --path="$WPPATH" --allow-root | grep -c "toggle" || echo 0
-          echo "=== post 59 (About) toggle count ==="
-          wp post get 59 --field=post_content --path="$WPPATH" --allow-root | grep -c "toggle" || echo 0
+          echo "=== 1. show_on_front ==="
+          wp option get show_on_front --path="$WPPATH" --allow-root
+          echo "=== 2. page_on_front ==="
+          wp option get page_on_front --path="$WPPATH" --allow-root
+          echo "=== 3. page_for_posts ==="
+          wp option get page_for_posts --path="$WPPATH" --allow-root
+          echo "=== 4. post 57 fields (head -20) ==="
+          wp post get 57 --fields=ID,post_title,post_name,post_status,post_content --path="$WPPATH" --allow-root | head -20
           REMOTE_EOF
           sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_check.sh
+
+      - name: Check live homepage builder markers
+        run: |
+          echo "=== 5. homepage builder markers ==="
+          curl -s https://lunacibarcelona.com/ | grep -i "elementor\|et_pb\|divi\|beaver" | head -5

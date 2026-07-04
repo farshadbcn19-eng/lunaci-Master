@@ -15,7 +15,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Check WordPress front-page settings and post 57 content
+      - name: Check Elementor edit mode and data for posts 57 and 59
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -27,21 +27,16 @@ jobs:
           cat > /tmp/remote_check.sh <<'REMOTE_EOF'
           set -e
           WPPATH="$HOME/domains/lunacibarcelona.com/public_html"
-          echo "=== 1. show_on_front ==="
-          wp option get show_on_front --path="$WPPATH" --allow-root
-          echo "=== 2. page_on_front ==="
-          wp option get page_on_front --path="$WPPATH" --allow-root
-          echo "=== 3. page_for_posts ==="
-          wp option get page_for_posts --path="$WPPATH" --allow-root
-          echo "=== 4. post 57 fields (head -20) ==="
-          wp post get 57 --fields=ID,post_title,post_name,post_status,post_content --path="$WPPATH" --allow-root | head -20
+          for ID in 57 59; do
+            echo "=== post $ID: _elementor_edit_mode ==="
+            wp post meta get "$ID" _elementor_edit_mode --path="$WPPATH" --allow-root || echo "(not set)"
+            echo "=== post $ID: _elementor_data present? (length) ==="
+            wp post meta get "$ID" _elementor_data --path="$WPPATH" --allow-root 2>/dev/null | wc -c || echo "(not set)"
+            echo "=== post $ID: _elementor_template_type ==="
+            wp post meta get "$ID" _elementor_template_type --path="$WPPATH" --allow-root 2>/dev/null || echo "(not set)"
+          done
           REMOTE_EOF
           sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_check.sh
-
-      - name: Check live homepage builder markers
-        run: |
-          echo "=== 5. homepage builder markers ==="
-          curl -s https://lunacibarcelona.com/ | grep -i "elementor\|et_pb\|divi\|beaver" | head -5

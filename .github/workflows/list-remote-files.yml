@@ -15,27 +15,26 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Home page - cart icon exact markup
+      - name: Home page - cart icon exact markup (line-based, file has 778 lines)
         run: |
           curl -s https://lunacibarcelona.com/ -o /tmp/home.html
-          echo "=== bytes: $(wc -c < /tmp/home.html) ==="
-          echo "=== context around ln-nav__cart (800 chars from match) ==="
-          grep -o 'ln-nav__cart.\{800\}' /tmp/home.html | head -1
-          echo "=== any other cart/bag/basket class names anywhere on page? ==="
-          grep -o 'class="[^"]*\(cart\|bag\|basket\)[^"]*"' /tmp/home.html | sort -u
-          echo "=== id attributes containing cart/bag/basket ==="
-          grep -o 'id="[^"]*\(cart\|bag\|basket\)[^"]*"' /tmp/home.html | sort -u
+          echo "=== line number of ln-nav__cart ==="
+          grep -n "ln-nav__cart" /tmp/home.html
+          echo "=== 6 lines of context ==="
+          grep -n "ln-nav__cart" /tmp/home.html | cut -d: -f1 | while read -r LN; do
+            sed -n "$((LN-1)),$((LN+5))p" /tmp/home.html
+          done
 
-      - name: Home page - is site actually minified single-line
-        run: |
-          echo "=== line count of home.html ==="
-          wc -l /tmp/home.html
-
-      - name: Contact page - check header>nav selector uniqueness
+      - name: Contact page - does site-header contain a nested nav
         run: |
           curl -sL https://lunacibarcelona.com/contact/ -o /tmp/contact.html
-          echo "=== bytes: $(wc -c < /tmp/contact.html) ==="
-          echo "=== all <header ...> opening tags on the page ==="
-          grep -o '<header[^>]*>' /tmp/contact.html
-          echo "=== is there a <nav> anywhere between the FIRST header tag and its matching close, i.e. does site-header contain a nav? (context 400 chars after first <header) ==="
-          grep -o '<header id="site-header"[^"]*".\{600\}' /tmp/contact.html | head -1
+          echo "=== line number of site-header open tag ==="
+          grep -n '<header id="site-header"' /tmp/contact.html
+          echo "=== line number of matching close for that first header ==="
+          awk '/<header id="site-header"/{start=NR} start && /<\/header>/{print NR; exit}' /tmp/contact.html
+          echo "=== full content of site-header block ==="
+          START=$(grep -n '<header id="site-header"' /tmp/contact.html | head -1 | cut -d: -f1)
+          END=$(awk -v s="$START" 'NR>=s && /<\/header>/{print NR; exit}' /tmp/contact.html)
+          sed -n "${START},${END}p" /tmp/contact.html
+          echo "=== does that block contain a <nav ==="
+          sed -n "${START},${END}p" /tmp/contact.html | grep -c "<nav"

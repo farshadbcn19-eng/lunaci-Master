@@ -493,6 +493,60 @@
     .lunaci-footer-cols { grid-template-columns: repeat(2, 1fr); }
     .lunaci-nav-links { gap: 20px; }
   }
+
+  /* ===== LOGO BACKGROUND FIX ===== */
+  .lunaci-nav-logo,
+  header img,
+  .nav-logo img,
+  a img[alt*="LUNACI"] {
+    background: transparent !important;
+    mix-blend-mode: lighten !important;
+    height: 75px !important;
+    width: auto !important;
+  }
+
+  /* ===== MOBILE MENU FIX ===== */
+  .lunaci-nav-toggle {
+    display: none;
+    background: none;
+    border: none;
+  }
+  @media (max-width: 768px) {
+    .lunaci-nav-links,
+    nav ul,
+    .nav-menu {
+      display: none !important;
+    }
+    .lunaci-nav-links.open,
+    nav ul.open,
+    .nav-menu.open {
+      display: flex !important;
+      flex-direction: column;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #0B0B0B;
+      padding: 20px 32px;
+      border-top: 1px solid rgba(212,175,55,0.2);
+      z-index: 9999;
+    }
+    .lunaci-nav-toggle {
+      display: flex !important;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: 8px;
+      background: none;
+      border: none;
+    }
+    .lunaci-nav-toggle span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: #D4AF37;
+    }
+  }
 </style>
 
   <nav class="lunaci-nav" aria-label="Site navigation">
@@ -503,11 +557,16 @@
       loading="lazy"
       style="height:75px; mix-blend-mode:lighten;"
     >
-    <div class="lunaci-nav-links">
+    <div class="lunaci-nav-links" id="lunaci-nav-links">
       <a href="/products/" class="lunaci-nav-link is-active" aria-current="page">Products</a>
       <a href="/shop/" class="lunaci-nav-link">Shop</a>
       <a href="/shop/" class="lunaci-nav-cta">Shop Now</a>
     </div>
+    <button type="button" class="lunaci-nav-toggle" id="lunaci-nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="lunaci-nav-links">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
   </nav>
 
   <section class="lunaci-hero" id="lunaci-hero">
@@ -803,6 +862,22 @@
   overlay.addEventListener('click', function (e) {
     if (e.target === overlay) closeModal();
   });
+
+  // ---- Mobile nav toggle ----
+  var navToggle = root.querySelector('#lunaci-nav-toggle');
+  var navLinks = root.querySelector('#lunaci-nav-links');
+  if (navToggle && navLinks) {
+    navToggle.addEventListener('click', function () {
+      var isOpen = navLinks.classList.toggle('open');
+      navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+    navLinks.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        navLinks.classList.remove('open');
+        navToggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+  }
 })();
 </script>
 </section>

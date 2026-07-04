@@ -44,11 +44,8 @@ jobs:
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_contact.sh
 
-      - name: Fetch live contact page nav markup
+      - name: Fetch live contact page full nav block
         run: |
           curl -sL https://lunacibarcelona.com/contact/ -o /tmp/contact.html
-          echo "=== bytes: $(wc -c < /tmp/contact.html) ==="
-          echo "=== title ==="
-          grep -o -i '<title>[^<]*</title>' /tmp/contact.html | head -1
-          echo "=== nav/header/menu/toggle tags ==="
-          grep -n -i -o '<[a-z0-9]*[^>]*\(nav\|header\|menu\|toggle\|hamburger\|burger\)[^>]*>' /tmp/contact.html | head -40
+          echo "=== lines 805-830 (raw, full nav block) ==="
+          sed -n '805,830p' /tmp/contact.html

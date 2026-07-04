@@ -15,12 +15,35 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Extract live nav markup structure from about-us page
+      - name: Verify mu-plugin deployed and purge cache
+        env:
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
         run: |
-          echo "=== Fetch about-us page ==="
-          curl -sL https://lunacibarcelona.com/about-us/ -o /tmp/about.html
-          echo "--- Bytes fetched: $(wc -c < /tmp/about.html) ---"
-          echo "=== Lines mentioning nav/header/menu/toggle/hamburger/burger (with line numbers) ==="
-          grep -n -i -o '<[a-z0-9]*[^>]*\(nav\|header\|menu\|toggle\|hamburger\|burger\)[^>]*>' /tmp/about.html | head -60
-          echo "=== does response look like a 404? ==="
-          grep -n -i -o '<title>[^<]*</title>' /tmp/about.html | head -3
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          cat > /tmp/remote_check.sh <<'REMOTE_EOF'
+          set -e
+          WPPATH="$HOME/domains/lunacibarcelona.com/public_html"
+          echo "=== mu-plugins dir listing ==="
+          ls -la "$WPPATH/wp-content/mu-plugins/"
+          echo "=== mu-plugin file size ==="
+          wc -c "$WPPATH/wp-content/mu-plugins/lunaci-mobile-nav-fix.php"
+          echo "=== active plugins sanity check (mu-plugins always active, just confirm wp-cli sees it) ==="
+          wp eval 'echo (file_exists(WPMU_PLUGIN_DIR . "/lunaci-mobile-nav-fix.php") ? "mu-plugin file present\n" : "MISSING\n");' --path="$WPPATH" --allow-root
+          echo "=== purge LiteSpeed cache ==="
+          wp litespeed-purge all --path="$WPPATH" --allow-root
+          REMOTE_EOF
+          sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile=~/.ssh/known_hosts \
+            "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_check.sh
+
+      - name: Check toggle markers on live Home and About pages
+        run: |
+          echo "=== Home page: lunaci-mobile-nav-fix markers ==="
+          curl -s https://lunacibarcelona.com/ | grep -o "lunaci-mobile-nav-fix-css\|lunaci-mobile-nav-fix-js\|lunaci-mobile-toggle" | sort | uniq -c
+          echo "=== About page: lunaci-mobile-nav-fix markers ==="
+          curl -sL https://lunacibarcelona.com/about-us/ | grep -o "lunaci-mobile-nav-fix-css\|lunaci-mobile-nav-fix-js\|lunaci-mobile-toggle" | sort | uniq -c

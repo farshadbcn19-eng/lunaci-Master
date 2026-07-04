@@ -15,7 +15,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Verify mu-plugin deployed and purge cache
+      - name: Check post_content for post 57 (product/collection links)
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -27,23 +27,28 @@ jobs:
           cat > /tmp/remote_check.sh <<'REMOTE_EOF'
           set -e
           WPPATH="$HOME/domains/lunacibarcelona.com/public_html"
-          echo "=== mu-plugins dir listing ==="
-          ls -la "$WPPATH/wp-content/mu-plugins/"
-          echo "=== mu-plugin file size ==="
-          wc -c "$WPPATH/wp-content/mu-plugins/lunaci-mobile-nav-fix.php"
-          echo "=== active plugins sanity check (mu-plugins always active, just confirm wp-cli sees it) ==="
-          wp eval 'echo (file_exists(WPMU_PLUGIN_DIR . "/lunaci-mobile-nav-fix.php") ? "mu-plugin file present\n" : "MISSING\n");' --path="$WPPATH" --allow-root
-          echo "=== purge LiteSpeed cache ==="
-          wp litespeed-purge all --path="$WPPATH" --allow-root
+          echo "=== post 57 post_content: lines with product/collection/shop (case-insensitive) ==="
+          wp post get 57 --field=post_content --path="$WPPATH" --allow-root | grep -n -i "product\|collection\|shop"
+          echo "=== post 57 _elementor_data: does it contain collections-2 / Shop button text? ==="
+          wp post meta get 57 _elementor_data --path="$WPPATH" --allow-root > /tmp/57_edata.json 2>/dev/null
+          echo "-- collections-2 occurrences:"
+          grep -o "collections-2" /tmp/57_edata.json | wc -l
+          echo "-- 'Shop' occurrences (with 40 chars context, first 10):"
+          grep -o '.\{40\}[Ss][Hh][Oo][Pp].\{40\}' /tmp/57_edata.json | head -10
+          echo "-- /products/ occurrences:"
+          grep -o "/products/" /tmp/57_edata.json | wc -l
           REMOTE_EOF
           sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_check.sh
 
-      - name: Check toggle markers on live Home and About pages
+      - name: Fetch live homepage nav region for manual inspection
         run: |
-          echo "=== Home page: lunaci-mobile-nav-fix markers ==="
-          curl -s https://lunacibarcelona.com/ | grep -o "lunaci-mobile-nav-fix-css\|lunaci-mobile-nav-fix-js\|lunaci-mobile-toggle" | sort | uniq -c
-          echo "=== About page: lunaci-mobile-nav-fix markers ==="
-          curl -sL https://lunacibarcelona.com/about-us/ | grep -o "lunaci-mobile-nav-fix-css\|lunaci-mobile-nav-fix-js\|lunaci-mobile-toggle" | sort | uniq -c
+          curl -s https://lunacibarcelona.com/ -o /tmp/home_live.html
+          echo "=== bytes: $(wc -c < /tmp/home_live.html) ==="
+          echo "=== context around ln-nav (400 chars before/after) ==="
+          grep -o '.\{200\}ln-nav\".\{2000\}' /tmp/home_live.html | head -c 3000
+          echo
+          echo "=== context around any 'Shop' text on the page (with surrounding tags) ==="
+          grep -o '.\{60\}[Ss][Hh][Oo][Pp].\{60\}' /tmp/home_live.html | head -20

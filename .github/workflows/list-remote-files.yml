@@ -15,12 +15,12 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Extract live nav markup structure from homepage
+      - name: Extract live nav markup structure from about-us page
         run: |
-          echo "=== Fetch homepage, isolate <header>/<nav> region ==="
-          curl -s https://lunacibarcelona.com/ -o /tmp/home.html
-          echo "--- Bytes fetched: $(wc -c < /tmp/home.html) ---"
+          echo "=== Fetch about-us page ==="
+          curl -sL https://lunacibarcelona.com/about-us/ -o /tmp/about.html
+          echo "--- Bytes fetched: $(wc -c < /tmp/about.html) ---"
           echo "=== Lines mentioning nav/header/menu/toggle/hamburger/burger (with line numbers) ==="
-          grep -n -i -o '<[a-z0-9]*[^>]*\(nav\|header\|menu\|toggle\|hamburger\|burger\)[^>]*>' /tmp/home.html | head -60
-          echo "=== elementor-location-header marker context ==="
-          grep -n -o '.\{80\}elementor-location-header.\{80\}' /tmp/home.html | head -5
+          grep -n -i -o '<[a-z0-9]*[^>]*\(nav\|header\|menu\|toggle\|hamburger\|burger\)[^>]*>' /tmp/about.html | head -60
+          echo "=== does response look like a 404? ==="
+          grep -n -i -o '<title>[^<]*</title>' /tmp/about.html | head -3

@@ -15,26 +15,33 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Inspect nav markup on About, Contact, Shop, Collections pages
+      - name: Pull Home and About post_content via wp-cli (base64-safe transport)
+        env:
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
         run: |
-          declare -A pages=( [about]="about-us/" [contact]="contact/" [shop]="shop/" [collections]="collections/" )
-          for label in "${!pages[@]}"; do
-            path="${pages[$label]}"
-            url="https://lunacibarcelona.com/$path"
-            echo "=== $label ($url) ==="
-            curl -sL -o "/tmp/page-$label.html" "$url"
-            echo "Bytes: $(wc -c < /tmp/page-$label.html)"
-            echo "-- <nav> tags --"
-            grep -o '<nav[^>]*>' "/tmp/page-$label.html" | sort -u
-            echo "-- lunaci-nav-toggle present? --"
-            grep -c 'lunaci-nav-toggle' "/tmp/page-$label.html" || echo 0
-            echo "-- ln-nav-toggle / ln- toggle hints --"
-            grep -ioE 'class="[^"]*(ln-[a-z-]*toggle|toggle[a-z-]*)[^"]*"' "/tmp/page-$label.html" | sort -u | head -10
-            echo "-- elementor menu toggle indicators --"
-            grep -oE 'elementor-menu-toggle[a-zA-Z_-]*' "/tmp/page-$label.html" | sort -u
-            echo "-- hamburger/burger/mobile-menu class hints --"
-            grep -ioE 'class="[^"]*(hamburger|burger|mobile-menu)[^"]*"' "/tmp/page-$label.html" | sort -u | head -10
-            echo "-- header tag --"
-            grep -o '<header[^>]*>' "/tmp/page-$label.html" | sort -u
-            echo ""
-          done
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          cat > /tmp/remote_pull.sh <<'REMOTE_EOF'
+          set -e
+          cd "$HOME/domains/lunacibarcelona.com/public_html"
+          echo "--- page list ---"
+          wp post list --post_type=page --fields=ID,post_title,post_name --allow-root
+          HOME_ID=$(wp post list --post_type=page --name=home --field=ID --allow-root)
+          ABOUT_ID=$(wp post list --post_type=page --name=about-us --field=ID --allow-root)
+          echo "HOME_ID=$HOME_ID ABOUT_ID=$ABOUT_ID"
+          echo "===HOME_B64_START==="
+          wp post get "$HOME_ID" --field=post_content --allow-root | base64 -w0
+          echo ""
+          echo "===HOME_B64_END==="
+          echo "===ABOUT_B64_START==="
+          wp post get "$ABOUT_ID" --field=post_content --allow-root | base64 -w0
+          echo ""
+          echo "===ABOUT_B64_END==="
+          REMOTE_EOF
+          sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile=~/.ssh/known_hosts \
+            "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_pull.sh

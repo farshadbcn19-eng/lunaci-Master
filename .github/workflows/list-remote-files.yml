@@ -15,7 +15,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Pull Home and About post_content via wp-cli (base64-safe transport)
+      - name: Push fixed HTML into post_content for Home and About, purge cache
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -24,24 +24,19 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          cat > /tmp/remote_pull.sh <<'REMOTE_EOF'
+          cat > /tmp/remote_push.sh <<'REMOTE_EOF'
           set -e
-          cd "$HOME/domains/lunacibarcelona.com/public_html"
-          echo "--- page list ---"
-          wp post list --post_type=page --fields=ID,post_title,post_name --allow-root
-          HOME_ID=$(wp post list --post_type=page --name=home --field=ID --allow-root)
-          ABOUT_ID=$(wp post list --post_type=page --name=about-us --field=ID --allow-root)
-          echo "HOME_ID=$HOME_ID ABOUT_ID=$ABOUT_ID"
-          echo "===HOME_B64_START==="
-          wp post get "$HOME_ID" --field=post_content --allow-root | base64 -w0
-          echo ""
-          echo "===HOME_B64_END==="
-          echo "===ABOUT_B64_START==="
-          wp post get "$ABOUT_ID" --field=post_content --allow-root | base64 -w0
-          echo ""
-          echo "===ABOUT_B64_END==="
+          WPPATH="$HOME/domains/lunacibarcelona.com/public_html"
+          cd "$WPPATH/wp-content/themes/lunaci"
+          echo "=== updating home (ID 57) ==="
+          wp post update 57 --post_content="$(cat pages/home.html)" --path="$WPPATH" --allow-root
+          echo "=== updating about (ID 59) ==="
+          wp post update 59 --post_content="$(cat pages/about.html)" --path="$WPPATH" --allow-root
+          echo "=== purging cache ==="
+          wp litespeed-purge all --path="$WPPATH" --allow-root
+          echo "=== all done ==="
           REMOTE_EOF
           sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_pull.sh
+            "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_push.sh

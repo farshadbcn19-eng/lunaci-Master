@@ -15,7 +15,21 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Push fixed HTML into post_content for Home and About, purge cache
+      - name: Verify live pages via curl (no cache)
+        run: |
+          echo "=== Home ==="
+          curl -s -H "Cache-Control: no-cache" https://lunacibarcelona.com/ -o /tmp/home_live.html
+          echo "lunaci-nav-toggle|ln-nav__toggle count: $(grep -c 'lunaci-nav-toggle\|ln-nav__toggle' /tmp/home_live.html || echo 0)"
+          echo "(actual class ln-nav-toggle count: $(grep -c 'ln-nav-toggle' /tmp/home_live.html || echo 0))"
+          echo "=== About ==="
+          curl -s -H "Cache-Control: no-cache" https://lunacibarcelona.com/about-us/ -o /tmp/about_live.html
+          echo "lunaci-nav-toggle|lna-nav__toggle count: $(grep -c 'lunaci-nav-toggle\|lna-nav__toggle' /tmp/about_live.html || echo 0)"
+          echo "(actual class lna-nav-toggle count: $(grep -c 'lna-nav-toggle' /tmp/about_live.html || echo 0))"
+          echo "=== Products ==="
+          curl -s -H "Cache-Control: no-cache" https://lunacibarcelona.com/products/ -o /tmp/products_live.html
+          echo "lunaci-nav-toggle count: $(grep -c 'lunaci-nav-toggle' /tmp/products_live.html || echo 0)"
+
+      - name: Check WordPress post_content directly via wp-cli
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -24,19 +38,15 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          cat > /tmp/remote_push.sh <<'REMOTE_EOF'
+          cat > /tmp/remote_check.sh <<'REMOTE_EOF'
           set -e
           WPPATH="$HOME/domains/lunacibarcelona.com/public_html"
-          cd "$WPPATH/wp-content/themes/lunaci"
-          echo "=== updating home (ID 57) ==="
-          wp post update 57 --post_content="$(cat pages/home.html)" --path="$WPPATH" --allow-root
-          echo "=== updating about (ID 59) ==="
-          wp post update 59 --post_content="$(cat pages/about.html)" --path="$WPPATH" --allow-root
-          echo "=== purging cache ==="
-          wp litespeed-purge all --path="$WPPATH" --allow-root
-          echo "=== all done ==="
+          echo "=== post 57 (Home) toggle count ==="
+          wp post get 57 --field=post_content --path="$WPPATH" --allow-root | grep -c "toggle" || echo 0
+          echo "=== post 59 (About) toggle count ==="
+          wp post get 59 --field=post_content --path="$WPPATH" --allow-root | grep -c "toggle" || echo 0
           REMOTE_EOF
           sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_push.sh
+            "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_check.sh

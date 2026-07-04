@@ -15,7 +15,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Check post_content for post 57 (product/collection links)
+      - name: Verify deployed mu-plugin, purge cache, check live markers
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -27,39 +27,21 @@ jobs:
           cat > /tmp/remote_check.sh <<'REMOTE_EOF'
           set -e
           WPPATH="$HOME/domains/lunacibarcelona.com/public_html"
-          echo "=== post 57 post_content: lines with product/collection/shop (case-insensitive) ==="
-          wp post get 57 --field=post_content --path="$WPPATH" --allow-root | grep -n -i "product\|collection\|shop"
-          echo "=== post 57 _elementor_data: does it contain collections-2 / Shop button text? ==="
-          wp post meta get 57 _elementor_data --path="$WPPATH" --allow-root > /tmp/57_edata.json 2>/dev/null
-          echo "-- collections-2 occurrences:"
-          grep -o "collections-2" /tmp/57_edata.json | wc -l
-          echo "-- 'Shop' occurrences (with 40 chars context, first 10):"
-          grep -o '.\{40\}[Ss][Hh][Oo][Pp].\{40\}' /tmp/57_edata.json | head -10
-          echo "-- /products/ occurrences:"
-          grep -o "/products/" /tmp/57_edata.json | wc -l
+          echo "=== mu-plugin file size/timestamp ==="
+          ls -la "$WPPATH/wp-content/mu-plugins/lunaci-mobile-nav-fix.php"
+          echo "=== deployed file contains fixStaleLinks / collections-2 rewrite? ==="
+          grep -c "fixStaleLinks\|collections-2\|about-us" "$WPPATH/wp-content/mu-plugins/lunaci-mobile-nav-fix.php"
+          echo "=== purge LiteSpeed cache ==="
+          wp litespeed-purge all --path="$WPPATH" --allow-root
           REMOTE_EOF
           sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_check.sh
 
-      - name: Extract exact nav <ul> contents from post 57 _elementor_data
-        env:
-          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
-          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
-          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
-          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+      - name: Check injected JS is present on live pages
         run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          cat > /tmp/remote_check2.sh <<'REMOTE_EOF'
-          set -e
-          WPPATH="$HOME/domains/lunacibarcelona.com/public_html"
-          wp post meta get 57 _elementor_data --path="$WPPATH" --allow-root > /tmp/57_edata.json 2>/dev/null
-          echo "=== raw text starting at the <ul class=\"ln-nav__links\"> tag (600 chars) ==="
-          grep -o 'ul class=\\"ln-nav__links\\".\{600\}' /tmp/57_edata.json | head -1
-          REMOTE_EOF
-          sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
-            -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_check2.sh
+          echo "=== Home page: fixStaleLinks / full-viewport overlay markers ==="
+          curl -s https://lunacibarcelona.com/ | grep -o "fixStaleLinks\|position: fixed\|lunaci-nav-open" | sort | uniq -c
+          echo "=== About page: same markers ==="
+          curl -sL https://lunacibarcelona.com/about-us/ | grep -o "fixStaleLinks\|position: fixed\|lunaci-nav-open" | sort | uniq -c

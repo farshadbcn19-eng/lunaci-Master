@@ -1,13 +1,13 @@
 <?php
 /**
  * Plugin Name: LUNACI Mobile Nav Fix
- * Description: Injects a working mobile-menu toggle on the Home and About
- *              pages. Those two pages are rendered by Elementor from
- *              _elementor_data (a frozen raw-HTML widget), not from
- *              post_content, so editing the page HTML in the lunaci-Master
- *              repo never reaches them. This hooks wp_footer instead, which
- *              runs on every request regardless of which field Elementor
- *              rendered the page from.
+ * Description: Injects a working mobile-menu toggle and fixes stale nav
+ *              links on the Home and About pages. Those two pages are
+ *              rendered by Elementor from _elementor_data (a frozen
+ *              raw-HTML widget), not from post_content, so editing the
+ *              page HTML in the lunaci-Master repo never reaches them.
+ *              This hooks wp_footer instead, which runs on every request
+ *              regardless of which field Elementor rendered the page from.
  * Author: LUNACI
  */
 
@@ -25,16 +25,20 @@ add_action('wp_footer', function () {
         .lna-nav__links.lunaci-nav-open {
             display: flex !important;
             flex-direction: column;
-            position: absolute;
-            top: 100%;
+            position: fixed;
+            top: 0;
             left: 0;
             right: 0;
+            bottom: 0;
+            padding: 100px 24px 24px;
             background: #0B0B0B;
-            padding: 20px;
-            z-index: 999;
+            overflow-y: auto;
+            z-index: 99998;
         }
         .lunaci-mobile-toggle {
             display: flex !important;
+            position: relative;
+            z-index: 99999;
         }
     }
     .lunaci-mobile-toggle {
@@ -59,13 +63,13 @@ add_action('wp_footer', function () {
     </style>
     <script id="lunaci-mobile-nav-fix-js">
     (function () {
-        var targets = [
+        var navTargets = [
             { nav: '#lnNav', links: '.ln-nav__links' },
             { nav: '#lnaNav', links: '.lna-nav__links' }
         ];
 
-        function init() {
-            targets.forEach(function (t) {
+        function initToggles() {
+            navTargets.forEach(function (t) {
                 var nav = document.querySelector(t.nav);
                 var links = nav ? nav.querySelector(t.links) : null;
                 if (!nav || !links || nav.querySelector('.lunaci-mobile-toggle')) {
@@ -92,6 +96,29 @@ add_action('wp_footer', function () {
                     });
                 });
             });
+        }
+
+        function fixStaleLinks() {
+            document.querySelectorAll('a[href]').forEach(function (a) {
+                var url;
+                try {
+                    url = new URL(a.href);
+                } catch (e) {
+                    return;
+                }
+                if (url.pathname === '/collections-2' || url.pathname === '/collections-2/') {
+                    url.pathname = '/products/';
+                    a.href = url.toString();
+                } else if (url.pathname === '/about' || url.pathname === '/about/') {
+                    url.pathname = '/about-us/';
+                    a.href = url.toString();
+                }
+            });
+        }
+
+        function init() {
+            initToggles();
+            fixStaleLinks();
         }
 
         if (document.readyState === 'loading') {

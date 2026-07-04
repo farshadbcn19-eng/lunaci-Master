@@ -15,7 +15,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Check contact page source and post record
+      - name: Verify deployed mu-plugin and purge cache
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -24,28 +24,28 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          cat > /tmp/remote_contact.sh <<'REMOTE_EOF'
+          cat > /tmp/remote_verify.sh <<'REMOTE_EOF'
           set -e
           WPPATH="$HOME/domains/lunacibarcelona.com/public_html"
-          echo "=== does theme pages/contact.html exist on server? ==="
-          ls -la "$WPPATH/wp-content/themes/lunaci/pages/contact.html" 2>&1 || echo "NOT FOUND"
-          echo "=== find the Contact page post by slug ==="
-          wp post list --post_type=page --pagename=contact --fields=ID,post_title,post_name,post_status --path="$WPPATH" --allow-root
-          echo "=== is it in Elementor builder mode? ==="
-          wp post list --post_type=page --pagename=contact --field=ID --path="$WPPATH" --allow-root | while read -r ID; do
-            echo "-- post $ID edit mode:"
-            wp post meta get "$ID" _elementor_edit_mode --path="$WPPATH" --allow-root 2>/dev/null || echo "(not set)"
-            echo "-- post $ID content contains shortcode?"
-            wp post get "$ID" --field=post_content --path="$WPPATH" --allow-root | grep -o "\[lunaci_[a-z]*\]" || echo "(no lunaci shortcode)"
-          done
+          echo "=== mu-plugin file size/timestamp ==="
+          ls -la "$WPPATH/wp-content/mu-plugins/lunaci-mobile-nav-fix.php"
+          echo "=== deployed file contains new markers? ==="
+          grep -c "lunaci-collapsible-links\|header > nav\|filenameMap" "$WPPATH/wp-content/mu-plugins/lunaci-mobile-nav-fix.php"
+          echo "=== products.html contains Contact link? ==="
+          grep -c 'href="/contact/" class="lunaci-nav-link"' "$WPPATH/wp-content/themes/lunaci/pages/products.html"
+          echo "=== purge LiteSpeed cache ==="
+          wp litespeed-purge all --path="$WPPATH" --allow-root
           REMOTE_EOF
           sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_contact.sh
+            "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_verify.sh
 
-      - name: Fetch live contact page full nav block
+      - name: Check live pages for new markers
         run: |
-          curl -sL https://lunacibarcelona.com/contact/ -o /tmp/contact.html
-          echo "=== lines 805-830 (raw, full nav block) ==="
-          sed -n '805,830p' /tmp/contact.html
+          echo "=== Home: collapsible-links / header>nav markers ==="
+          curl -s https://lunacibarcelona.com/ | grep -o "lunaci-collapsible-links\|filenameMap" | sort | uniq -c
+          echo "=== Contact: same markers, plus Contact link in nav ul ==="
+          curl -sL https://lunacibarcelona.com/contact/ | grep -o "lunaci-collapsible-links\|filenameMap" | sort | uniq -c
+          echo "=== Products page: Contact link present, CTA hide rule present ==="
+          curl -sL https://lunacibarcelona.com/products/ | grep -o 'href="/contact/" class="lunaci-nav-link"\|lunaci-nav-cta' | sort | uniq -c

@@ -2,12 +2,17 @@
 /**
  * Plugin Name: LUNACI Mobile Nav Fix
  * Description: Injects a working mobile-menu toggle and fixes stale nav
- *              links on the Home and About pages. Those two pages are
+ *              links on Home, About, and Contact. Home/About/Contact are
  *              rendered by Elementor from _elementor_data (a frozen
  *              raw-HTML widget), not from post_content, so editing the
  *              page HTML in the lunaci-Master repo never reaches them.
  *              This hooks wp_footer instead, which runs on every request
  *              regardless of which field Elementor rendered the page from.
+ *              Contact's nav has no id/class of its own and its links are
+ *              leftover relative filenames (index.html, products.html,
+ *              shop.html, contact.html) from a static template that was
+ *              never adapted to WordPress permalinks; both are fixed here
+ *              too.
  * Author: LUNACI
  */
 
@@ -17,12 +22,10 @@ add_action('wp_footer', function () {
     ?>
     <style id="lunaci-mobile-nav-fix-css">
     @media (max-width: 768px) {
-        .ln-nav__links,
-        .lna-nav__links {
+        .lunaci-collapsible-links {
             display: none !important;
         }
-        .ln-nav__links.lunaci-nav-open,
-        .lna-nav__links.lunaci-nav-open {
+        .lunaci-collapsible-links.lunaci-nav-open {
             display: flex !important;
             flex-direction: column;
             position: fixed;
@@ -39,6 +42,10 @@ add_action('wp_footer', function () {
             display: flex !important;
             position: relative;
             z-index: 99999;
+        }
+        .nav-cta,
+        .lunaci-nav-cta {
+            display: none !important;
         }
     }
     .lunaci-mobile-toggle {
@@ -65,7 +72,8 @@ add_action('wp_footer', function () {
     (function () {
         var navTargets = [
             { nav: '#lnNav', links: '.ln-nav__links' },
-            { nav: '#lnaNav', links: '.lna-nav__links' }
+            { nav: '#lnaNav', links: '.lna-nav__links' },
+            { nav: 'header > nav', links: 'ul' }
         ];
 
         function initToggles() {
@@ -75,6 +83,8 @@ add_action('wp_footer', function () {
                 if (!nav || !links || nav.querySelector('.lunaci-mobile-toggle')) {
                     return;
                 }
+
+                links.classList.add('lunaci-collapsible-links');
 
                 var btn = document.createElement('button');
                 btn.type = 'button';
@@ -99,6 +109,13 @@ add_action('wp_footer', function () {
         }
 
         function fixStaleLinks() {
+            var filenameMap = {
+                'index.html': '/',
+                'products.html': '/products/',
+                'shop.html': '/shop/',
+                'contact.html': '/contact/'
+            };
+
             document.querySelectorAll('a[href]').forEach(function (a) {
                 var url;
                 try {
@@ -106,11 +123,22 @@ add_action('wp_footer', function () {
                 } catch (e) {
                     return;
                 }
+
                 if (url.pathname === '/collections-2' || url.pathname === '/collections-2/') {
                     url.pathname = '/products/';
                     a.href = url.toString();
-                } else if (url.pathname === '/about' || url.pathname === '/about/') {
+                    return;
+                }
+                if (url.pathname === '/about' || url.pathname === '/about/') {
                     url.pathname = '/about-us/';
+                    a.href = url.toString();
+                    return;
+                }
+
+                var segments = url.pathname.split('/');
+                var lastSegment = segments[segments.length - 1];
+                if (Object.prototype.hasOwnProperty.call(filenameMap, lastSegment)) {
+                    url.pathname = filenameMap[lastSegment];
                     a.href = url.toString();
                 }
             });

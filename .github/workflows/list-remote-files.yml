@@ -15,27 +15,23 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Verify deploy, purge cache, and recheck live page
-        env:
-          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
-          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
-          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
-          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+      - name: Inspect Elementor nav markup on Home and About pages
         run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
-            -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SSH_USER@$SSH_HOST" \
-            'echo "--- md5sum ---"; \
-             md5sum ~/domains/lunacibarcelona.com/public_html/wp-content/themes/lunaci/pages/products.html; \
-             echo "--- cache purge ---"; \
-             wp litespeed-purge all --path="$HOME/domains/lunacibarcelona.com/public_html" --allow-root 2>/dev/null || wp cache flush --path="$HOME/domains/lunacibarcelona.com/public_html" --allow-root'
-
-          echo "--- live /products/ recheck ---"
-          url="https://lunacibarcelona.com/products/"
-          curl -sL -o /tmp/products-live.html "$url"
-          echo "lunaci-nav-toggle count: $(grep -c 'lunaci-nav-toggle' /tmp/products-live.html || echo 0)"
-          echo "logo style height:75px occurrences: $(grep -c 'height:75px' /tmp/products-live.html || echo 0)"
-          echo "lunaci-card count: $(grep -c 'lunaci-card' /tmp/products-live.html || echo 0)"
+          for path in "" "about-us/"; do
+            label="${path:-home}"
+            url="https://lunacibarcelona.com/$path"
+            echo "=== $label ($url) ==="
+            curl -sL -o "/tmp/page-$label.html" "$url"
+            echo "Bytes: $(wc -c < /tmp/page-$label.html)"
+            echo "-- <nav> tags --"
+            grep -o '<nav[^>]*>' "/tmp/page-$label.html" | sort -u
+            echo "-- elementor menu toggle indicators --"
+            grep -oE 'elementor-menu-toggle[a-zA-Z_-]*' "/tmp/page-$label.html" | sort -u
+            echo "-- hamburger/toggle/burger class hints --"
+            grep -ioE 'class="[^"]*(toggle|hamburger|burger|mobile-menu)[^"]*"' "/tmp/page-$label.html" | sort -u | head -20
+            echo "-- header tag --"
+            grep -o '<header[^>]*>' "/tmp/page-$label.html" | sort -u
+            echo "-- nav menu widget markers --"
+            grep -oE 'elementor-nav-menu[a-zA-Z_-]*|elementor-widget-nav-menu' "/tmp/page-$label.html" | sort -u
+            echo ""
+          done

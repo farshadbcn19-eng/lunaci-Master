@@ -15,26 +15,27 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Home page - full nav block incl cart icon
+      - name: Home page - cart icon exact markup
         run: |
           curl -s https://lunacibarcelona.com/ -o /tmp/home.html
-          echo "=== lines around <nav id=\"lnNav\"> through </nav> ==="
-          awk '/<nav id="lnNav"/{f=1} f{print} /<\/nav>/{if(f){exit}}' /tmp/home.html
+          echo "=== bytes: $(wc -c < /tmp/home.html) ==="
+          echo "=== context around ln-nav__cart (800 chars from match) ==="
+          grep -o 'ln-nav__cart.\{800\}' /tmp/home.html | head -1
+          echo "=== any other cart/bag/basket class names anywhere on page? ==="
+          grep -o 'class="[^"]*\(cart\|bag\|basket\)[^"]*"' /tmp/home.html | sort -u
+          echo "=== id attributes containing cart/bag/basket ==="
+          grep -o 'id="[^"]*\(cart\|bag\|basket\)[^"]*"' /tmp/home.html | sort -u
 
-      - name: Products page - all anchors inside nav
+      - name: Home page - is site actually minified single-line
         run: |
-          curl -sL https://lunacibarcelona.com/products/ -o /tmp/products.html
-          echo "=== bytes: $(wc -c < /tmp/products.html) ==="
-          echo "=== full nav block ==="
-          awk '/<nav class="lunaci-nav"/{f=1} f{print} /<\/nav>/{if(f){exit}}' /tmp/products.html
-          echo "=== all <a> tags inside nav (text + href), extracted ==="
-          awk '/<nav class="lunaci-nav"/{f=1} f{print} /<\/nav>/{if(f){exit}}' /tmp/products.html | grep -o '<a [^>]*>[^<]*</a>'
+          echo "=== line count of home.html ==="
+          wc -l /tmp/home.html
 
-      - name: Contact page - full nav block and toggle state
+      - name: Contact page - check header>nav selector uniqueness
         run: |
           curl -sL https://lunacibarcelona.com/contact/ -o /tmp/contact.html
           echo "=== bytes: $(wc -c < /tmp/contact.html) ==="
-          echo "=== lines 805-835 raw ==="
-          sed -n '805,835p' /tmp/contact.html
-          echo "=== does lunaci-mobile-toggle appear near this nav? ==="
-          grep -c "lunaci-mobile-toggle\|lunaci-collapsible-links" /tmp/contact.html
+          echo "=== all <header ...> opening tags on the page ==="
+          grep -o '<header[^>]*>' /tmp/contact.html
+          echo "=== is there a <nav> anywhere between the FIRST header tag and its matching close, i.e. does site-header contain a nav? (context 400 chars after first <header) ==="
+          grep -o '<header id="site-header"[^"]*".\{600\}' /tmp/contact.html | head -1

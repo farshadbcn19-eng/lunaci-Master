@@ -29,11 +29,14 @@ jobs:
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" "wp litespeed-purge all --path=\$HOME/domains/lunacibarcelona.com/public_html --allow-root"
 
-      - name: Verify dropdown-style overlay and outside-click-close deployed
+      - name: Verify logo removed and links centered
         run: |
           curl -s https://lunacibarcelona.com/ -o /tmp/home.html
-          echo "=== overlay CSS rule (top/bottom/padding/align) ==="
+          echo "=== overlay CSS rule (align/justify/padding) ==="
           LN=$(grep -n '#lunaci-global-nav-overlay {' /tmp/home.html | head -1 | cut -d: -f1)
           sed -n "${LN},$((LN+12))p" /tmp/home.html
-          echo "=== outside-click-close JS present? ==="
-          grep -c "overlay.contains(e.target)" /tmp/home.html
+          echo "=== full overlay HTML block ==="
+          LN2=$(grep -n 'id="lunaci-global-nav-overlay"' /tmp/home.html | head -1 | cut -d: -f1)
+          sed -n "${LN2},$((LN2+8))p" /tmp/home.html
+          echo "=== lunaci-overlay-logo occurrences (should be 0) ==="
+          grep -c "lunaci-overlay-logo" /tmp/home.html || echo 0

@@ -29,21 +29,13 @@ jobs:
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" "wp litespeed-purge all --path=\$HOME/domains/lunacibarcelona.com/public_html --allow-root"
 
-      - name: Verify global nav overlay deployed live
+      - name: Verify close button and logo deployed live
         run: |
-          echo "=== Home page markers ==="
           curl -s https://lunacibarcelona.com/ -o /tmp/home.html
-          grep -c "lunaci-global-toggle\|lunaci-global-nav-overlay" /tmp/home.html
-          echo "=== Products page markers + native toggle hidden rule ==="
-          curl -sL https://lunacibarcelona.com/products/ -o /tmp/products.html
-          grep -c "lunaci-global-toggle\|lunaci-global-nav-overlay" /tmp/products.html
-          grep -c "#lunaci-nav-toggle" /tmp/products.html
-          echo "=== Contact page markers ==="
-          curl -sL https://lunacibarcelona.com/contact/ -o /tmp/contact.html
-          grep -c "lunaci-global-toggle\|lunaci-global-nav-overlay" /tmp/contact.html
-          echo "=== About page markers ==="
-          curl -sL https://lunacibarcelona.com/about-us/ -o /tmp/about.html
-          grep -c "lunaci-global-toggle\|lunaci-global-nav-overlay" /tmp/about.html
-          echo "=== overlay link content (from Home page copy) ==="
+          echo "=== full overlay block ==="
           LN=$(grep -n 'id="lunaci-global-nav-overlay"' /tmp/home.html | head -1 | cut -d: -f1)
-          sed -n "${LN},$((LN+5))p" /tmp/home.html
+          sed -n "${LN},$((LN+9))p" /tmp/home.html
+          echo "=== close button CSS rule present? ==="
+          grep -c "lunaci-global-close" /tmp/home.html
+          echo "=== overlay logo CSS rule present? ==="
+          grep -c "lunaci-overlay-logo" /tmp/home.html

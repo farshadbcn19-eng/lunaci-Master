@@ -1,18 +1,17 @@
 <?php
 /**
  * Plugin Name: LUNACI Mobile Nav Fix
- * Description: Injects a working mobile-menu toggle and fixes stale nav
- *              links on Home, About, and Contact. Home/About/Contact are
- *              rendered by Elementor from _elementor_data (a frozen
- *              raw-HTML widget), not from post_content, so editing the
- *              page HTML in the lunaci-Master repo never reaches them.
- *              This hooks wp_footer instead, which runs on every request
- *              regardless of which field Elementor rendered the page from.
- *              Contact's nav has no id/class of its own and its links are
- *              leftover relative filenames (index.html, products.html,
- *              shop.html, contact.html) from a static template that was
- *              never adapted to WordPress permalinks; both are fixed here
- *              too.
+ * Description: Site-wide mobile navigation. Instead of adapting to each
+ *              page's own inconsistent nav markup (Home/About/Contact are
+ *              frozen Elementor widgets, Products is native HTML), this
+ *              injects one independent full-screen mobile nav overlay with
+ *              its own hamburger button and hardcoded Products/Shop/
+ *              Contact/About links, identical on every page. Every page's
+ *              own nav-links container and toggle button are hidden on
+ *              mobile to avoid duplication; desktop nav is untouched. Also
+ *              keeps the site-wide link rewrite for stale /collections-2,
+ *              /about, and leftover relative-filename hrefs found in
+ *              Elementor's frozen page data.
  * Author: LUNACI
  */
 
@@ -22,92 +21,110 @@ add_action('wp_footer', function () {
     ?>
     <style id="lunaci-mobile-nav-fix-css">
     @media (max-width: 768px) {
-        .lunaci-collapsible-links {
-            display: none !important;
-        }
-        .lunaci-collapsible-links.lunaci-nav-open {
-            display: flex !important;
-            flex-direction: column;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            padding: 100px 24px 24px;
-            background: #0B0B0B;
-            overflow-y: auto;
-            z-index: 99998;
-        }
-        .lunaci-mobile-toggle {
-            display: flex !important;
-            position: relative;
-            z-index: 99999;
-        }
+        .ln-nav__links,
+        .lna-nav__links,
+        .lunaci-nav-links,
+        header > nav ul,
+        #lunaci-nav-toggle,
+        .lunaci-nav-cta,
         .nav-cta,
-        .lunaci-nav-cta {
-            display: none !important;
-        }
         .ln-nav__cart,
         .lna-nav__cart {
             display: none !important;
         }
+
+        #lunaci-global-toggle {
+            display: flex !important;
+        }
     }
-    .lunaci-mobile-toggle {
+
+    #lunaci-global-toggle {
         display: none;
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 100000;
         flex-direction: column;
         justify-content: center;
         gap: 5px;
         width: 32px;
-        height: 24px;
+        height: 32px;
         background: none;
         border: none;
         cursor: pointer;
-        margin-left: auto;
         padding: 0;
     }
-    .lunaci-mobile-toggle span {
+    #lunaci-global-toggle span {
         display: block;
         width: 100%;
         height: 2px;
         background: #D4AF37;
     }
+
+    #lunaci-global-nav-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #0B0B0B;
+        z-index: 99999;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 32px;
+    }
+    #lunaci-global-nav-overlay.lunaci-global-nav-open {
+        display: flex;
+    }
+    #lunaci-global-nav-overlay a {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: #F7F4EE;
+        text-decoration: none;
+    }
+    #lunaci-global-nav-overlay a:hover {
+        color: #D4AF37;
+    }
     </style>
+
+    <button type="button" id="lunaci-global-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="lunaci-global-nav-overlay">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <div id="lunaci-global-nav-overlay" aria-hidden="true">
+        <a href="https://lunacibarcelona.com/products/">Products</a>
+        <a href="https://lunacibarcelona.com/shop/">Shop</a>
+        <a href="https://lunacibarcelona.com/about-us/">About</a>
+        <a href="https://lunacibarcelona.com/contact/">Contact</a>
+    </div>
+
     <script id="lunaci-mobile-nav-fix-js">
     (function () {
-        var navTargets = [
-            { nav: '#lnNav', links: '.ln-nav__links' },
-            { nav: '#lnaNav', links: '.lna-nav__links' },
-            { nav: 'header > nav', links: 'ul' }
-        ];
+        function initGlobalNav() {
+            var btn = document.getElementById('lunaci-global-toggle');
+            var overlay = document.getElementById('lunaci-global-nav-overlay');
+            if (!btn || !overlay) {
+                return;
+            }
 
-        function initToggles() {
-            navTargets.forEach(function (t) {
-                var nav = document.querySelector(t.nav);
-                var links = nav ? nav.querySelector(t.links) : null;
-                if (!nav || !links || nav.querySelector('.lunaci-mobile-toggle')) {
-                    return;
-                }
+            btn.addEventListener('click', function () {
+                var isOpen = overlay.classList.toggle('lunaci-global-nav-open');
+                btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                overlay.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+            });
 
-                links.classList.add('lunaci-collapsible-links');
-
-                var btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'lunaci-mobile-toggle';
-                btn.setAttribute('aria-label', 'Toggle navigation menu');
-                btn.setAttribute('aria-expanded', 'false');
-                btn.innerHTML = '<span></span><span></span><span></span>';
-                nav.insertBefore(btn, links);
-
-                btn.addEventListener('click', function () {
-                    var isOpen = links.classList.toggle('lunaci-nav-open');
-                    btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-                });
-
-                links.querySelectorAll('a').forEach(function (link) {
-                    link.addEventListener('click', function () {
-                        links.classList.remove('lunaci-nav-open');
-                        btn.setAttribute('aria-expanded', 'false');
-                    });
+            overlay.querySelectorAll('a').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    overlay.classList.remove('lunaci-global-nav-open');
+                    btn.setAttribute('aria-expanded', 'false');
+                    overlay.setAttribute('aria-hidden', 'true');
                 });
             });
         }
@@ -149,7 +166,7 @@ add_action('wp_footer', function () {
         }
 
         function init() {
-            initToggles();
+            initGlobalNav();
             fixStaleLinks();
         }
 

@@ -74,10 +74,10 @@ add_action('wp_footer', function () {
         background: #0B0B0B;
         z-index: 99999;
         flex-direction: column;
-        align-items: flex-start;
-        justify-content: flex-start;
+        align-items: center;
+        justify-content: center;
         gap: 24px;
-        padding: 32px 24px 40px;
+        padding: 60px 24px 40px;
     }
     #lunaci-global-nav-overlay.lunaci-global-nav-open {
         display: flex;
@@ -106,30 +106,6 @@ add_action('wp_footer', function () {
         cursor: pointer;
         z-index: 100001;
     }
-
-    #lunaci-overlay-logo {
-        position: absolute;
-        top: 24px;
-        left: 24px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-decoration: none;
-    }
-    #lunaci-overlay-logo span {
-        margin-top: 4px;
-        font-family: 'Montserrat', sans-serif;
-        font-size: 9px;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        color: #F7F4EE;
-        border-bottom: 1px solid transparent;
-        transition: border-color 0.2s ease, color 0.2s ease;
-    }
-    #lunaci-overlay-logo:hover span {
-        color: #D4AF37;
-        border-bottom-color: #D4AF37;
-    }
     </style>
 
     <button type="button" id="lunaci-global-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="lunaci-global-nav-overlay">
@@ -140,10 +116,6 @@ add_action('wp_footer', function () {
 
     <div id="lunaci-global-nav-overlay" aria-hidden="true">
         <button type="button" id="lunaci-global-close" aria-label="Close menu">&#10005;</button>
-        <a href="https://lunacibarcelona.com/" id="lunaci-overlay-logo">
-            <img src="https://lunacibarcelona.com/wp-content/uploads/2026/05/b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg" alt="LUNACI Barcelona" style="height:60px; mix-blend-mode:lighten;">
-            <span>Home</span>
-        </a>
         <a href="https://lunacibarcelona.com/">Home</a>
         <a href="https://lunacibarcelona.com/products/">Products</a>
         <a href="https://lunacibarcelona.com/shop/">Shop</a>

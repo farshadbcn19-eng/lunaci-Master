@@ -47,6 +47,10 @@ add_action('wp_footer', function () {
         .lunaci-nav-cta {
             display: none !important;
         }
+        .ln-nav__cart,
+        .lna-nav__cart {
+            display: none !important;
+        }
     }
     .lunaci-mobile-toggle {
         display: none;

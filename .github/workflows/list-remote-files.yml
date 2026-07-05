@@ -15,26 +15,41 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Home page - cart icon exact markup (line-based, file has 778 lines)
+      - name: Purge LiteSpeed cache
+        env:
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile=~/.ssh/known_hosts \
+            "$SSH_USER@$SSH_HOST" "wp litespeed-purge all --path=\$HOME/domains/lunacibarcelona.com/public_html --allow-root"
+
+      - name: 1. Home - cart icon hide rule present + element still in DOM
         run: |
           curl -s https://lunacibarcelona.com/ -o /tmp/home.html
-          echo "=== line number of ln-nav__cart ==="
-          grep -n "ln-nav__cart" /tmp/home.html
-          echo "=== 6 lines of context ==="
-          grep -n "ln-nav__cart" /tmp/home.html | cut -d: -f1 | while read -r LN; do
-            sed -n "$((LN-1)),$((LN+5))p" /tmp/home.html
-          done
+          echo "=== is the .ln-nav__cart hide rule deployed in the injected CSS? ==="
+          grep -o '\.ln-nav__cart,[^}]*}' /tmp/home.html | head -3
+          echo "=== is the cart icon element itself still present in the DOM? ==="
+          grep -c 'class="ln-nav__cart"' /tmp/home.html
 
-      - name: Contact page - does site-header contain a nested nav
+      - name: 2. Products - count and list nav links in hamburger container
+        run: |
+          curl -sL https://lunacibarcelona.com/products/ -o /tmp/products.html
+          echo "=== all <a> tags inside #lunaci-nav-links ==="
+          grep -o '<div class="lunaci-nav-links"[^>]*>.*</div>' /tmp/products.html | grep -o '<a [^>]*>[^<]*</a>'
+          echo "=== count ==="
+          grep -o '<div class="lunaci-nav-links"[^>]*>.*</div>' /tmp/products.html | grep -o '<a [^>]*>[^<]*</a>' | wc -l
+
+      - name: 3. Contact - nav links present + toggle wiring shipped
         run: |
           curl -sL https://lunacibarcelona.com/contact/ -o /tmp/contact.html
-          echo "=== line number of site-header open tag ==="
-          grep -n '<header id="site-header"' /tmp/contact.html
-          echo "=== line number of matching close for that first header ==="
-          awk '/<header id="site-header"/{start=NR} start && /<\/header>/{print NR; exit}' /tmp/contact.html
-          echo "=== full content of site-header block ==="
-          START=$(grep -n '<header id="site-header"' /tmp/contact.html | head -1 | cut -d: -f1)
-          END=$(awk -v s="$START" 'NR>=s && /<\/header>/{print NR; exit}' /tmp/contact.html)
-          sed -n "${START},${END}p" /tmp/contact.html
-          echo "=== does that block contain a <nav ==="
-          sed -n "${START},${END}p" /tmp/contact.html | grep -c "<nav"
+          echo "=== nav ul links (raw served HTML, before any client-side JS runs) ==="
+          sed -n '805,825p' /tmp/contact.html | grep -o '<a [^>]*>[^<]*</a>'
+          echo "=== is the mu-plugin's toggle JS/CSS actually shipped on this page? ==="
+          grep -c "lunaci-collapsible-links\|header > nav\|lunaci-mobile-toggle" /tmp/contact.html
+          echo "NOTE: curl cannot execute JavaScript, so this confirms the links exist in the DOM the toggle script would act on, and that our script is present and loaded — but not the actual post-click visual result. That requires a real browser, which is not reachable from this sandbox due to network policy."

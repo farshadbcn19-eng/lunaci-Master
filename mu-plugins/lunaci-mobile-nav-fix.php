@@ -67,16 +67,17 @@ add_action('wp_footer', function () {
     #lunaci-global-nav-overlay {
         display: none;
         position: fixed;
-        top: 0;
+        top: 80px;
         left: 0;
         right: 0;
-        bottom: 0;
+        bottom: auto;
         background: #0B0B0B;
         z-index: 99999;
         flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 32px;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 24px;
+        padding: 32px 24px 40px;
     }
     #lunaci-global-nav-overlay.lunaci-global-nav-open {
         display: flex;
@@ -182,6 +183,12 @@ add_action('wp_footer', function () {
                     setOpen(false);
                 });
             }
+
+            document.addEventListener('click', function (e) {
+                if (overlay.classList.contains('lunaci-global-nav-open') && !overlay.contains(e.target) && !btn.contains(e.target)) {
+                    setOpen(false);
+                }
+            });
         }
 
         function fixStaleLinks() {

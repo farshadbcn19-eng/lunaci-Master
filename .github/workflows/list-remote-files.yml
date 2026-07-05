@@ -15,7 +15,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Backup, verify-and-trash target products, purge cache, list final
+      - name: Diagnostic - check server state before retrying trash script
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -24,40 +24,32 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          cat > /tmp/remote_trash.sh <<'REMOTE_EOF'
-          set -e
+          cat > /tmp/remote_check.sh <<'REMOTE_EOF'
+          echo "=== whoami/pwd ==="
+          whoami
+          pwd
+          echo "=== HOME ==="
+          echo "$HOME"
           WPPATH="$HOME/domains/lunacibarcelona.com/public_html"
+          echo "=== WPPATH ==="
+          echo "$WPPATH"
+          ls -ld "$WPPATH" 2>&1
 
-          echo "=== STEP 1: BACKUP ==="
-          BACKUP_FILE="$HOME/lunaci_products_backup_$(date +%Y%m%d_%H%M).csv"
-          wp post list --post_type=product --fields=ID,post_title,post_status --format=csv --allow-root --path="$WPPATH" > "$BACKUP_FILE"
-          echo "Backup created: $BACKUP_FILE"
-          wc -l "$BACKUP_FILE"
+          echo "=== EXISTING BACKUP FILES ==="
+          ls -la "$HOME"/lunaci_products_backup_*.csv 2>&1 || echo "NO BACKUP FOUND"
 
-          echo "=== STEP 2: VERIFY AND TRASH ==="
-          declare -A targets=([50]="Golden Glow Highlighter" [16]="Luminous Face Powder" [12]="Midnight Eyes Palette" [46]="Midnight Eyeshadow" [52]="Midnight Nail Polish" [18]="Onyx Nail Lacquer" [20]="Radiance Boost Serum" [54]="Radiance Face Serum" [48]="Ruby Luxe Lipstick" [14]="Velvet Rouge Lipstick")
-          TRASHED=0
-          SKIPPED=0
-          for id in "${!targets[@]}"; do
-            actual=$(wp post get "$id" --field=post_title --allow-root --path="$WPPATH" 2>/dev/null)
-            if [ "$actual" == "${targets[$id]}" ]; then
-              wp post delete "$id" --allow-root --path="$WPPATH"
-              echo "Trashed: $id ($actual)"
-              TRASHED=$((TRASHED+1))
-            else
-              echo "MISMATCH — SKIPPED: $id (expected \"${targets[$id]}\", found \"$actual\")"
-              SKIPPED=$((SKIPPED+1))
-            fi
+          echo "=== wp-cli version check ==="
+          wp --allow-root --path="$WPPATH" cli version 2>&1
+
+          echo "=== TRASHED PRODUCTS (should be none related to our targets) ==="
+          wp post list --post_type=product --post_status=trash --fields=ID,post_title,post_status --allow-root --path="$WPPATH" 2>&1
+
+          echo "=== TARGET IDS CURRENT STATUS ==="
+          for id in 50 16 12 46 52 18 20 54 48 14; do
+            wp post get "$id" --field=post_status --allow-root --path="$WPPATH" 2>&1 | sed "s/^/id=$id status=/"
           done
-          echo "SUMMARY: trashed=$TRASHED skipped=$SKIPPED"
-
-          echo "=== STEP 3: PURGE CACHE ==="
-          wp litespeed-purge all --allow-root --path="$WPPATH"
-
-          echo "=== STEP 4: FINAL LIST ==="
-          wp post list --post_type=product --fields=ID,post_title --allow-root --path="$WPPATH"
           REMOTE_EOF
           sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_trash.sh
+            "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_check.sh

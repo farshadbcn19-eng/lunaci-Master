@@ -15,10 +15,10 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Products page - raw grep as requested
+      - name: Products page - all href links, filtered
         run: |
-          curl -s https://lunacibarcelona.com/products/ | grep -A2 "lunaci-collapsible-links\|lunaci-mobile-toggle\|<nav\|<ul\|<li\|</ul\|</nav" | head -60
+          curl -s https://lunacibarcelona.com/products/ | grep -oP '(?<=href=")[^"]*(?=")' | grep -v "fonts\|css\|js\|png\|jpg\|wp-content\|wp-includes\|#" | head -20
 
-      - name: Contact page - raw grep as requested
+      - name: Contact page - all href links, filtered
         run: |
-          curl -s https://lunacibarcelona.com/contact/ | grep -A2 "lunaci-collapsible-links\|lunaci-mobile-toggle\|<nav\|<ul\|<li\|</ul\|</nav" | head -60
+          curl -s https://lunacibarcelona.com/contact/ | grep -oP '(?<=href=")[^"]*(?=")' | grep -v "fonts\|css\|js\|png\|jpg\|wp-content\|wp-includes\|#" | head -20

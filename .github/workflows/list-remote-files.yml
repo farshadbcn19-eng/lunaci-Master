@@ -15,10 +15,64 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Products page - all href links, filtered
-        run: |
-          curl -s https://lunacibarcelona.com/products/ | grep -oP '(?<=href=")[^"]*(?=")' | grep -v "fonts\|css\|js\|png\|jpg\|wp-content\|wp-includes\|#" | head -20
+      - name: Set up Node for headless browser check
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-      - name: Contact page - all href links, filtered
+      - name: Install Playwright
         run: |
-          curl -s https://lunacibarcelona.com/contact/ | grep -oP '(?<=href=")[^"]*(?=")' | grep -v "fonts\|css\|js\|png\|jpg\|wp-content\|wp-includes\|#" | head -20
+          npm init -y > /dev/null 2>&1
+          npm install playwright > /dev/null 2>&1
+          npx playwright install --with-deps chromium > /dev/null 2>&1
+
+      - name: Real browser check - mobile nav after click, both pages
+        run: |
+          cat > check.js <<'EOF'
+          const { chromium } = require('playwright');
+
+          const pages = [
+            { url: 'https://lunacibarcelona.com/products/', toggle: '#lunaci-nav-toggle', links: '#lunaci-nav-links' },
+            { url: 'https://lunacibarcelona.com/contact/', toggle: '.lunaci-mobile-toggle', links: 'header > nav ul' }
+          ];
+
+          (async () => {
+            const browser = await chromium.launch();
+            for (const p of pages) {
+              const page = await browser.newPage({ viewport: { width: 375, height: 812 } });
+              await page.goto(p.url, { waitUntil: 'networkidle' });
+              console.log('=== ' + p.url + ' ===');
+
+              const toggle = await page.$(p.toggle);
+              console.log('toggle found: ' + !!toggle);
+              if (toggle) {
+                await toggle.click();
+                await page.waitForTimeout(500);
+              }
+
+              const linksInfo = await page.evaluate((sel) => {
+                const container = document.querySelector(sel);
+                if (!container) return { found: false };
+                const anchors = Array.from(container.querySelectorAll('a'));
+                return {
+                  found: true,
+                  count: anchors.length,
+                  links: anchors.map(a => ({ text: a.textContent.trim(), href: a.href, visible: !!(a.offsetWidth || a.offsetHeight || a.getClientRects().length) }))
+                };
+              }, p.links);
+              console.log(JSON.stringify(linksInfo, null, 2));
+
+              await page.screenshot({ path: p.url.includes('products') ? 'products-open.png' : 'contact-open.png' });
+              await page.close();
+            }
+            await browser.close();
+          })().catch(e => { console.error('ERROR:', e.message); process.exit(1); });
+          EOF
+          node check.js
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: nav-screenshots
+          path: '*.png'
+          if-no-files-found: ignore

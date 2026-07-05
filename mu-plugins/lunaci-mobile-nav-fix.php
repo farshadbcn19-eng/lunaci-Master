@@ -90,6 +90,24 @@ add_action('wp_footer', function () {
     #lunaci-global-nav-overlay a:hover {
         color: #D4AF37;
     }
+
+    #lunaci-global-close {
+        position: absolute;
+        top: 24px;
+        right: 24px;
+        background: none;
+        border: none;
+        color: #D4AF37;
+        font-size: 24px;
+        cursor: pointer;
+        z-index: 100001;
+    }
+
+    #lunaci-overlay-logo {
+        position: absolute;
+        top: 24px;
+        left: 24px;
+    }
     </style>
 
     <button type="button" id="lunaci-global-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="lunaci-global-nav-overlay">
@@ -99,6 +117,10 @@ add_action('wp_footer', function () {
     </button>
 
     <div id="lunaci-global-nav-overlay" aria-hidden="true">
+        <button type="button" id="lunaci-global-close" aria-label="Close menu">&#10005;</button>
+        <a href="https://lunacibarcelona.com/" id="lunaci-overlay-logo">
+            <img src="https://lunacibarcelona.com/wp-content/uploads/2026/05/b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg" alt="LUNACI Barcelona" style="height:60px; mix-blend-mode:lighten;">
+        </a>
         <a href="https://lunacibarcelona.com/products/">Products</a>
         <a href="https://lunacibarcelona.com/shop/">Shop</a>
         <a href="https://lunacibarcelona.com/about-us/">About</a>
@@ -127,6 +149,15 @@ add_action('wp_footer', function () {
                     overlay.setAttribute('aria-hidden', 'true');
                 });
             });
+
+            var closeBtn = document.getElementById('lunaci-global-close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function () {
+                    overlay.classList.remove('lunaci-global-nav-open');
+                    btn.setAttribute('aria-expanded', 'false');
+                    overlay.setAttribute('aria-hidden', 'true');
+                });
+            }
         }
 
         function fixStaleLinks() {

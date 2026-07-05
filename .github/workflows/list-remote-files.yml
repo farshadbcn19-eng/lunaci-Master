@@ -29,9 +29,21 @@ jobs:
             -o UserKnownHostsFile=~/.ssh/known_hosts \
             "$SSH_USER@$SSH_HOST" "wp litespeed-purge all --path=\$HOME/domains/lunacibarcelona.com/public_html --allow-root"
 
-      - name: Verify inline logo styles deployed live
+      - name: Verify global nav overlay deployed live
         run: |
-          curl -s https://lunacibarcelona.com/products/ -o /tmp/products.html
-          echo "=== img tag block (line-range around class=lunaci-nav-logo) ==="
-          LN=$(grep -n 'class="lunaci-nav-logo"' /tmp/products.html | head -1 | cut -d: -f1)
-          sed -n "$((LN-1)),$((LN+5))p" /tmp/products.html
+          echo "=== Home page markers ==="
+          curl -s https://lunacibarcelona.com/ -o /tmp/home.html
+          grep -c "lunaci-global-toggle\|lunaci-global-nav-overlay" /tmp/home.html
+          echo "=== Products page markers + native toggle hidden rule ==="
+          curl -sL https://lunacibarcelona.com/products/ -o /tmp/products.html
+          grep -c "lunaci-global-toggle\|lunaci-global-nav-overlay" /tmp/products.html
+          grep -c "#lunaci-nav-toggle" /tmp/products.html
+          echo "=== Contact page markers ==="
+          curl -sL https://lunacibarcelona.com/contact/ -o /tmp/contact.html
+          grep -c "lunaci-global-toggle\|lunaci-global-nav-overlay" /tmp/contact.html
+          echo "=== About page markers ==="
+          curl -sL https://lunacibarcelona.com/about-us/ -o /tmp/about.html
+          grep -c "lunaci-global-toggle\|lunaci-global-nav-overlay" /tmp/about.html
+          echo "=== overlay link content (from Home page copy) ==="
+          LN=$(grep -n 'id="lunaci-global-nav-overlay"' /tmp/home.html | head -1 | cut -d: -f1)
+          sed -n "${LN},$((LN+5))p" /tmp/home.html

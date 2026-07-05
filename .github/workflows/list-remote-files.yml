@@ -15,37 +15,98 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Purge LiteSpeed cache
-        env:
-          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
-          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
-          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
-          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
-            -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SSH_USER@$SSH_HOST" "wp litespeed-purge all --path=\$HOME/domains/lunacibarcelona.com/public_html --allow-root"
+      - name: Set up Node for headless browser check
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-      - name: Verify logo fix deployed live
+      - name: Install Playwright
         run: |
-          curl -s https://lunacibarcelona.com/products/ -o /tmp/products.html
-          echo "=== -webkit-mix-blend-mode present? ==="
-          grep -c "webkit-mix-blend-mode" /tmp/products.html
-          echo "=== .lunaci-nav solid background rule present? ==="
-          LN=$(grep -n '\.lunaci-nav {' /tmp/products.html | tail -1 | cut -d: -f1)
-          sed -n "${LN},$((LN+2))p" /tmp/products.html
+          npm init -y > /dev/null 2>&1
+          npm install playwright > /dev/null 2>&1
+          npx playwright install --with-deps chromium > /dev/null 2>&1
 
-      - name: Contact page - exact nav header structure (for investigation, no changes)
+      - name: Real browser check - Products active-link visibility and Contact toggle state
         run: |
-          curl -sL https://lunacibarcelona.com/contact/ -o /tmp/contact.html
-          echo "=== line numbers of every header/nav open+close tag ==="
-          grep -n '<header\|</header>\|<nav\|</nav>' /tmp/contact.html
-          echo "=== full block from first NAV comment through the matching </nav> ==="
-          START=$(grep -n '<!-- NAV -->' /tmp/contact.html | head -1 | cut -d: -f1)
-          END=$(awk -v s="$START" 'NR>=s && /<\/nav>/{print NR; exit}' /tmp/contact.html)
-          sed -n "${START},${END}p" /tmp/contact.html
-          echo "=== does the mu-plugin toggle button appear inside this nav block after our JS runs? (static HTML won't show it, but check script presence) ==="
-          grep -c "lunaci-mobile-toggle\|lunaci-collapsible-links" /tmp/contact.html
+          cat > check.js <<'EOF'
+          const { chromium } = require('playwright');
+
+          (async () => {
+            const browser = await chromium.launch();
+
+            // ===== 1. Products page: is the "Products" (active) link hidden? =====
+            {
+              const page = await browser.newPage({ viewport: { width: 375, height: 812 } });
+              await page.goto('https://lunacibarcelona.com/products/', { waitUntil: 'networkidle' });
+              console.log('=== PRODUCTS PAGE ===');
+
+              const before = await page.evaluate(() => {
+                const links = Array.from(document.querySelectorAll('#lunaci-nav-links a'));
+                return links.map(a => {
+                  const cs = getComputedStyle(a);
+                  return { text: a.textContent.trim(), display: cs.display, visibility: cs.visibility, opacity: cs.opacity, isActive: a.classList.contains('is-active') };
+                });
+              });
+              console.log('BEFORE click:', JSON.stringify(before, null, 2));
+
+              const toggle = await page.$('#lunaci-nav-toggle');
+              console.log('toggle found:', !!toggle);
+              if (toggle) {
+                await toggle.click();
+                await page.waitForTimeout(500);
+              }
+
+              const after = await page.evaluate(() => {
+                const links = Array.from(document.querySelectorAll('#lunaci-nav-links a'));
+                return links.map(a => {
+                  const cs = getComputedStyle(a);
+                  const rect = a.getBoundingClientRect();
+                  return { text: a.textContent.trim(), display: cs.display, visibility: cs.visibility, opacity: cs.opacity, isActive: a.classList.contains('is-active'), width: rect.width, height: rect.height };
+                });
+              });
+              console.log('AFTER click:', JSON.stringify(after, null, 2));
+              await page.close();
+            }
+
+            // ===== 2. Contact page: exact 3 questions asked =====
+            {
+              const page = await browser.newPage({ viewport: { width: 375, height: 812 } });
+              await page.goto('https://lunacibarcelona.com/contact/', { waitUntil: 'networkidle' });
+              console.log('=== CONTACT PAGE ===');
+
+              const beforeDisplay = await page.evaluate(() => {
+                const ul = document.querySelector('header > nav ul');
+                if (!ul) return { found: false };
+                return { found: true, display: getComputedStyle(ul).display, classes: ul.className, anchorCount: ul.querySelectorAll('a').length };
+              });
+              console.log('BEFORE click - nav ul state:', JSON.stringify(beforeDisplay, null, 2));
+
+              const toggle = await page.$('.lunaci-mobile-toggle');
+              console.log('toggle found:', !!toggle);
+              if (toggle) {
+                await toggle.click();
+                await page.waitForTimeout(500);
+              }
+
+              const afterDisplay = await page.evaluate(() => {
+                const ul = document.querySelector('header > nav ul');
+                if (!ul) return { found: false };
+                const anchors = Array.from(ul.querySelectorAll('a'));
+                return {
+                  found: true,
+                  display: getComputedStyle(ul).display,
+                  classes: ul.className,
+                  hasOpenClass: ul.classList.contains('lunaci-nav-open'),
+                  hasGenericOpenClass: ul.classList.contains('open'),
+                  anchorCount: anchors.length,
+                  anchors: anchors.map(a => ({ text: a.textContent.trim(), href: a.href }))
+                };
+              });
+              console.log('AFTER click - nav ul state:', JSON.stringify(afterDisplay, null, 2));
+              await page.close();
+            }
+
+            await browser.close();
+          })().catch(e => { console.error('ERROR:', e.message); process.exit(1); });
+          EOF
+          node check.js

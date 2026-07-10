@@ -15,7 +15,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update -y && sudo apt-get install -y sshpass
 
-      - name: Order-reference check, then force-delete only if unreferenced
+      - name: Raw order-reference query requested by user (read-only)
         env:
           SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
           SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
@@ -24,44 +24,15 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          cat > /tmp/remote_forcedelete.sh <<'REMOTE_EOF'
-          set -e
+          cat > /tmp/remote_query.sh <<'REMOTE_EOF'
           WPPATH="$HOME/domains/lunacibarcelona.com/public_html"
-          PREFIX=$(wp db prefix --allow-root --path="$WPPATH")
+          echo "=== wp db prefix (actual table prefix on this install) ==="
+          wp db prefix --allow-root --path="$WPPATH"
 
-          echo "=== STEP A: ORDER-REFERENCE CHECK (read-only) ==="
-          REFS=$(wp db query "SELECT oim.meta_value AS product_id, COUNT(*) AS order_refs FROM ${PREFIX}woocommerce_order_itemmeta oim WHERE oim.meta_key='_product_id' AND oim.meta_value IN (50,16,12,46,52,18,20,54,48,14) GROUP BY oim.meta_value;" --allow-root --path="$WPPATH" --skip-column-names)
-          if [ -n "$REFS" ]; then
-            echo "ORDER REFERENCES FOUND — ABORTING, NOTHING WILL BE DELETED:"
-            echo "$REFS"
-            exit 0
-          fi
-          echo "No order references found for any of the 10 target IDs. Proceeding."
-
-          echo "=== STEP B: VERIFY TITLES AND FORCE-DELETE ==="
-          declare -A targets=([50]="Golden Glow Highlighter" [16]="Luminous Face Powder" [12]="Midnight Eyes Palette" [46]="Midnight Eyeshadow" [52]="Midnight Nail Polish" [18]="Onyx Nail Lacquer" [20]="Radiance Boost Serum" [54]="Radiance Face Serum" [48]="Ruby Luxe Lipstick" [14]="Velvet Rouge Lipstick")
-          DELETED=0
-          SKIPPED=0
-          for id in "${!targets[@]}"; do
-            actual=$(wp post get "$id" --field=post_title --allow-root --path="$WPPATH" 2>/dev/null)
-            if [ "$actual" == "${targets[$id]}" ]; then
-              wp post delete "$id" --force --allow-root --path="$WPPATH"
-              echo "Deleted: $id ($actual)"
-              DELETED=$((DELETED+1))
-            else
-              echo "MISMATCH — SKIPPED: $id (expected \"${targets[$id]}\", found \"$actual\")"
-              SKIPPED=$((SKIPPED+1))
-            fi
-          done
-          echo "SUMMARY: deleted=$DELETED skipped=$SKIPPED"
-
-          echo "=== STEP C: PURGE CACHE ==="
-          wp litespeed-purge all --allow-root --path="$WPPATH"
-
-          echo "=== STEP D: FINAL LIST ==="
-          wp post list --post_type=product --fields=ID,post_title --allow-root --path="$WPPATH"
+          echo "=== Requested query, literal wp_ prefix ==="
+          wp db query "SELECT oim.meta_value AS product_id, COUNT(*) AS order_refs FROM wp_woocommerce_order_itemmeta oim WHERE oim.meta_key='_product_id' AND oim.meta_value IN (50,16,12,46,52,18,20,54,48,14) GROUP BY oim.meta_value;" --allow-root --path="$WPPATH" 2>&1
           REMOTE_EOF
           sshpass -p "$SSH_PASS" ssh -p "$SSH_PORT" \
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts \
-            "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_forcedelete.sh
+            "$SSH_USER@$SSH_HOST" bash -s < /tmp/remote_query.sh

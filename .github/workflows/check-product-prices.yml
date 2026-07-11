@@ -15,8 +15,27 @@ jobs:
           sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
             -p ${{ secrets.HOSTINGER_SSH_PORT }} \
             ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
-            'WP_PATH=$(find $HOME -name "wp-config.php" -maxdepth 6 2>/dev/null | head -1 | xargs dirname); \
-             echo "WordPress found at: $WP_PATH"; \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               echo "--- $HOME listing ---"; ls -la "$HOME";
+               if [ -d "$HOME/domains" ]; then echo "--- $HOME/domains listing ---"; ls -la "$HOME/domains"; fi;
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
              wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path="$WP_PATH" && \
              echo "---PRICES---" && \
              wp post list --post_type=product --field=ID --path="$WP_PATH" | while read id; do \

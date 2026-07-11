@@ -1,0 +1,23 @@
+name: Check Product Prices (Read-Only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-prices:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch WooCommerce products and prices
+        run: |
+          curl -s \
+            -u "${{ secrets.WC_CONSUMER_KEY }}:${{ secrets.WC_CONSUMER_SECRET }}" \
+            "https://lunaci.es/wp-json/wc/v3/products?per_page=100&fields=id,name,regular_price,sale_price,status" \
+            | python3 -c "
+          import json,sys
+          products = json.load(sys.stdin)
+          print(f\"{'ID':<8} {'Name':<50} {'Regular':<12} {'Sale'}\")
+          print('-'*85)
+          for p in products:
+              print(f\"{p['id']:<8} {p['name'][:49]:<50} {p['regular_price']:<12} {p['sale_price']}\")
+          print(f\"\nTotal: {len(products)} products\")
+          "

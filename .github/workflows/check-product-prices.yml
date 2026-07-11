@@ -42,6 +42,4 @@ jobs:
                price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
                title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
                echo "$id | $title | $price"; \
-             done && \
-             echo "---CATEGORIES---" && \
-             wp term list product_cat --fields=term_id,name,slug,parent,count --format=table --path="$WP_PATH"'
+             done'

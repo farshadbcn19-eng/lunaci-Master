@@ -15,7 +15,10 @@ jobs:
           sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
             -p ${{ secrets.HOSTINGER_SSH_PORT }} \
             ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
-            "wp post list --post_type=product --fields=ID,post_title --format=csv --path=~/public_html && \
-             wp post list --post_type=product --field=ID --path=~/public_html | while read id; do \
-               echo \"\$id,\$(wp post meta get \$id _regular_price --path=~/public_html)\"; \
-             done"
+            'wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path=$HOME/public_html && \
+             echo "---PRICES---" && \
+             wp post list --post_type=product --field=ID --path=$HOME/public_html | while read id; do \
+               price=$(wp post meta get $id _regular_price --path=$HOME/public_html); \
+               title=$(wp post get $id --field=post_title --path=$HOME/public_html); \
+               echo "$id | $title | $price"; \
+             done'

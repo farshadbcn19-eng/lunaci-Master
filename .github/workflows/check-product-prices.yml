@@ -15,10 +15,12 @@ jobs:
           sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
             -p ${{ secrets.HOSTINGER_SSH_PORT }} \
             ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
-            'wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path=$HOME/public_html && \
+            'WP_PATH=$(find $HOME -name "wp-config.php" -maxdepth 6 2>/dev/null | head -1 | xargs dirname); \
+             echo "WordPress found at: $WP_PATH"; \
+             wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path="$WP_PATH" && \
              echo "---PRICES---" && \
-             wp post list --post_type=product --field=ID --path=$HOME/public_html | while read id; do \
-               price=$(wp post meta get $id _regular_price --path=$HOME/public_html); \
-               title=$(wp post get $id --field=post_title --path=$HOME/public_html); \
+             wp post list --post_type=product --field=ID --path="$WP_PATH" | while read id; do \
+               price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
+               title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
                echo "$id | $title | $price"; \
              done'

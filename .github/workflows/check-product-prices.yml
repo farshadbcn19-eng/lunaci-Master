@@ -42,4 +42,14 @@ jobs:
                price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
                title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
                echo "$id | $title | $price"; \
+             done && \
+             echo "---PLUGIN STATUS (jetpack + hostinger-easy-onboarding)---" && \
+             wp plugin list --fields=name,status,version,update --format=table --path="$WP_PATH" && \
+             echo "---LIVE HOMEPAGE CHECK (3x)---" && \
+             for i in 1 2 3; do \
+               CODE=$(curl -sk -o /tmp/home_check_$i.html -w "%{http_code}" https://lunacibarcelona.com/); \
+               ERR=$(grep -io "critical error\|fatal error" /tmp/home_check_$i.html | head -1); \
+               echo "attempt $i: http_code=$CODE error_found=${ERR:-none}"; \
+               rm -f /tmp/home_check_$i.html; \
+               sleep 2; \
              done'

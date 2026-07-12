@@ -6,6 +6,7 @@ on:
 jobs:
   check-prices:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Install sshpass
         run: sudo apt-get install -y sshpass
@@ -13,6 +14,7 @@ jobs:
       - name: List products and prices
         run: |
           sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ServerAliveInterval=5 -o ServerAliveCountMax=3 -o ConnectTimeout=15 \
             -p ${{ secrets.HOSTINGER_SSH_PORT }} \
             ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
             'WP_PATH="";
@@ -45,7 +47,7 @@ jobs:
              done; \
              echo "---LIVE HOMEPAGE CHECK (3x)---"; \
              for i in 1 2 3; do \
-               CODE=$(curl -sk -o /tmp/home_check_$i.html -w "%{http_code}" https://lunacibarcelona.com/); \
+               CODE=$(curl -sk --connect-timeout 10 --max-time 20 -o /tmp/home_check_$i.html -w "%{http_code}" https://lunacibarcelona.com/); \
                ERR=$(grep -io "critical error\|fatal error" /tmp/home_check_$i.html | head -1); \
                echo "attempt $i: http_code=$CODE error_found=${ERR:-none}"; \
                rm -f /tmp/home_check_$i.html; \

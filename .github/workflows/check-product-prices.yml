@@ -42,4 +42,8 @@ jobs:
                price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
                title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
                echo "$id | $title | $price"; \
-             done'
+             done && \
+             echo "---VARIABLE PARENT PRICE CHECK---" && \
+             echo "PD9waHAKZm9yZWFjaCAoIGFycmF5KCA0OTEsIDQ5NywgNTAyICkgYXMgJGlkICkgewoJJHAgPSB3Y19nZXRfcHJvZHVjdCggJGlkICk7CglpZiAoICEgJHAgKSB7CgkJV1BfQ0xJOjpsb2coICRpZCAuICcgfCBOT1QgRk9VTkQnICk7CgkJY29udGludWU7Cgl9CglXUF9DTEk6OmxvZyggc3ByaW50ZigKCQknJWQgfCAlcyB8IGdldF9wcmljZSgpPSVzIHwgZ2V0X3JlZ3VsYXJfcHJpY2UoKT0lcyB8IG1ldGE6X3ByaWNlPSVzIHwgbWV0YTpfcmVndWxhcl9wcmljZT0lcycsCgkJJGlkLAoJCSRwLT5nZXRfbmFtZSgpLAoJCXZhcl9leHBvcnQoICRwLT5nZXRfcHJpY2UoKSwgdHJ1ZSApLAoJCXZhcl9leHBvcnQoICRwLT5nZXRfcmVndWxhcl9wcmljZSgpLCB0cnVlICksCgkJdmFyX2V4cG9ydCggZ2V0X3Bvc3RfbWV0YSggJGlkLCAnX3ByaWNlJywgdHJ1ZSApLCB0cnVlICksCgkJdmFyX2V4cG9ydCggZ2V0X3Bvc3RfbWV0YSggJGlkLCAnX3JlZ3VsYXJfcHJpY2UnLCB0cnVlICksIHRydWUgKQoJKSApOwp9Cg==" | base64 -d > /tmp/check-parent-prices.php && \
+             wp eval-file /tmp/check-parent-prices.php --path="$WP_PATH" && \
+             rm -f /tmp/check-parent-prices.php'

@@ -36,10 +36,9 @@ jobs:
                exit 1;
              fi;
              echo "WordPress found at: $WP_PATH";
-             wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path="$WP_PATH" && \
-             echo "---PRICES---" && \
-             wp post list --post_type=product --field=ID --path="$WP_PATH" | while read id; do \
-               price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
-               title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
-               echo "$id | $title | $price"; \
-             done'
+             echo "---WPML-RELATED PLUGIN STATUS---";
+             wp plugin list --fields=name,status,version --format=table --path="$WP_PATH" | grep -iE "^name|sitepress|multilingual|wpml";
+             echo "---WPML SETTINGS + LANGUAGES (read-only)---";
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKZWNobyAiLS0tIGljbF9zaXRlcHJlc3Nfc2V0dGluZ3MgKGtleSBmaWVsZHMpIC0tLVxuIjsKJHNldHRpbmdzID0gZ2V0X29wdGlvbiggJ2ljbF9zaXRlcHJlc3Nfc2V0dGluZ3MnICk7CmlmICggJHNldHRpbmdzICkgewoJZWNobyAnZGVmYXVsdF9sYW5ndWFnZTogJyAuICggaXNzZXQoICRzZXR0aW5nc1snZGVmYXVsdF9sYW5ndWFnZSddICkgPyAkc2V0dGluZ3NbJ2RlZmF1bHRfbGFuZ3VhZ2UnXSA6ICdOL0EnICkgLiAiXG4iOwoJZWNobyAnYWN0aXZlX2xhbmd1YWdlczogJyAuICggaXNzZXQoICRzZXR0aW5nc1snYWN0aXZlX2xhbmd1YWdlcyddICkgPyBpbXBsb2RlKCAnLCAnLCAoYXJyYXkpICRzZXR0aW5nc1snYWN0aXZlX2xhbmd1YWdlcyddICkgOiAnTi9BJyApIC4gIlxuIjsKCWVjaG8gJ2xhbmd1YWdlX25lZ290aWF0aW9uX3R5cGU6ICcgLiAoIGlzc2V0KCAkc2V0dGluZ3NbJ2xhbmd1YWdlX25lZ290aWF0aW9uX3R5cGUnXSApID8gJHNldHRpbmdzWydsYW5ndWFnZV9uZWdvdGlhdGlvbl90eXBlJ10gOiAnTi9BJyApIC4gIlxuIjsKCWVjaG8gJ3NldHVwX2NvbXBsZXRlIGtleSBwcmVzZW50OiAnIC4gKCBpc3NldCggJHNldHRpbmdzWydzZXR1cF9jb21wbGV0ZSddICkgPyB2YXJfZXhwb3J0KCAkc2V0dGluZ3NbJ3NldHVwX2NvbXBsZXRlJ10sIHRydWUgKSA6ICdubycgKSAuICJcbiI7Cn0gZWxzZSB7CgllY2hvICJpY2xfc2l0ZXByZXNzX3NldHRpbmdzIG9wdGlvbiBpcyBOT1Qgc2V0IChXUE1MIHNldHVwIHdpemFyZCBoYXMgbm90IGJlZW4gcnVuIC8gc2F2ZWQgeWV0KVxuIjsKfQoKZWNobyAiXG4tLS0gaWNsX2xhbmd1YWdlcyBEQiB0YWJsZSAtLS1cbiI7CiR0YWJsZSAgPSAkd3BkYi0+cHJlZml4IC4gJ2ljbF9sYW5ndWFnZXMnOwokZXhpc3RzID0gJHdwZGItPmdldF92YXIoICR3cGRiLT5wcmVwYXJlKCAnU0hPVyBUQUJMRVMgTElLRSAlcycsICR0YWJsZSApICk7CmlmICggJGV4aXN0cyApIHsKCSRyb3dzID0gJHdwZGItPmdldF9yZXN1bHRzKCAiU0VMRUNUIGNvZGUsIGVuZ2xpc2hfbmFtZSwgbWFqb3IsIGFjdGl2ZSwgZGVmYXVsdF9sb2NhbGUgRlJPTSB7JHRhYmxlfSBPUkRFUiBCWSBtYWpvciBERVNDLCBjb2RlIEFTQyIgKTsKCWlmICggZW1wdHkoICRyb3dzICkgKSB7CgkJZWNobyAiVGFibGUgZXhpc3RzIGJ1dCBoYXMgemVybyByb3dzIChubyBsYW5ndWFnZXMgY29uZmlndXJlZCB5ZXQpXG4iOwoJfSBlbHNlIHsKCQlmb3JlYWNoICggJHJvd3MgYXMgJHIgKSB7CgkJCWVjaG8gInskci0+Y29kZX0gfCB7JHItPmVuZ2xpc2hfbmFtZX0gfCBtYWpvcj17JHItPm1ham9yfSB8IGFjdGl2ZT17JHItPmFjdGl2ZX0gfCBsb2NhbGU9eyRyLT5kZWZhdWx0X2xvY2FsZX1cbiI7CgkJfQoJfQp9IGVsc2UgewoJZWNobyAiVGFibGUgeyR0YWJsZX0gZG9lcyBub3QgZXhpc3QgKFdQTUwgZGF0YWJhc2Ugbm90IGluaXRpYWxpemVkIHlldClcbiI7Cn0K" | base64 -d > /tmp/check-wpml.php;
+             wp eval-file /tmp/check-wpml.php --path="$WP_PATH";
+             rm -f /tmp/check-wpml.php'

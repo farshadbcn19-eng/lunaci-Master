@@ -42,4 +42,20 @@ jobs:
                price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
                title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
                echo "$id | $title | $price"; \
-             done'
+             done; \
+             echo "---HEO PLUGIN HEADER---"; \
+             head -30 "$WP_PATH/wp-content/plugins/hostinger-easy-onboarding/hostinger-easy-onboarding.php" 2>/dev/null || echo "(main file not at expected path)"; \
+             echo "---HEO PLUGIN FILE TREE---"; \
+             find "$WP_PATH/wp-content/plugins/hostinger-easy-onboarding" -maxdepth 2 2>/dev/null || echo "(plugin dir not found)"; \
+             echo "---HEO CAPABILITY KEYWORD SCAN (ssl/certificate/backup/dns/nameserver/cron)---"; \
+             grep -rliE "ssl|certificate|https_enforce|backup|dns_record|dns_zone|nameserver|cron_schedule|wp_schedule_event" \
+               "$WP_PATH/wp-content/plugins/hostinger-easy-onboarding" --include=*.php 2>/dev/null; \
+             echo "(if no lines above, none of those keywords appear in the plugin source)"; \
+             echo "---HEO CRON EVENTS---"; \
+             wp cron event list --path="$WP_PATH" --format=table 2>/dev/null | grep -i "onboard\|heo\|hostinger"; \
+             echo "(if no lines above, no matching cron events found)"; \
+             echo "---HEO OPTIONS IN DB---"; \
+             wp option list --search="*hostinger_easy_onboarding*" --path="$WP_PATH" 2>/dev/null; \
+             echo "(if no lines above, no matching options found)"; \
+             echo "---HOSTINGER (main) PLUGIN HEADER for comparison---"; \
+             head -20 "$WP_PATH/wp-content/plugins/hostinger/hostinger.php" 2>/dev/null || echo "(main file not at expected path)"'

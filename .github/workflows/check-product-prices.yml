@@ -36,10 +36,10 @@ jobs:
                exit 1;
              fi;
              echo "WordPress found at: $WP_PATH";
-             wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path="$WP_PATH" && \
-             echo "---PRICES---" && \
-             wp post list --post_type=product --field=ID --path="$WP_PATH" | while read id; do \
-               price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
-               title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
-               echo "$id | $title | $price"; \
-             done'
+             echo "---CATEGORY BANNER PNG SEARCH---";
+             FOUND_FILES=$(find "$WP_PATH/wp-content/uploads" \( -iname "lunaci-category-face.png" -o -iname "lunaci-category-eyes.png" -o -iname "lunaci-category-lips.png" -o -iname "lunaci-category-nails.png" \) 2>/dev/null);
+             if [ -z "$FOUND_FILES" ]; then
+               echo "No matching files found under $WP_PATH/wp-content/uploads";
+             else
+               echo "$FOUND_FILES" | while read -r f; do ls -lh "$f"; done;
+             fi'

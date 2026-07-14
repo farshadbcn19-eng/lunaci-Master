@@ -42,4 +42,6 @@ jobs:
                echo "No matching files found under $WP_PATH/wp-content/uploads";
              else
                echo "$FOUND_FILES" | while read -r f; do ls -lh "$f"; done;
-             fi'
+             fi;
+             echo "---IMAGEMAGICK AVAILABILITY---";
+             (which convert && convert -version | head -1) || echo "convert (ImageMagick) not found in PATH"'

@@ -44,4 +44,6 @@ jobs:
                echo "$FOUND_FILES" | while read -r f; do ls -lh "$f"; done;
              fi;
              echo "---IMAGEMAGICK AVAILABILITY---";
-             (which convert && convert -version | head -1) || echo "convert (ImageMagick) not found in PATH"'
+             (which convert && convert -version | head -1) || echo "convert (ImageMagick) not found in PATH";
+             echo "---PHP IMAGE LIBRARY AVAILABILITY---";
+             php -r "echo (\"GD: \" . (extension_loaded(\"gd\") ? \"yes\" : \"no\") . \"\\n\"); echo (\"Imagick ext: \" . (extension_loaded(\"imagick\") ? \"yes\" : \"no\") . \"\\n\"); echo (\"imagecreatefrompng(): \" . (function_exists(\"imagecreatefrompng\") ? \"yes\" : \"no\") . \"\\n\"); echo (\"imagejpeg(): \" . (function_exists(\"imagejpeg\") ? \"yes\" : \"no\") . \"\\n\"); echo (\"Imagick class: \" . (class_exists(\"Imagick\") ? \"yes\" : \"no\") . \"\\n\");"'

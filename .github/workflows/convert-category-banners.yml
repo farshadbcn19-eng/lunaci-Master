@@ -1,0 +1,52 @@
+name: Convert Category Banner PNGs to JPG (one-time write)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  convert-banners:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Convert PNGs to JPG (quality 90) and verify
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+             FOUND_FILES=$(find "$WP_PATH/wp-content/uploads" \( -iname "lunaci-category-face.png" -o -iname "lunaci-category-eyes.png" -o -iname "lunaci-category-lips.png" -o -iname "lunaci-category-nails.png" \) 2>/dev/null);
+             if [ -z "$FOUND_FILES" ]; then
+               echo "ERROR: none of the 4 category banner PNGs were found under $WP_PATH/wp-content/uploads";
+               exit 1;
+             fi;
+             echo "$FOUND_FILES" | wc -l | xargs echo "Found PNG count:";
+             echo "PD9waHAKaWYgKCBlbXB0eSggJGFyZ3NbMF0gKSB8fCAhIGZpbGVfZXhpc3RzKCAkYXJnc1swXSApICkgewoJZWNobyAiRVJST1I6IHNvdXJjZSBmaWxlIG5vdCBmb3VuZDogIiAuICggaXNzZXQoICRhcmdzWzBdICkgPyAkYXJnc1swXSA6ICcobm9uZSknICkgLiAiXG4iOwoJZXhpdCggMSApOwp9Cgokc3JjID0gJGFyZ3NbMF07CiRkc3QgPSBwcmVnX3JlcGxhY2UoICcvXC5wbmckL2knLCAnLmpwZycsICRzcmMgKTsKCmlmICggZmlsZV9leGlzdHMoICRkc3QgKSApIHsKCWVjaG8gIlNLSVAgKGFscmVhZHkgZXhpc3RzLCBub3Qgb3ZlcndyaXR0ZW4pOiAkZHN0XG4iOwoJZXhpdCggMCApOwp9Cgp0cnkgewoJJGltZyA9IG5ldyBJbWFnaWNrKCAkc3JjICk7CgkkaW1nLT5zZXRJbWFnZUZvcm1hdCggJ2pwZWcnICk7CgkkaW1nLT5zZXRJbWFnZUNvbXByZXNzaW9uUXVhbGl0eSggOTAgKTsKCSRpbWctPndyaXRlSW1hZ2UoICRkc3QgKTsKCSRpbWctPmNsZWFyKCk7CgkkaW1nLT5kZXN0cm95KCk7CgoJY2xlYXJzdGF0Y2FjaGUoKTsKCSRzcmNfa2IgPSByb3VuZCggZmlsZXNpemUoICRzcmMgKSAvIDEwMjQsIDEgKTsKCSRkc3Rfa2IgPSByb3VuZCggZmlsZXNpemUoICRkc3QgKSAvIDEwMjQsIDEgKTsKCWVjaG8gIk9LOiBjcmVhdGVkICRkc3QgKHskZHN0X2tifSBLQikgfCBvcmlnaW5hbCBQTkcgdW50b3VjaGVkIGF0ICRzcmMgKHskc3JjX2tifSBLQilcbiI7Cn0gY2F0Y2ggKCBFeGNlcHRpb24gJGUgKSB7CgllY2hvICJFUlJPUiBjb252ZXJ0aW5nICRzcmM6ICIgLiAkZS0+Z2V0TWVzc2FnZSgpIC4gIlxuIjsKCWV4aXQoIDEgKTsKfQo=" | base64 -d > /tmp/convert-to-jpg.php;
+             echo "---CONVERTING---";
+             echo "$FOUND_FILES" | while read -r f; do
+               wp eval-file /tmp/convert-to-jpg.php "$f" --path="$WP_PATH";
+             done;
+             rm -f /tmp/convert-to-jpg.php;
+             echo "---VERIFY (new JPGs alongside untouched PNGs)---";
+             find "$WP_PATH/wp-content/uploads" \( -iname "lunaci-category-face.jpg" -o -iname "lunaci-category-eyes.jpg" -o -iname "lunaci-category-lips.jpg" -o -iname "lunaci-category-nails.jpg" -o -iname "lunaci-category-face.png" -o -iname "lunaci-category-eyes.png" -o -iname "lunaci-category-lips.png" -o -iname "lunaci-category-nails.png" \) 2>/dev/null | sort | while read -r f; do ls -lh "$f"; done'

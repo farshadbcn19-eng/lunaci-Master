@@ -36,10 +36,14 @@ jobs:
                exit 1;
              fi;
              echo "WordPress found at: $WP_PATH";
-             wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path="$WP_PATH" && \
-             echo "---PRICES---" && \
-             wp post list --post_type=product --field=ID --path="$WP_PATH" | while read id; do \
-               price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
-               title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
-               echo "$id | $title | $price"; \
-             done'
+             echo "---ACTIVE THEME + FUNCTIONS.PHP CHECK---";
+             ACTIVE_THEME=$(wp theme list --status=active --field=name --path="$WP_PATH");
+             echo "Active theme slug: $ACTIVE_THEME";
+             ls -la "$WP_PATH/wp-content/themes/$ACTIVE_THEME/functions.php" 2>/dev/null || echo "(no functions.php in active theme dir)";
+             echo "-- template/stylesheet from wp option --";
+             wp option get template --path="$WP_PATH";
+             wp option get stylesheet --path="$WP_PATH";
+             echo "-- name collision check in active theme functions.php --";
+             grep -n "function lunaci_category_banner" "$WP_PATH/wp-content/themes/$ACTIVE_THEME/functions.php" 2>/dev/null || echo "no existing lunaci_category_banner function found";
+             echo "-- last 15 lines of functions.php (for context) --";
+             tail -15 "$WP_PATH/wp-content/themes/$ACTIVE_THEME/functions.php" 2>/dev/null'

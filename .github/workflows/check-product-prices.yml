@@ -36,16 +36,10 @@ jobs:
                exit 1;
              fi;
              echo "WordPress found at: $WP_PATH";
-             echo "---STEP 1: PRODUCT CATEGORIES (slug)---";
-             wp wc product_cat list --fields=term_id,name,slug --format=table --path="$WP_PATH" --user=1 2>/dev/null || wp term list product_cat --fields=term_id,name,slug --format=table --path="$WP_PATH";
-             echo "---STEP 2: ATTACHMENT LOOKUP PER FILE---";
-             for slug in lunaci-category-face lunaci-category-eyes lunaci-category-lips lunaci-category-nails; do
-               echo "-- $slug --";
-               wp post list --post_type=attachment --name="$slug" --fields=ID,post_title,post_name --format=table --path="$WP_PATH";
-               attach_id=$(wp post list --post_type=attachment --name="$slug" --field=ID --path="$WP_PATH");
-               if [ -n "$attach_id" ]; then
-                 echo "   _wp_attached_file: $(wp post meta get $attach_id _wp_attached_file --path="$WP_PATH")";
-               fi;
-             done;
-             echo "---STEP 3: WPCODE PLUGIN STATUS---";
-             wp plugin list --status=active --path="$WP_PATH" | grep -i wpcode || echo "WPCode not found among active plugins"'
+             wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path="$WP_PATH" && \
+             echo "---PRICES---" && \
+             wp post list --post_type=product --field=ID --path="$WP_PATH" | while read id; do \
+               price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
+               title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
+               echo "$id | $title | $price"; \
+             done'

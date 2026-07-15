@@ -36,10 +36,12 @@ jobs:
                exit 1;
              fi;
              echo "WordPress found at: $WP_PATH";
-             wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path="$WP_PATH" && \
-             echo "---PRICES---" && \
-             wp post list --post_type=product --field=ID --path="$WP_PATH" | while read id; do \
-               price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
-               title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
-               echo "$id | $title | $price"; \
-             done'
+             echo "---STEP 1+2: PRODUCT_CAT THUMBNAILS + ELEMENTOR DATA SCAN---";
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKZWNobyAiLS0tIHByb2R1Y3RfY2F0IHRlcm1zICsgdGh1bWJuYWlsX2lkIChyZWFkLW9ubHkpIC0tLVxuIjsKJHRlcm1zID0gZ2V0X3Rlcm1zKCBhcnJheSggJ3RheG9ub215JyA9PiAncHJvZHVjdF9jYXQnLCAnaGlkZV9lbXB0eScgPT4gZmFsc2UgKSApOwppZiAoIGlzX3dwX2Vycm9yKCAkdGVybXMgKSApIHsKCWVjaG8gIkVSUk9SIGZldGNoaW5nIHRlcm1zOiAiIC4gJHRlcm1zLT5nZXRfZXJyb3JfbWVzc2FnZSgpIC4gIlxuIjsKfSBlbHNlIHsKCWZvcmVhY2ggKCAkdGVybXMgYXMgJHQgKSB7CgkJJHRodW1iX2lkID0gZ2V0X3Rlcm1fbWV0YSggJHQtPnRlcm1faWQsICd0aHVtYm5haWxfaWQnLCB0cnVlICk7CgkJJGZpbGUgPSAnJzsKCQlpZiAoICR0aHVtYl9pZCApIHsKCQkJJGZpbGUgPSBnZXRfcG9zdF9tZXRhKCAkdGh1bWJfaWQsICdfd3BfYXR0YWNoZWRfZmlsZScsIHRydWUgKTsKCQl9CgkJZWNobyAieyR0LT50ZXJtX2lkfSB8IHskdC0+bmFtZX0gfCB0aHVtYm5haWxfaWQ9IiAuICggJHRodW1iX2lkID8gJHRodW1iX2lkIDogJ25vbmUnICkgLiAiIHwgZmlsZT0iIC4gKCAkZmlsZSA/ICRmaWxlIDogJ24vYScgKSAuICJcbiI7Cgl9Cn0KCmVjaG8gIlxuLS0tIF9lbGVtZW50b3JfZGF0YSBtYXRjaGVzIChyZWFkLW9ubHkgc2NhbikgLS0tXG4iOwokbmVlZGxlcyA9IGFycmF5KCAnbHVuYWNpLWNhdGVnb3J5LWZhY2UnLCAnbHVuYWNpLWNhdGVnb3J5LWV5ZXMnLCAnbHVuYWNpLWNhdGVnb3J5LWxpcHMnLCAnbHVuYWNpLWNhdGVnb3J5LW5haWxzJyApOwpmb3JlYWNoICggJG5lZWRsZXMgYXMgJG5lZWRsZSApIHsKCSRsaWtlID0gJyUnIC4gJHdwZGItPmVzY19saWtlKCAkbmVlZGxlICkgLiAnJSc7Cgkkcm93cyA9ICR3cGRiLT5nZXRfcmVzdWx0cyggJHdwZGItPnByZXBhcmUoICJTRUxFQ1QgcG9zdF9pZCBGUk9NIHskd3BkYi0+cG9zdG1ldGF9IFdIRVJFIG1ldGFfa2V5PSdfZWxlbWVudG9yX2RhdGEnIEFORCBtZXRhX3ZhbHVlIExJS0UgJXMiLCAkbGlrZSApICk7CglpZiAoIGVtcHR5KCAkcm93cyApICkgewoJCWVjaG8gIiRuZWVkbGU6IG5vIF9lbGVtZW50b3JfZGF0YSBtYXRjaFxuIjsKCX0gZWxzZSB7CgkJZm9yZWFjaCAoICRyb3dzIGFzICRyICkgewoJCQkkdGl0bGUgID0gZ2V0X3RoZV90aXRsZSggJHItPnBvc3RfaWQgKTsKCQkJJHN0YXR1cyA9IGdldF9wb3N0X3N0YXR1cyggJHItPnBvc3RfaWQgKTsKCQkJZWNobyAiJG5lZWRsZTogcG9zdF9pZD17JHItPnBvc3RfaWR9IHwgdGl0bGU9XCIkdGl0bGVcIiB8IHN0YXR1cz0kc3RhdHVzXG4iOwoJCX0KCX0KfQo=" | base64 -d > /tmp/check-banner-refs.php;
+             wp eval-file /tmp/check-banner-refs.php --path="$WP_PATH";
+             rm -f /tmp/check-banner-refs.php;
+             echo "---STEP 3: HARDCODED REFERENCES IN ACTIVE THEME---";
+             ACTIVE_THEME=$(wp theme list --status=active --field=name --path="$WP_PATH");
+             echo "Active theme: $ACTIVE_THEME";
+             grep -rl "lunaci-category" "$WP_PATH/wp-content/themes/$ACTIVE_THEME" 2>/dev/null | head -20;
+             echo "(end of theme grep results, empty above means no hardcoded matches)"'

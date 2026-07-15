@@ -36,24 +36,10 @@ jobs:
                exit 1;
              fi;
              echo "WordPress found at: $WP_PATH";
-             echo "---STEP 1: wp post_type=code-snippets attempt---";
-             wp post list --post_type=code-snippets --fields=ID,post_title,post_status --format=table --path="$WP_PATH";
-             echo "---STEP 1+2: FIND lunaci_category_banner IN CODE SNIPPETS PLUGIN (custom table fallback)---";
-             echo "PD9waHAKZWNobyAiLS0tIHBvc3RfdHlwZT1jb2RlLXNuaXBwZXRzIGF0dGVtcHQgLS0tXG4iOwokcG9zdHMgPSBnZXRfcG9zdHMoIGFycmF5KCAncG9zdF90eXBlJyA9PiAnY29kZS1zbmlwcGV0cycsICdwb3N0c19wZXJfcGFnZScgPT4gLTEsICdwb3N0X3N0YXR1cycgPT4gJ2FueScsICdmaWVsZHMnID0+ICdpZHMnICkgKTsKaWYgKCBlbXB0eSggJHBvc3RzICkgKSB7CgllY2hvICJObyBwb3N0cyBmb3VuZCB3aXRoIHBvc3RfdHlwZT1jb2RlLXNuaXBwZXRzIChDb2RlIFNuaXBwZXRzIHBsdWdpbiB0eXBpY2FsbHkgdXNlcyBhIGN1c3RvbSBEQiB0YWJsZSwgbm90IGEgcG9zdCB0eXBlKS5cbiI7Cn0gZWxzZSB7Cglmb3JlYWNoICggJHBvc3RzIGFzICRwaWQgKSB7CgkJZWNobyBnZXRfdGhlX3RpdGxlKCAkcGlkICkgLiAiIChJRCAkcGlkKSBzdGF0dXM9IiAuIGdldF9wb3N0X3N0YXR1cyggJHBpZCApIC4gIlxuIjsKCX0KfQoKZWNobyAiXG4tLS0gY3VzdG9tICdzbmlwcGV0cycgdGFibGUgY2hlY2sgLS0tXG4iOwpnbG9iYWwgJHdwZGI7CiR0YWJsZSAgPSAkd3BkYi0+cHJlZml4IC4gJ3NuaXBwZXRzJzsKJGV4aXN0cyA9ICR3cGRiLT5nZXRfdmFyKCAkd3BkYi0+cHJlcGFyZSggJ1NIT1cgVEFCTEVTIExJS0UgJXMnLCAkdGFibGUgKSApOwppZiAoICEgJGV4aXN0cyApIHsKCWVjaG8gIlRhYmxlICR0YWJsZSBkb2VzIG5vdCBleGlzdC5cbiI7Cn0gZWxzZSB7Cgkkcm93cyA9ICR3cGRiLT5nZXRfcmVzdWx0cyggIlNFTEVDVCBpZCwgbmFtZSwgYWN0aXZlLCBzY29wZSBGUk9NIHskdGFibGV9IiApOwoJaWYgKCBlbXB0eSggJHJvd3MgKSApIHsKCQllY2hvICJUYWJsZSBleGlzdHMgYnV0IGhhcyB6ZXJvIHJvd3MuXG4iOwoJfSBlbHNlIHsKCQlmb3JlYWNoICggJHJvd3MgYXMgJHIgKSB7CgkJCWVjaG8gImlkPXskci0+aWR9IHwgbmFtZT17JHItPm5hbWV9IHwgYWN0aXZlPXskci0+YWN0aXZlfSB8IHNjb3BlPXskci0+c2NvcGV9XG4iOwoJCX0KCX0KCgllY2hvICJcbi0tLSBzbmlwcGV0KHMpIGNvbnRhaW5pbmcgJ2x1bmFjaV9jYXRlZ29yeV9iYW5uZXInIChzZWFyY2hpbmcgJ2NvZGUnIGNvbHVtbikgLS0tXG4iOwoJJG1hdGNoID0gJHdwZGItPmdldF9yZXN1bHRzKCAkd3BkYi0+cHJlcGFyZSggIlNFTEVDVCBpZCwgbmFtZSwgY29kZSBGUk9NIHskdGFibGV9IFdIRVJFIGNvZGUgTElLRSAlcyIsICclJyAuICR3cGRiLT5lc2NfbGlrZSggJ2x1bmFjaV9jYXRlZ29yeV9iYW5uZXInICkgLiAnJScgKSApOwoJaWYgKCBlbXB0eSggJG1hdGNoICkgKSB7CgkJZWNobyAiTm8gc25pcHBldCBtYXRjaGVkIHZpYSAnY29kZScgY29sdW1uLlxuIjsKCQlpZiAoICR3cGRiLT5sYXN0X2Vycm9yICkgewoJCQllY2hvICJTUUwgZXJyb3IgKGNvbHVtbiBuYW1lIG1heSBkaWZmZXIpOiAiIC4gJHdwZGItPmxhc3RfZXJyb3IgLiAiXG4iOwoJCX0KCX0gZWxzZSB7CgkJZm9yZWFjaCAoICRtYXRjaCBhcyAkbSApIHsKCQkJZWNobyAiPT09IEZVTEwgQ09ERTogaWQ9eyRtLT5pZH0gbmFtZT17JG0tPm5hbWV9ID09PVxuIjsKCQkJZWNobyAkbS0+Y29kZSAuICJcbiI7CgkJCWVjaG8gIj09PSBFTkQgaWQ9eyRtLT5pZH0gPT09XG5cbiI7CgkJfQoJfQp9Cg==" | base64 -d > /tmp/find-code-snippets-banner.php;
-             wp eval-file /tmp/find-code-snippets-banner.php --path="$WP_PATH";
-             rm -f /tmp/find-code-snippets-banner.php;
-             echo "---STEP 3: CATEGORY LINKS + CURL CHECK---";
-             echo "PD9waHAKZm9yZWFjaCAoIGFycmF5KCAnZmFjZScsICdleWVzJywgJ2xpcHMnLCAnbmFpbHMnICkgYXMgJHNsdWcgKSB7CgkkbGluayA9IGdldF90ZXJtX2xpbmsoICRzbHVnLCAncHJvZHVjdF9jYXQnICk7CglpZiAoIGlzX3dwX2Vycm9yKCAkbGluayApICkgewoJCWVjaG8gIiRzbHVnOiBFUlJPUiAtICIgLiAkbGluay0+Z2V0X2Vycm9yX21lc3NhZ2UoKSAuICJcbiI7Cgl9IGVsc2UgewoJCWVjaG8gIiRzbHVnOiAkbGlua1xuIjsKCX0KfQo=" | base64 -d > /tmp/get-category-links2.php;
-             wp eval-file /tmp/get-category-links2.php --path="$WP_PATH" > /tmp/cat-links.txt;
-             rm -f /tmp/get-category-links2.php;
-             cat /tmp/cat-links.txt;
-             while IFS=": " read -r slug url; do
-               if [ -z "$url" ]; then continue; fi;
-               echo "== $slug ($url) ==";
-               http_code=$(curl -s -o /tmp/catpage.html --connect-timeout 10 --max-time 20 -w "%{http_code}" "$url");
-               echo "http_code=$http_code";
-               grep -oE "class=\"[^\"]*lunaci[^\"]*\"" /tmp/catpage.html || echo "no lunaci-related class found";
-               grep -oE "src=\"[^\"]*lunaci-category[^\"]*\"" /tmp/catpage.html || echo "no lunaci-category image src found";
-               grep -oE "wp-image-[0-9]+" /tmp/catpage.html || echo "no wp-image-ID class found";
-             done < /tmp/cat-links.txt;
-             rm -f /tmp/cat-links.txt /tmp/catpage.html'
+             wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path="$WP_PATH" && \
+             echo "---PRICES---" && \
+             wp post list --post_type=product --field=ID --path="$WP_PATH" | while read id; do \
+               price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
+               title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
+               echo "$id | $title | $price"; \
+             done'

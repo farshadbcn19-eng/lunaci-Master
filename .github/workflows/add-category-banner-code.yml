@@ -1,0 +1,59 @@
+name: Add Category Banner Code to functions.php (one-time write)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  add-banner-code:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Append lunaci_category_banner to active theme functions.php and verify
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+             echo "---APPENDING CODE---";
+             echo "PD9waHAKJHRoZW1lID0gZ2V0X3N0eWxlc2hlZXQoKTsKJGZpbGUgID0gZ2V0X3RoZW1lX3Jvb3QoKSAuICcvJyAuICR0aGVtZSAuICcvZnVuY3Rpb25zLnBocCc7CgppZiAoICEgZmlsZV9leGlzdHMoICRmaWxlICkgKSB7CgllY2hvICJFUlJPUjogZnVuY3Rpb25zLnBocCBub3QgZm91bmQgYXQgJGZpbGVcbiI7CglleGl0KCAxICk7Cn0KCiRjb250ZW50ID0gZmlsZV9nZXRfY29udGVudHMoICRmaWxlICk7CmlmICggc3RycG9zKCAkY29udGVudCwgJ2Z1bmN0aW9uIGx1bmFjaV9jYXRlZ29yeV9iYW5uZXInICkgIT09IGZhbHNlICkgewoJZWNobyAiQUJPUlQ6IGx1bmFjaV9jYXRlZ29yeV9iYW5uZXIgYWxyZWFkeSBleGlzdHMgaW4gJGZpbGUgLSBub3QgbW9kaWZ5aW5nLlxuIjsKCWV4aXQoIDEgKTsKfQoKJGNvZGUgPSA8PDwnUEhQJwoKZnVuY3Rpb24gbHVuYWNpX2NhdGVnb3J5X2Jhbm5lcigpIHsKCWlmICggISBpc19wcm9kdWN0X2NhdGVnb3J5KCkgKSB7CgkJcmV0dXJuOwoJfQoJJHRlcm0gPSBnZXRfcXVlcmllZF9vYmplY3QoKTsKCWlmICggISAkdGVybSB8fCBlbXB0eSggJHRlcm0tPnNsdWcgKSApIHsKCQlyZXR1cm47Cgl9CgkkYmFubmVycyA9IGFycmF5KAoJCSdmYWNlJyAgPT4gNjMzLAoJCSdleWVzJyAgPT4gNjM1LAoJCSdsaXBzJyAgPT4gNjMxLAoJCSduYWlscycgPT4gNjI5LAoJKTsKCWlmICggZW1wdHkoICRiYW5uZXJzWyAkdGVybS0+c2x1ZyBdICkgKSB7CgkJcmV0dXJuOwoJfQoJPz4KCTxzdHlsZT4KCS5sdW5hY2ktY2F0ZWdvcnktYmFubmVyIHsKCQl3aWR0aDogMTAwJTsKCQlhc3BlY3QtcmF0aW86IDMgLyAyOwoJCW92ZXJmbG93OiBoaWRkZW47CgkJbWFyZ2luLWJvdHRvbTogMzBweDsKCX0KCS5sdW5hY2ktY2F0ZWdvcnktYmFubmVyX19pbWcgewoJCXdpZHRoOiAxMDAlOwoJCWhlaWdodDogMTAwJTsKCQlvYmplY3QtZml0OiBjb3ZlcjsKCQlvYmplY3QtcG9zaXRpb246IGNlbnRlciB0b3A7CgkJZGlzcGxheTogYmxvY2s7Cgl9CglAbWVkaWEgKG1heC13aWR0aDogNzY4cHgpIHsKCQkubHVuYWNpLWNhdGVnb3J5LWJhbm5lciB7CgkJCWFzcGVjdC1yYXRpbzogNCAvIDU7CgkJfQoJfQoJPC9zdHlsZT4KCTw/cGhwCgllY2hvICc8ZGl2IGNsYXNzPSJsdW5hY2ktY2F0ZWdvcnktYmFubmVyIj4nOwoJZWNobyB3cF9nZXRfYXR0YWNobWVudF9pbWFnZSggJGJhbm5lcnNbICR0ZXJtLT5zbHVnIF0sICdmdWxsJywgZmFsc2UsIGFycmF5KCAnY2xhc3MnID0+ICdsdW5hY2ktY2F0ZWdvcnktYmFubmVyX19pbWcnICkgKTsKCWVjaG8gJzwvZGl2Pic7Cn0KYWRkX2FjdGlvbiggJ3dvb2NvbW1lcmNlX2JlZm9yZV9tYWluX2NvbnRlbnQnLCAnbHVuYWNpX2NhdGVnb3J5X2Jhbm5lcicsIDUgKTsKClBIUDsKCiRyZXN1bHQgPSBmaWxlX3B1dF9jb250ZW50cyggJGZpbGUsICRjb250ZW50IC4gJGNvZGUgKTsKaWYgKCAkcmVzdWx0ID09PSBmYWxzZSApIHsKCWVjaG8gIkVSUk9SOiBmYWlsZWQgdG8gd3JpdGUgdG8gJGZpbGVcbiI7CglleGl0KCAxICk7Cn0KZWNobyAiT0s6IGFwcGVuZGVkIGx1bmFjaV9jYXRlZ29yeV9iYW5uZXIgdG8gJGZpbGUgKCIgLiBzdHJsZW4oICRjb2RlICkgLiAiIGJ5dGVzIGFkZGVkKVxuIjsK" | base64 -d > /tmp/append-category-banner.php;
+             wp eval-file /tmp/append-category-banner.php --path="$WP_PATH";
+             rm -f /tmp/append-category-banner.php;
+             echo "---VERIFY: grep confirms new function in functions.php---";
+             ACTIVE_THEME=$(wp theme list --status=active --field=name --path="$WP_PATH");
+             grep -n "function lunaci_category_banner\|add_action( .woocommerce_before_main_content., .lunaci_category_banner." "$WP_PATH/wp-content/themes/$ACTIVE_THEME/functions.php";
+             echo "---GET CATEGORY LINKS---";
+             echo "PD9waHAKZm9yZWFjaCAoIGFycmF5KCAnZmFjZScsICdleWVzJywgJ2xpcHMnLCAnbmFpbHMnICkgYXMgJHNsdWcgKSB7CgkkbGluayA9IGdldF90ZXJtX2xpbmsoICRzbHVnLCAncHJvZHVjdF9jYXQnICk7CglpZiAoIGlzX3dwX2Vycm9yKCAkbGluayApICkgewoJCWVjaG8gIiRzbHVnOiBFUlJPUiAtICIgLiAkbGluay0+Z2V0X2Vycm9yX21lc3NhZ2UoKSAuICJcbiI7Cgl9IGVsc2UgewoJCWVjaG8gIiRzbHVnOiAkbGlua1xuIjsKCX0KfQo=" | base64 -d > /tmp/get-category-links.php;
+             wp eval-file /tmp/get-category-links.php --path="$WP_PATH" > /tmp/category-links.txt;
+             cat /tmp/category-links.txt;
+             echo "---CURL EACH CATEGORY PAGE FOR BANNER HTML---";
+             while IFS=": " read -r slug url; do
+               if [ -n "$url" ]; then
+                 echo "-- $slug ($url) --";
+                 http_code=$(curl -s -o /tmp/page.html --connect-timeout 10 --max-time 20 -w "%{http_code}" "$url");
+                 echo "http_code=$http_code";
+                 grep -o "class=\"lunaci-category-banner\"" /tmp/page.html || echo "banner div NOT found";
+               fi;
+             done < /tmp/category-links.txt;
+             rm -f /tmp/get-category-links.php /tmp/category-links.txt /tmp/page.html'

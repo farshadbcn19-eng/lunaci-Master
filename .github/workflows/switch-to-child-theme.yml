@@ -1,0 +1,75 @@
+name: Create and Activate Hello Elementor Child Theme (one-time write)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  switch-to-child-theme:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Create child theme, activate it, clean up parent, and verify
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+             CHILD_DIR="$WP_PATH/wp-content/themes/hello-elementor-child";
+             echo "---STEP 1+2+3: CREATE CHILD THEME FILES---";
+             mkdir -p "$CHILD_DIR";
+             echo "LyoKVGhlbWUgTmFtZTogSGVsbG8gRWxlbWVudG9yIENoaWxkClRlbXBsYXRlOiBoZWxsby1lbGVtZW50b3IKVmVyc2lvbjogMS4wLjAKKi8K" | base64 -d > "$CHILD_DIR/style.css";
+             echo "PD9waHAKYWRkX2FjdGlvbiggJ3dwX2VucXVldWVfc2NyaXB0cycsICdsdW5hY2lfZW5xdWV1ZV9wYXJlbnRfc3R5bGUnICk7CmZ1bmN0aW9uIGx1bmFjaV9lbnF1ZXVlX3BhcmVudF9zdHlsZSgpIHsKCXdwX2VucXVldWVfc3R5bGUoICdoZWxsby1lbGVtZW50b3ItcGFyZW50LXN0eWxlJywgZ2V0X3RlbXBsYXRlX2RpcmVjdG9yeV91cmkoKSAuICcvc3R5bGUuY3NzJyApOwp9CgphZGRfYWN0aW9uKCAnd29vY29tbWVyY2VfYmVmb3JlX21haW5fY29udGVudCcsICdsdW5hY2lfY2F0ZWdvcnlfYmFubmVyJywgNSApOwpmdW5jdGlvbiBsdW5hY2lfY2F0ZWdvcnlfYmFubmVyKCkgewoJaWYgKCAhIGlzX3Byb2R1Y3RfY2F0ZWdvcnkoKSApIHsKCQlyZXR1cm47Cgl9CgkkdGVybSA9IGdldF9xdWVyaWVkX29iamVjdCgpOwoJaWYgKCAhICR0ZXJtIHx8IGVtcHR5KCAkdGVybS0+c2x1ZyApICkgewoJCXJldHVybjsKCX0KCSRiYW5uZXJzID0gYXJyYXkoCgkJJ2ZhY2UnICA9PiA2MzMsCgkJJ2V5ZXMnICA9PiA2MzUsCgkJJ2xpcHMnICA9PiA2MzEsCgkJJ25haWxzJyA9PiA2MjksCgkpOwoJaWYgKCBlbXB0eSggJGJhbm5lcnNbICR0ZXJtLT5zbHVnIF0gKSApIHsKCQlyZXR1cm47Cgl9Cgk/PgoJPHN0eWxlPgoJLmx1bmFjaS1jYXRlZ29yeS1iYW5uZXIgewoJCXdpZHRoOiAxMDAlOwoJCWFzcGVjdC1yYXRpbzogMyAvIDI7CgkJb3ZlcmZsb3c6IGhpZGRlbjsKCQltYXJnaW4tYm90dG9tOiAzMHB4OwoJfQoJLmx1bmFjaS1jYXRlZ29yeS1iYW5uZXJfX2ltZyB7CgkJd2lkdGg6IDEwMCU7CgkJaGVpZ2h0OiAxMDAlOwoJCW9iamVjdC1maXQ6IGNvdmVyOwoJCW9iamVjdC1wb3NpdGlvbjogY2VudGVyIHRvcDsKCQlkaXNwbGF5OiBibG9jazsKCX0KCUBtZWRpYSAobWF4LXdpZHRoOiA3NjhweCkgewoJCS5sdW5hY2ktY2F0ZWdvcnktYmFubmVyIHsKCQkJYXNwZWN0LXJhdGlvOiA0IC8gNTsKCQl9Cgl9Cgk8L3N0eWxlPgoJPD9waHAKCWVjaG8gJzxkaXYgY2xhc3M9Imx1bmFjaS1jYXRlZ29yeS1iYW5uZXIiPic7CgllY2hvIHdwX2dldF9hdHRhY2htZW50X2ltYWdlKCAkYmFubmVyc1sgJHRlcm0tPnNsdWcgXSwgJ2Z1bGwnLCBmYWxzZSwgYXJyYXkoICdjbGFzcycgPT4gJ2x1bmFjaS1jYXRlZ29yeS1iYW5uZXJfX2ltZycgKSApOwoJZWNobyAnPC9kaXY+JzsKfQo=" | base64 -d > "$CHILD_DIR/functions.php";
+             php -l "$CHILD_DIR/functions.php";
+             echo "---STEP 4: CONFIRM CHILD THEME IS DETECTED---";
+             wp theme list --path="$WP_PATH";
+             echo "---STEP 5: ACTIVATE CHILD THEME---";
+             wp theme activate hello-elementor-child --path="$WP_PATH";
+             echo "---STEP 6: REMOVE lunaci_category_banner FROM PARENT functions.php---";
+             echo "PD9waHAKJGZpbGUgPSBnZXRfdGVtcGxhdGVfZGlyZWN0b3J5KCkgLiAnL2Z1bmN0aW9ucy5waHAnOwoKaWYgKCAhIGZpbGVfZXhpc3RzKCAkZmlsZSApICkgewoJZWNobyAiRVJST1I6IHBhcmVudCBmdW5jdGlvbnMucGhwIG5vdCBmb3VuZCBhdCAkZmlsZVxuIjsKCWV4aXQoIDEgKTsKfQoKJGNvbnRlbnQgPSBmaWxlX2dldF9jb250ZW50cyggJGZpbGUgKTsKJG1hcmtlciAgPSAnZnVuY3Rpb24gbHVuYWNpX2NhdGVnb3J5X2Jhbm5lcigpJzsKJHBvcyAgICAgPSBzdHJwb3MoICRjb250ZW50LCAkbWFya2VyICk7CgppZiAoICRwb3MgPT09IGZhbHNlICkgewoJZWNobyAiSU5GTzogbHVuYWNpX2NhdGVnb3J5X2Jhbm5lciBub3QgZm91bmQgaW4gJGZpbGUgLSBub3RoaW5nIHRvIHJlbW92ZSAoYWxyZWFkeSBjbGVhbikuXG4iOwp9IGVsc2UgewoJJGJlZm9yZSA9IHJ0cmltKCBzdWJzdHIoICRjb250ZW50LCAwLCAkcG9zICkgKSAuICJcbiI7CgkkcmVzdWx0ID0gZmlsZV9wdXRfY29udGVudHMoICRmaWxlLCAkYmVmb3JlICk7CglpZiAoICRyZXN1bHQgPT09IGZhbHNlICkgewoJCWVjaG8gIkVSUk9SOiBmYWlsZWQgdG8gd3JpdGUgJGZpbGVcbiI7CgkJZXhpdCggMSApOwoJfQoJZWNobyAiT0s6IHJlbW92ZWQgbHVuYWNpX2NhdGVnb3J5X2Jhbm5lciBibG9jayBmcm9tICRmaWxlICh0cnVuY2F0ZWQgYXQgYnl0ZSBvZmZzZXQgJHBvcylcbiI7Cn0K" | base64 -d > /tmp/remove-parent-banner-code.php;
+             wp eval-file /tmp/remove-parent-banner-code.php --path="$WP_PATH";
+             rm -f /tmp/remove-parent-banner-code.php;
+             echo "---STEP 7: CONFIRM ACTIVE THEME IS NOW CHILD---";
+             wp theme list --status=active --path="$WP_PATH";
+             echo "---STEP 8+9: GET VERIFICATION LINKS---";
+             echo "PD9waHAKZWNobyAiaG9tZTogIiAuIGhvbWVfdXJsKCAnLycgKSAuICJcbiI7Cgpmb3JlYWNoICggYXJyYXkoICdmYWNlJywgJ2V5ZXMnLCAnbGlwcycsICduYWlscycgKSBhcyAkc2x1ZyApIHsKCSRsaW5rID0gZ2V0X3Rlcm1fbGluayggJHNsdWcsICdwcm9kdWN0X2NhdCcgKTsKCWlmICggaXNfd3BfZXJyb3IoICRsaW5rICkgKSB7CgkJZWNobyAiJHNsdWc6IEVSUk9SIC0gIiAuICRsaW5rLT5nZXRfZXJyb3JfbWVzc2FnZSgpIC4gIlxuIjsKCX0gZWxzZSB7CgkJZWNobyAiJHNsdWc6ICRsaW5rXG4iOwoJfQp9CgokcHJvZHVjdHMgPSBnZXRfcG9zdHMoIGFycmF5KAoJJ3Bvc3RfdHlwZScgICAgICA9PiAncHJvZHVjdCcsCgkncG9zdF9zdGF0dXMnICAgID0+ICdwdWJsaXNoJywKCSdwb3N0c19wZXJfcGFnZScgPT4gMSwKCSdmaWVsZHMnICAgICAgICAgPT4gJ2lkcycsCikgKTsKaWYgKCAhIGVtcHR5KCAkcHJvZHVjdHMgKSApIHsKCWVjaG8gInByb2R1Y3Q6ICIgLiBnZXRfcGVybWFsaW5rKCAkcHJvZHVjdHNbMF0gKSAuICJcbiI7Cn0gZWxzZSB7CgllY2hvICJwcm9kdWN0OiBOT05FX0ZPVU5EXG4iOwp9Cg==" | base64 -d > /tmp/get-verification-links.php;
+             wp eval-file /tmp/get-verification-links.php --path="$WP_PATH" > /tmp/verify-links.txt;
+             rm -f /tmp/get-verification-links.php;
+             cat /tmp/verify-links.txt;
+             echo "-- CURL CHECKS --";
+             while IFS=": " read -r key url; do
+               if [ -z "$url" ]; then continue; fi;
+               echo "== $key ($url) ==";
+               http_code=$(curl -s -o /tmp/page.html --connect-timeout 10 --max-time 20 -w "%{http_code}" "$url");
+               echo "http_code=$http_code";
+               case "$key" in
+                 face|eyes|lips|nails)
+                   grep -o "class=\"lunaci-category-banner\"" /tmp/page.html || echo "banner div NOT found";
+                   ;;
+                 home|product)
+                   if grep -qi "fatal error" /tmp/page.html; then echo "FATAL ERROR FOUND IN PAGE"; else echo "no fatal error string found"; fi;
+                   ;;
+               esac;
+             done < /tmp/verify-links.txt;
+             rm -f /tmp/verify-links.txt /tmp/page.html'

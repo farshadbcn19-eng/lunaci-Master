@@ -36,10 +36,19 @@ jobs:
                exit 1;
              fi;
              echo "WordPress found at: $WP_PATH";
-             wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path="$WP_PATH" && \
-             echo "---PRICES---" && \
-             wp post list --post_type=product --field=ID --path="$WP_PATH" | while read id; do \
-               price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
-               title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
-               echo "$id | $title | $price"; \
-             done'
+             echo "---1. RAW DB QUERY: posts with Discover Collection in _elementor_data---";
+             wp db query "SELECT post_id FROM wp_postmeta WHERE meta_key='"'"'_elementor_data'"'"' AND meta_value LIKE '"'"'%Discover Collection%'"'"'" --path="$WP_PATH";
+             echo "---1b. EXTRACTED LINKS FROM _elementor_data---";
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwokcm93cyA9ICR3cGRiLT5nZXRfcmVzdWx0cyggIlNFTEVDVCBwb3N0X2lkIEZST00geyR3cGRiLT5wcmVmaXh9cG9zdG1ldGEgV0hFUkUgbWV0YV9rZXk9J19lbGVtZW50b3JfZGF0YScgQU5EIG1ldGFfdmFsdWUgTElLRSAnJURpc2NvdmVyIENvbGxlY3Rpb24lJyIgKTsKaWYgKCBlbXB0eSggJHJvd3MgKSApIHsKCWVjaG8gIk5vIHBvc3RfaWQgZm91bmQgd2l0aCAnRGlzY292ZXIgQ29sbGVjdGlvbicgaW4gX2VsZW1lbnRvcl9kYXRhXG4iOwoJZXhpdDsKfQoKZnVuY3Rpb24gc2VhcmNoX2VsZW1lbnRzKCAkZWxlbWVudHMsICYkcmVzdWx0cyApIHsKCWZvcmVhY2ggKCAkZWxlbWVudHMgYXMgJGVsICkgewoJCSRzZXR0aW5ncyA9IGlzc2V0KCAkZWxbJ3NldHRpbmdzJ10gKSA/ICRlbFsnc2V0dGluZ3MnXSA6IGFycmF5KCk7CgkJJHRleHRfZmllbGRzID0gYXJyYXkoKTsKCQlmb3JlYWNoICggJHNldHRpbmdzIGFzICRrID0+ICR2ICkgewoJCQlpZiAoIGlzX3N0cmluZyggJHYgKSAmJiBzdHJpcG9zKCAkdiwgJ0Rpc2NvdmVyIENvbGxlY3Rpb24nICkgIT09IGZhbHNlICkgewoJCQkJJHRleHRfZmllbGRzWyAkayBdID0gJHY7CgkJCX0KCQl9CgkJaWYgKCAhIGVtcHR5KCAkdGV4dF9maWVsZHMgKSApIHsKCQkJJGxpbmtfaW5mbyA9IGFycmF5KCk7CgkJCWZvcmVhY2ggKCBhcnJheSggJ2xpbmsnLCAndXJsJywgJ3NlbGVjdF9saW5rJyApIGFzICRsayApIHsKCQkJCWlmICggaXNzZXQoICRzZXR0aW5nc1sgJGxrIF0gKSApIHsKCQkJCQkkbGlua19pbmZvWyAkbGsgXSA9ICRzZXR0aW5nc1sgJGxrIF07CgkJCQl9CgkJCX0KCQkJJHJlc3VsdHNbXSA9IGFycmF5KAoJCQkJJ2lkJyAgICAgICAgID0+IGlzc2V0KCAkZWxbJ2lkJ10gKSA/ICRlbFsnaWQnXSA6IG51bGwsCgkJCQknd2lkZ2V0VHlwZScgPT4gaXNzZXQoICRlbFsnd2lkZ2V0VHlwZSddICkgPyAkZWxbJ3dpZGdldFR5cGUnXSA6IG51bGwsCgkJCQkndGV4dF9maWVsZHMnID0+ICR0ZXh0X2ZpZWxkcywKCQkJCSdsaW5rX2luZm8nICA9PiAkbGlua19pbmZvLAoJCQkpOwoJCX0KCQlpZiAoICEgZW1wdHkoICRlbFsnZWxlbWVudHMnXSApICkgewoJCQlzZWFyY2hfZWxlbWVudHMoICRlbFsnZWxlbWVudHMnXSwgJHJlc3VsdHMgKTsKCQl9Cgl9Cn0KCmZvcmVhY2ggKCAkcm93cyBhcyAkcm93ICkgewoJJHBvc3RfaWQgPSAkcm93LT5wb3N0X2lkOwoJZWNobyAiPT09IHBvc3RfaWQ6ICRwb3N0X2lkID09PVxuIjsKCWVjaG8gIlBvc3QgdGl0bGU6ICIgLiBnZXRfdGhlX3RpdGxlKCAkcG9zdF9pZCApIC4gIlxuIjsKCWVjaG8gIlBvc3Qgc3RhdHVzOiAiIC4gZ2V0X3Bvc3Rfc3RhdHVzKCAkcG9zdF9pZCApIC4gIlxuIjsKCSRkYXRhID0gZ2V0X3Bvc3RfbWV0YSggJHBvc3RfaWQsICdfZWxlbWVudG9yX2RhdGEnLCB0cnVlICk7CgkkanNvbiA9IGpzb25fZGVjb2RlKCAkZGF0YSwgdHJ1ZSApOwoJaWYgKCAhIGlzX2FycmF5KCAkanNvbiApICkgewoJCWVjaG8gIkNvdWxkIG5vdCBkZWNvZGUgSlNPTiBmb3IgcG9zdF9pZCAkcG9zdF9pZFxuIjsKCQljb250aW51ZTsKCX0KCSRyZXN1bHRzID0gYXJyYXkoKTsKCXNlYXJjaF9lbGVtZW50cyggJGpzb24sICRyZXN1bHRzICk7CgllY2hvICJGb3VuZCAiIC4gY291bnQoICRyZXN1bHRzICkgLiAiIG1hdGNoaW5nIGVsZW1lbnRzOlxuIjsKCWZvcmVhY2ggKCAkcmVzdWx0cyBhcyAkciApIHsKCQllY2hvIGpzb25fZW5jb2RlKCAkciwgSlNPTl9QUkVUVFlfUFJJTlQgfCBKU09OX1VORVNDQVBFRF9TTEFTSEVTICkgLiAiXG4iOwoJfQp9Cg==" | base64 -d > /tmp/extract-discover-links.php;
+             wp eval-file /tmp/extract-discover-links.php --path="$WP_PATH";
+             rm -f /tmp/extract-discover-links.php;
+             echo "---2. PAGES: check for shop/products slug---";
+             wp post list --post_type=page --fields=ID,post_title,post_name,post_status --format=table --path="$WP_PATH";
+             echo "---3. WOOCOMMERCE SHOP PAGE---";
+             SHOP_PAGE_ID=$(wp option get woocommerce_shop_page_id --path="$WP_PATH");
+             echo "woocommerce_shop_page_id: $SHOP_PAGE_ID";
+             if [ -n "$SHOP_PAGE_ID" ] && [ "$SHOP_PAGE_ID" != "0" ]; then
+               wp post get "$SHOP_PAGE_ID" --fields=ID,post_title,post_name,post_status --format=table --path="$WP_PATH";
+             else
+               echo "No shop page set (ID is 0 or empty)";
+             fi'

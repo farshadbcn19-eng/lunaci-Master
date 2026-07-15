@@ -36,10 +36,10 @@ jobs:
                exit 1;
              fi;
              echo "WordPress found at: $WP_PATH";
-             wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path="$WP_PATH" && \
-             echo "---PRICES---" && \
-             wp post list --post_type=product --field=ID --path="$WP_PATH" | while read id; do \
-               price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
-               title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
-               echo "$id | $title | $price"; \
-             done'
+             echo "---CASE-INSENSITIVE CHECK FOR lips CATEGORY BANNER IMAGE---";
+             http_code=$(curl -s -o /tmp/lipspage.html --connect-timeout 10 --max-time 20 -w "%{http_code}" "https://lunacibarcelona.com/product-category/lips/");
+             echo "http_code=$http_code";
+             grep -oiE "lunaci-category-lips[a-zA-Z0-9._-]*" /tmp/lipspage.html | sort -u || echo "still no lunaci-category-lips filename found (case-insensitive)";
+             echo "-- broader: any lunaci-category- filename, any case --";
+             grep -oi "lunaci-category-[a-zA-Z0-9._-]*" /tmp/lipspage.html | sort -u || echo "no lunaci-category- filename found at all";
+             rm -f /tmp/lipspage.html'

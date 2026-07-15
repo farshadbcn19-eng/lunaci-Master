@@ -36,10 +36,5 @@ jobs:
                exit 1;
              fi;
              echo "WordPress found at: $WP_PATH";
-             wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path="$WP_PATH" && \
-             echo "---PRICES---" && \
-             wp post list --post_type=product --field=ID --path="$WP_PATH" | while read id; do \
-               price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
-               title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
-               echo "$id | $title | $price"; \
-             done'
+             echo "---ATTACHMENTS CREATED BETWEEN 2026-07-15 07:50:00 AND 11:52:00---";
+             wp post list --post_type=attachment --post_status=inherit --fields=ID,post_title,post_name,post_date --format=table --path="$WP_PATH" | awk -F"\t" "NR==1 || (\$4 >= \"2026-07-15 07:50:00\" && \$4 <= \"2026-07-15 11:52:00\")"'

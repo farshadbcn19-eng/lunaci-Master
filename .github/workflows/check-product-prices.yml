@@ -36,10 +36,13 @@ jobs:
                exit 1;
              fi;
              echo "WordPress found at: $WP_PATH";
-             wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path="$WP_PATH" && \
-             echo "---PRICES---" && \
-             wp post list --post_type=product --field=ID --path="$WP_PATH" | while read id; do \
-               price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
-               title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
-               echo "$id | $title | $price"; \
-             done'
+             echo "---STEP 1: ATTACHMENT LOOKUP PER FILE (with post_date)---";
+             for slug in lunaci-category-face lunaci-category-eyes lunaci-category-lips lunaci-category-nails; do
+               echo "-- $slug --";
+               wp post list --post_type=attachment --name="$slug" --fields=ID,post_title,post_name,post_date --format=table --path="$WP_PATH";
+             done;
+             echo "---STEP 2: PREVIOUS IMPORT IDS (621,623,625,627) STATUS---";
+             wp post list --post__in=621,623,625,627 --post_type=attachment --fields=ID,post_title,post_status --format=table --path="$WP_PATH";
+             echo "---STEP 3 (WPCODE RE-CHECK): PLUGIN ACTIVE STATUS + SNIPPETS IF ANY---";
+             wp plugin list --status=active --path="$WP_PATH" | grep -i wpcode || echo "WPCode not found among active plugins";
+             wp post list --post_type=wpcode --fields=ID,post_title,post_status --format=table --path="$WP_PATH" 2>/dev/null || echo "(no wpcode post_type / no snippets, or WPCode inactive)"'

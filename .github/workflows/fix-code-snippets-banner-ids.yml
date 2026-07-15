@@ -1,17 +1,17 @@
-name: Fix Attachment IDs in Code Snippets Banner Snippet (one-time write)
+name: Purge Cache and Verify Category Banners (one-time write)
 
 on:
   workflow_dispatch:
 
 jobs:
-  fix-snippet-ids:
+  purge-and-verify:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Install sshpass
         run: sudo apt-get install -y sshpass
 
-      - name: Update snippet id=7 attachment IDs (validated via php -l before saving) and verify
+      - name: Purge cache (LiteSpeed, fallback to wp cache flush) and verify category banners render fresh
         run: |
           sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
             -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
@@ -36,47 +36,25 @@ jobs:
                exit 1;
              fi;
              echo "WordPress found at: $WP_PATH";
-             echo "---STEP A: PREPARE CANDIDATE (replace IDs, write to file, DB NOT touched yet)---";
-             echo "PD9waHAKZ2xvYmFsICR3cGRiOwokdGFibGUgPSAkd3BkYi0+cHJlZml4IC4gJ3NuaXBwZXRzJzsKJGlkICAgID0gNzsKCiRyb3cgPSAkd3BkYi0+Z2V0X3JvdyggJHdwZGItPnByZXBhcmUoICJTRUxFQ1QgY29kZSBGUk9NIHskdGFibGV9IFdIRVJFIGlkID0gJWQiLCAkaWQgKSApOwppZiAoICEgJHJvdyApIHsKCWVjaG8gIkVSUk9SOiBzbmlwcGV0IGlkPSRpZCBub3QgZm91bmRcbiI7CglleGl0KCAxICk7Cn0KJGNvZGUgPSAkcm93LT5jb2RlOwoKJHJlcGxhY2VtZW50cyA9IGFycmF5KAoJIidmYWNlJyAgPT4gNjIxLCIgPT4gIidmYWNlJyAgPT4gNjMzLCIsCgkiJ2V5ZXMnICA9PiA2MjMsIiA9PiAiJ2V5ZXMnICA9PiA2MzUsIiwKCSInbGlwcycgID0+IDYyNSwiID0+ICInbGlwcycgID0+IDYzMSwiLAoJIiduYWlscycgPT4gNjI3LCIgPT4gIiduYWlscycgPT4gNjI5LCIsCik7CgokbmV3X2NvZGUgPSAkY29kZTsKZm9yZWFjaCAoICRyZXBsYWNlbWVudHMgYXMgJHNlYXJjaCA9PiAkcmVwbGFjZSApIHsKCSRjb3VudCA9IHN1YnN0cl9jb3VudCggJG5ld19jb2RlLCAkc2VhcmNoICk7CglpZiAoICRjb3VudCAhPT0gMSApIHsKCQllY2hvICJBQk9SVDogZXhwZWN0ZWQgZXhhY3RseSAxIG9jY3VycmVuY2Ugb2YgXCIkc2VhcmNoXCIsIGZvdW5kICRjb3VudC4gTm90IG1vZGlmeWluZyBhbnl0aGluZy5cbiI7CgkJZXhpdCggMSApOwoJfQoJJG5ld19jb2RlID0gc3RyX3JlcGxhY2UoICRzZWFyY2gsICRyZXBsYWNlLCAkbmV3X2NvZGUgKTsKfQoKJHJlc3VsdCA9IGZpbGVfcHV0X2NvbnRlbnRzKCAnL3RtcC9uZXdfc25pcHBldF9jYW5kaWRhdGUucGhwJywgIjw/cGhwXG4iIC4gJG5ld19jb2RlICk7CmlmICggJHJlc3VsdCA9PT0gZmFsc2UgKSB7CgllY2hvICJFUlJPUjogZmFpbGVkIHRvIHdyaXRlIGNhbmRpZGF0ZSBmaWxlXG4iOwoJZXhpdCggMSApOwp9CmVjaG8gIk9LOiBjYW5kaWRhdGUgd3JpdHRlbiB0byAvdG1wL25ld19zbmlwcGV0X2NhbmRpZGF0ZS5waHBcbiI7CmVjaG8gIi0tLSBORVcgQ09ERSAocHJldmlldykgLS0tXG4iOwplY2hvICRuZXdfY29kZSAuICJcbiI7Cg==" | base64 -d > /tmp/prepare-snippet-update.php;
-             wp eval-file /tmp/prepare-snippet-update.php --path="$WP_PATH";
-             rm -f /tmp/prepare-snippet-update.php;
-             echo "---STEP B: php -l ON CANDIDATE (must pass before any DB write)---";
-             if [ ! -f /tmp/new_snippet_candidate.php ]; then
-               echo "ERROR: candidate file was not created (prepare step aborted) - stopping, DB untouched.";
-               exit 1;
+             echo "---STEP 1: PURGE CACHE---";
+             wp litespeed-purge all --path="$WP_PATH";
+             PURGE_STATUS=$?;
+             if [ "$PURGE_STATUS" -ne 0 ]; then
+               echo "wp litespeed-purge all failed (exit $PURGE_STATUS) - falling back to wp cache flush";
+               wp cache flush --path="$WP_PATH";
              fi;
-             php -l /tmp/new_snippet_candidate.php;
-             LINT_STATUS=$?;
-             if [ "$LINT_STATUS" -ne 0 ]; then
-               echo "ERROR: php -l failed on candidate - stopping, DB untouched.";
-               rm -f /tmp/new_snippet_candidate.php;
-               exit 1;
-             fi;
-             echo "---STEP C: COMMIT UPDATE TO DB (only reached because php -l passed)---";
-             echo "PD9waHAKJGZpbGUgPSAnL3RtcC9uZXdfc25pcHBldF9jYW5kaWRhdGUucGhwJzsKaWYgKCAhIGZpbGVfZXhpc3RzKCAkZmlsZSApICkgewoJZWNobyAiRVJST1I6IGNhbmRpZGF0ZSBmaWxlIG5vdCBmb3VuZCwgYWJvcnRpbmcgdXBkYXRlLlxuIjsKCWV4aXQoIDEgKTsKfQokY29udGVudCA9IGZpbGVfZ2V0X2NvbnRlbnRzKCAkZmlsZSApOwokcHJlZml4ICA9ICI8P3BocFxuIjsKaWYgKCBzdWJzdHIoICRjb250ZW50LCAwLCBzdHJsZW4oICRwcmVmaXggKSApID09PSAkcHJlZml4ICkgewoJJG5ld19jb2RlID0gc3Vic3RyKCAkY29udGVudCwgc3RybGVuKCAkcHJlZml4ICkgKTsKfSBlbHNlIHsKCSRuZXdfY29kZSA9ICRjb250ZW50Owp9CgpnbG9iYWwgJHdwZGI7CiR0YWJsZSA9ICR3cGRiLT5wcmVmaXggLiAnc25pcHBldHMnOwokaWQgICAgPSA3OwoKJHVwZGF0ZWQgPSAkd3BkYi0+dXBkYXRlKCAkdGFibGUsIGFycmF5KCAnY29kZScgPT4gJG5ld19jb2RlICksIGFycmF5KCAnaWQnID0+ICRpZCApLCBhcnJheSggJyVzJyApLCBhcnJheSggJyVkJyApICk7CmlmICggJHVwZGF0ZWQgPT09IGZhbHNlICkgewoJZWNobyAiRVJST1I6IERCIHVwZGF0ZSBmYWlsZWQ6ICIgLiAkd3BkYi0+bGFzdF9lcnJvciAuICJcbiI7CglleGl0KCAxICk7Cn0KZWNobyAiT0s6IHNuaXBwZXQgaWQ9JGlkIHVwZGF0ZWQgaW4gREIgKHJvd3MgYWZmZWN0ZWQ6ICR1cGRhdGVkKVxuIjsKCmVjaG8gIi0tLSBWRVJJRlk6IHJlLWZldGNoIGFuZCBjb25maXJtIG5ldyBJRHMgcHJlc2VudCAtLS1cbiI7CiRyb3cgPSAkd3BkYi0+Z2V0X3JvdyggJHdwZGItPnByZXBhcmUoICJTRUxFQ1QgY29kZSBGUk9NIHskdGFibGV9IFdIRVJFIGlkID0gJWQiLCAkaWQgKSApOwpmb3JlYWNoICggYXJyYXkoIDYzMywgNjM1LCA2MzEsIDYyOSApIGFzICRleHBlY3RlZF9pZCApIHsKCWVjaG8gKCBzdHJwb3MoICRyb3ctPmNvZGUsIChzdHJpbmcpICRleHBlY3RlZF9pZCApICE9PSBmYWxzZSA/ICJmb3VuZCAkZXhwZWN0ZWRfaWRcbiIgOiAiTUlTU0lORyAkZXhwZWN0ZWRfaWRcbiIgKTsKfQpmb3JlYWNoICggYXJyYXkoIDYyMSwgNjIzLCA2MjUsIDYyNyApIGFzICRvbGRfaWQgKSB7CgllY2hvICggc3RycG9zKCAkcm93LT5jb2RlLCAoc3RyaW5nKSAkb2xkX2lkICkgIT09IGZhbHNlID8gIldBUk5JTkc6IG9sZCBpZCAkb2xkX2lkIHN0aWxsIHByZXNlbnRcbiIgOiAiY29uZmlybWVkIG9sZCBpZCAkb2xkX2lkIG5vIGxvbmdlciBwcmVzZW50XG4iICk7Cn0K" | base64 -d > /tmp/commit-snippet-update.php;
-             wp eval-file /tmp/commit-snippet-update.php --path="$WP_PATH";
-             rm -f /tmp/commit-snippet-update.php /tmp/new_snippet_candidate.php;
-             echo "---STEP D: CURL CATEGORY PAGES (confirm banner image now present)---";
+             echo "---STEP 2: CATEGORY LINKS---";
              echo "PD9waHAKZm9yZWFjaCAoIGFycmF5KCAnZmFjZScsICdleWVzJywgJ2xpcHMnLCAnbmFpbHMnICkgYXMgJHNsdWcgKSB7CgkkbGluayA9IGdldF90ZXJtX2xpbmsoICRzbHVnLCAncHJvZHVjdF9jYXQnICk7CglpZiAoIGlzX3dwX2Vycm9yKCAkbGluayApICkgewoJCWVjaG8gIiRzbHVnOiBFUlJPUiAtICIgLiAkbGluay0+Z2V0X2Vycm9yX21lc3NhZ2UoKSAuICJcbiI7Cgl9IGVsc2UgewoJCWVjaG8gIiRzbHVnOiAkbGlua1xuIjsKCX0KfQo=" | base64 -d > /tmp/get-cat-links3.php;
              wp eval-file /tmp/get-cat-links3.php --path="$WP_PATH" > /tmp/cat-links.txt;
              rm -f /tmp/get-cat-links3.php;
              cat /tmp/cat-links.txt;
+             echo "---STEP 3: CURL EACH CATEGORY PAGE (post-purge, checking for real image filename)---";
              while IFS=": " read -r slug url; do
                if [ -z "$url" ]; then continue; fi;
                echo "== $slug ($url) ==";
                http_code=$(curl -s -o /tmp/catpage.html --connect-timeout 10 --max-time 20 -w "%{http_code}" "$url");
                echo "http_code=$http_code";
-               grep -oE "class=\"[^\"]*lunaci[^\"]*\"" /tmp/catpage.html || echo "no lunaci-related class found";
-               grep -oE "src=\"[^\"]*lunaci-category[^\"]*\"" /tmp/catpage.html || echo "no lunaci-category image src found";
+               grep -oE "class=\"[^\"]*lunaci[^\"]*\"" /tmp/catpage.html | head -1 || echo "no lunaci-related class found";
+               grep -o "lunaci-category-${slug}[a-zA-Z0-9._-]*" /tmp/catpage.html | sort -u || echo "no lunaci-category-${slug} image filename found";
              done < /tmp/cat-links.txt;
-             rm -f /tmp/cat-links.txt /tmp/catpage.html;
-             echo "---STEP E: CURL HOMEPAGE (confirm still healthy)---";
-             DOMAIN_HOST=$(basename "$(dirname "$WP_PATH")");
-             http_code=$(curl -s -o /tmp/home.html --connect-timeout 10 --max-time 20 -w "%{http_code}" "https://$DOMAIN_HOST/");
-             echo "homepage http_code=$http_code";
-             if grep -qi "fatal error\|critical error" /tmp/home.html; then
-               echo "STILL BROKEN: fatal/critical error string found on homepage";
-             else
-               echo "OK: homepage has no fatal/critical error string";
-             fi;
-             rm -f /tmp/home.html'
+             rm -f /tmp/cat-links.txt /tmp/catpage.html'

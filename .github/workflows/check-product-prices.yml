@@ -36,18 +36,10 @@ jobs:
                exit 1;
              fi;
              echo "WordPress found at: $WP_PATH";
-             echo "---POST 637 DIRECT FIELDS---";
-             wp post get 637 --field=post_title --path="$WP_PATH";
-             wp post get 637 --field=post_name --path="$WP_PATH";
-             wp post get 637 --field=post_status --path="$WP_PATH";
-             wp post get 637 --field=post_type --path="$WP_PATH";
-             echo "---POST 637 FULL (fields)---";
-             wp post get 637 --fields=ID,post_title,post_name,post_status,post_type --format=table --path="$WP_PATH";
-             echo "---wp post list ALL STATUSES, ID 637---";
-             wp post list --post_type=product --post_status=any --post__in=637 --fields=ID,post_title,post_status,post_name --format=table --path="$WP_PATH";
-             echo "---wp post list name=concealer, ALL STATUSES---";
-             wp post list --post_type=product --post_status=any --name=concealer --fields=ID,post_title,post_status,post_name --format=table --path="$WP_PATH";
-             echo "---wp post list name=Concealer (capitalized), ALL STATUSES---";
-             wp post list --post_type=product --post_status=any --name=Concealer --fields=ID,post_title,post_status,post_name --format=table --path="$WP_PATH";
-             echo "---wp post list ALL DRAFT PRODUCTS---";
-             wp post list --post_type=product --post_status=draft --fields=ID,post_title,post_status,post_name --format=table --path="$WP_PATH"'
+             wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path="$WP_PATH" && \
+             echo "---PRICES---" && \
+             wp post list --post_type=product --field=ID --path="$WP_PATH" | while read id; do \
+               price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
+               title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
+               echo "$id | $title | $price"; \
+             done'

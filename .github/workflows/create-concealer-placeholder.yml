@@ -1,0 +1,44 @@
+name: Create Concealer Placeholder Product (one-time write)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create-concealer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Create draft Concealer product and verify
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+             echo "---CREATING CONCEALER PLACEHOLDER (draft, no price, no image)---";
+             echo "PD9waHAKJGV4aXN0aW5nX2lkID0gd2NfZ2V0X3Byb2R1Y3RfaWRfYnlfc2t1KCAnMjU4Mzc0MCcgKTsKaWYgKCAkZXhpc3RpbmdfaWQgKSB7CgllY2hvICJBQk9SVDogU0tVIDI1ODM3NDAgYWxyZWFkeSBpbiB1c2UgYnkgcHJvZHVjdCBJRCAkZXhpc3RpbmdfaWQgLSBub3QgY3JlYXRpbmcgYW55dGhpbmcuXG4iOwoJZXhpdCggMSApOwp9CgokcHJvZHVjdCA9IG5ldyBXQ19Qcm9kdWN0X1NpbXBsZSgpOwokcHJvZHVjdC0+c2V0X25hbWUoICdDb25jZWFsZXInICk7CiRwcm9kdWN0LT5zZXRfc3RhdHVzKCAnZHJhZnQnICk7CiRwcm9kdWN0LT5zZXRfc2t1KCAnMjU4Mzc0MCcgKTsKJHByb2R1Y3QtPnNldF9kZXNjcmlwdGlvbiggJ1BsYWNlaG9sZGVyIOKAlCBwcm9kdWN0aW9uIHBhdXNlZC4gQXdhaXRpbmcgZmluYWwgcGhvdG9zIGFuZCBzcGVjcyBmcm9tIEZhcnNoYWQgYmVmb3JlIGFjdGl2YXRpb24uJyApOwokcHJvZHVjdC0+c2V0X2NhdGVnb3J5X2lkcyggYXJyYXkoIDMwICkgKTsKJHByb2R1Y3QtPnNldF9yZWd1bGFyX3ByaWNlKCAnJyApOwoKJHByb2R1Y3RfaWQgPSAkcHJvZHVjdC0+c2F2ZSgpOwoKaWYgKCAhICRwcm9kdWN0X2lkICkgewoJZWNobyAiRVJST1I6IGZhaWxlZCB0byBjcmVhdGUgcHJvZHVjdFxuIjsKCWV4aXQoIDEgKTsKfQoKZWNobyAiT0s6IGNyZWF0ZWQgcHJvZHVjdCBJRCAkcHJvZHVjdF9pZFxuIjsKZWNobyAiTmFtZTogIiAuICRwcm9kdWN0LT5nZXRfbmFtZSgpIC4gIlxuIjsKZWNobyAiU3RhdHVzOiAiIC4gZ2V0X3Bvc3Rfc3RhdHVzKCAkcHJvZHVjdF9pZCApIC4gIlxuIjsKZWNobyAiU0tVOiAiIC4gJHByb2R1Y3QtPmdldF9za3UoKSAuICJcbiI7CmVjaG8gIlJlZ3VsYXIgcHJpY2U6ICIgLiB2YXJfZXhwb3J0KCAkcHJvZHVjdC0+Z2V0X3JlZ3VsYXJfcHJpY2UoKSwgdHJ1ZSApIC4gIlxuIjsKZWNobyAiQ2F0ZWdvcnkgSURzOiAiIC4gaW1wbG9kZSggJywnLCAkcHJvZHVjdC0+Z2V0X2NhdGVnb3J5X2lkcygpICkgLiAiXG4iOwplY2hvICJEZXNjcmlwdGlvbjogIiAuICRwcm9kdWN0LT5nZXRfZGVzY3JpcHRpb24oKSAuICJcbiI7Cg==" | base64 -d > /tmp/create-concealer-placeholder.php;
+             wp eval-file /tmp/create-concealer-placeholder.php --path="$WP_PATH";
+             rm -f /tmp/create-concealer-placeholder.php;
+             echo "---VERIFY VIA wp post list (name=concealer)---";
+             wp post list --post_type=product --name=concealer --fields=ID,post_title,post_status,post_name --format=table --path="$WP_PATH"'

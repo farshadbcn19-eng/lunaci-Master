@@ -43,6 +43,12 @@ jobs:
              done;
              echo "---STEP 2: PREVIOUS IMPORT IDS (621,623,625,627) STATUS---";
              wp post list --post__in=621,623,625,627 --post_type=attachment --fields=ID,post_title,post_status --format=table --path="$WP_PATH";
+             echo "-- same IDs, any post_type/any status --";
+             wp post list --post__in=621,623,625,627 --post_status=any --fields=ID,post_title,post_type,post_status --format=table --path="$WP_PATH";
+             echo "-- attached files for NEW attachment IDs 629,631,633,635 --";
+             for id in 629 631 633 635; do
+               echo "$id: $(wp post meta get $id _wp_attached_file --path="$WP_PATH" 2>/dev/null) | status=$(wp post get $id --field=post_status --path="$WP_PATH" 2>/dev/null)";
+             done;
              echo "---STEP 3 (WPCODE RE-CHECK): PLUGIN ACTIVE STATUS + SNIPPETS IF ANY---";
              wp plugin list --status=active --path="$WP_PATH" | grep -i wpcode || echo "WPCode not found among active plugins";
              wp post list --post_type=wpcode --fields=ID,post_title,post_status --format=table --path="$WP_PATH" 2>/dev/null || echo "(no wpcode post_type / no snippets, or WPCode inactive)"'

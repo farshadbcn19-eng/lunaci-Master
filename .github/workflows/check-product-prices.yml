@@ -36,10 +36,19 @@ jobs:
                exit 1;
              fi;
              echo "WordPress found at: $WP_PATH";
-             wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path="$WP_PATH" && \
-             echo "---PRICES---" && \
-             wp post list --post_type=product --field=ID --path="$WP_PATH" | while read id; do \
-               price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
-               title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
-               echo "$id | $title | $price"; \
-             done'
+             echo "---STEP 1: ACTIVE CACHING PLUGINS---";
+             wp plugin list --status=active --path="$WP_PATH" | grep -iE "cache|litespeed|hostinger" || echo "no obvious caching plugin found among active plugins";
+             echo "---STEP 2: FULL CURL WITH HEADERS FOR face CATEGORY (cache indicators + broader image search)---";
+             http_code=$(curl -s -D /tmp/headers.txt -o /tmp/facepage.html --connect-timeout 10 --max-time 20 -w "%{http_code}" "https://lunacibarcelona.com/product-category/face/");
+             echo "http_code=$http_code";
+             echo "-- response headers (cache-related) --";
+             grep -iE "cache|age:|x-litespeed|x-lscache" /tmp/headers.txt || echo "no cache-related headers found";
+             echo "-- broader search for lunaci-category in raw HTML (any attribute) --";
+             grep -o "lunaci-category-[a-zA-Z0-9._-]*" /tmp/facepage.html | sort -u || echo "no lunaci-category filename reference found anywhere in HTML";
+             echo "-- data-src / srcset check --";
+             grep -oE "(data-src|srcset)=\"[^\"]*\"" /tmp/facepage.html | head -10 || echo "no data-src/srcset attributes found";
+             echo "-- retry with cache-busting query string --";
+             http_code2=$(curl -s -o /tmp/facepage2.html --connect-timeout 10 --max-time 20 -w "%{http_code}" "https://lunacibarcelona.com/product-category/face/?nocache=$(date +%s)");
+             echo "http_code2=$http_code2";
+             grep -o "lunaci-category-[a-zA-Z0-9._-]*" /tmp/facepage2.html | sort -u || echo "no lunaci-category filename reference found (cache-busted request)";
+             rm -f /tmp/headers.txt /tmp/facepage.html /tmp/facepage2.html'

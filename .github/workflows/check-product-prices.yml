@@ -36,10 +36,15 @@ jobs:
                exit 1;
              fi;
              echo "WordPress found at: $WP_PATH";
-             wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path="$WP_PATH" && \
-             echo "---PRICES---" && \
-             wp post list --post_type=product --field=ID --path="$WP_PATH" | while read id; do \
-               price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
-               title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
-               echo "$id | $title | $price"; \
+             echo "---SEARCHING WPCODE SNIPPETS FOR lunaci_category_banner---";
+             for id in 483 407 319; do
+               echo "== ID $id ==";
+               if wp post get "$id" --field=post_content --path="$WP_PATH" 2>/dev/null | grep -q "lunaci_category_banner"; then
+                 echo "MATCH FOUND in ID $id";
+                 echo "-- full post_content of $id --";
+                 wp post get "$id" --field=post_content --path="$WP_PATH";
+                 break;
+               else
+                 echo "no match in $id";
+               fi;
              done'

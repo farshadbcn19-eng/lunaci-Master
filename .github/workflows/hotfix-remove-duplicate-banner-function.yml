@@ -1,0 +1,68 @@
+name: HOTFIX - Remove duplicate lunaci_category_banner from child theme (one-time write)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  hotfix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Remove duplicate function from child theme functions.php (filesystem-only, no wp-cli)
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+             CHILD_FN="$WP_PATH/wp-content/themes/hello-elementor-child/functions.php";
+             echo "---BEFORE (line count + last lines)---";
+             wc -l "$CHILD_FN";
+             echo "---LOCATING DUPLICATE BLOCK (no wp-cli, plain grep/head, avoids re-triggering the fatal)---";
+             LINE_NUM=$(grep -n "lunaci_category_banner" "$CHILD_FN" | head -1 | cut -d: -f1);
+             if [ -z "$LINE_NUM" ]; then
+               echo "INFO: lunaci_category_banner not found in child functions.php - nothing to remove.";
+             else
+               echo "Found first occurrence at line $LINE_NUM - truncating file to keep only lines before it";
+               head -n $((LINE_NUM - 1)) "$CHILD_FN" > /tmp/functions_fixed.php;
+               php -l /tmp/functions_fixed.php;
+               mv /tmp/functions_fixed.php "$CHILD_FN";
+               echo "OK: removed duplicate lunaci_category_banner block from child theme functions.php";
+             fi;
+             echo "---AFTER (line count + content)---";
+             wc -l "$CHILD_FN";
+             cat "$CHILD_FN";
+             echo "---VERIFY SITE IS BACK UP (plain curl, no wp-cli)---";
+             DOMAIN_HOST=$(basename "$(dirname "$WP_PATH")");
+             for url in "https://$DOMAIN_HOST/" "https://$DOMAIN_HOST/product-category/face/"; do
+               echo "-- $url --";
+               http_code=$(curl -s -o /tmp/page.html --connect-timeout 10 --max-time 20 -w "%{http_code}" "$url");
+               echo "http_code=$http_code";
+               if grep -qi "fatal error\|critical error" /tmp/page.html; then
+                 echo "STILL BROKEN: fatal/critical error string found";
+               else
+                 echo "OK: no fatal/critical error string found";
+               fi;
+             done;
+             rm -f /tmp/page.html'

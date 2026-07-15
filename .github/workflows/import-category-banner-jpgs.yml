@@ -1,0 +1,50 @@
+name: Import Category Banner JPGs into Media Library (one-time write)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  import-jpgs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Import the 4 JPGs as new attachments
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+             cd "$WP_PATH" || exit 1;
+             for pair in "face:Lunaci Category Face" "eyes:Lunaci Category Eyes" "lips:Lunaci Category Lips" "nails:Lunaci Category Nails"; do
+               slug="${pair%%:*}";
+               title="${pair#*:}";
+               jpg="wp-content/uploads/2026/07/lunaci-category-${slug}.jpg";
+               if [ ! -f "$jpg" ]; then
+                 echo "ERROR: expected JPG not found: $jpg";
+                 exit 1;
+               fi;
+               echo "-- Importing $jpg --";
+               wp media import "$jpg" --title="$title" --path="$WP_PATH" --porcelain;
+             done'

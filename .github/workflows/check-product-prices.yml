@@ -42,6 +42,10 @@ jobs:
              for slug in lunaci-category-face lunaci-category-eyes lunaci-category-lips lunaci-category-nails; do
                echo "-- $slug --";
                wp post list --post_type=attachment --name="$slug" --fields=ID,post_title,post_name --format=table --path="$WP_PATH";
+               attach_id=$(wp post list --post_type=attachment --name="$slug" --field=ID --path="$WP_PATH");
+               if [ -n "$attach_id" ]; then
+                 echo "   _wp_attached_file: $(wp post meta get $attach_id _wp_attached_file --path="$WP_PATH")";
+               fi;
              done;
              echo "---STEP 3: WPCODE PLUGIN STATUS---";
              wp plugin list --status=active --path="$WP_PATH" | grep -i wpcode || echo "WPCode not found among active plugins"'

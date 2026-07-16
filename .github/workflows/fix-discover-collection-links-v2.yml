@@ -1,0 +1,92 @@
+name: Fix Discover Collection category links v2 (wp_slash, per-label verify) (one-time write)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix-links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Prepare, validate, commit fix, purge cache, verify
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "---STEP 1: PREPARE + VALIDATE (no DB write yet; per-label verification, no global remaining==0 check)---";
+             echo "PD9waHAKJHBvc3RfaWQgID0gNjE7CiRtZXRhX2tleSA9ICdfZWxlbWVudG9yX2RhdGEnOwoKJHJhdyA9IGdldF9wb3N0X21ldGEoICRwb3N0X2lkLCAkbWV0YV9rZXksIHRydWUgKTsKaWYgKCBlbXB0eSggJHJhdyApICkgewoJZWNobyAiQUJPUlQ6IGVtcHR5ICRtZXRhX2tleSBmb3IgcG9zdCAkcG9zdF9pZFxuIjsKCWV4aXQoIDEgKTsKfQokYmVmb3JlX2xlbiA9IHN0cmxlbiggJHJhdyApOwplY2hvICJiZWZvcmVfbGVuPSRiZWZvcmVfbGVuXG4iOwoKJGRlY29kZWQgPSBqc29uX2RlY29kZSggJHJhdywgdHJ1ZSApOwppZiAoICEgaXNfYXJyYXkoICRkZWNvZGVkICkgKSB7CgllY2hvICJBQk9SVDogY291bGQgbm90IGpzb25fZGVjb2RlIGV4aXN0aW5nIF9lbGVtZW50b3JfZGF0YVxuIjsKCWV4aXQoIDEgKTsKfQoKJHRhcmdldHMgPSBhcnJheSgKCSdGYWNlJyA9PiAnZmFjZScsCgknRXllJyAgPT4gJ2V5ZXMnLAoJJ0xpcCcgID0+ICdsaXBzJywKCSdOYWlsJyA9PiAnbmFpbHMnLAopOwokbGlua3MgPSBhcnJheSgpOwpmb3JlYWNoICggJHRhcmdldHMgYXMgJGxhYmVsID0+ICRzbHVnICkgewoJJHRlcm1fbGluayA9IGdldF90ZXJtX2xpbmsoICRzbHVnLCAncHJvZHVjdF9jYXQnICk7CglpZiAoIGlzX3dwX2Vycm9yKCAkdGVybV9saW5rICkgKSB7CgkJZWNobyAiQUJPUlQ6IGNvdWxkIG5vdCByZXNvbHZlIHRlcm0gbGluayBmb3Igc2x1ZyAnJHNsdWcnOiAiIC4gJHRlcm1fbGluay0+Z2V0X2Vycm9yX21lc3NhZ2UoKSAuICJcbiI7CgkJZXhpdCggMSApOwoJfQoJJGxpbmtzWyAkbGFiZWwgXSA9ICR0ZXJtX2xpbms7Cn0KZWNobyAiUmVzb2x2ZWQgY2F0ZWdvcnkgbGlua3M6XG4iOwpmb3JlYWNoICggJGxpbmtzIGFzICRsYWJlbCA9PiAkdXJsICkgewoJZWNobyAiICAkbGFiZWwgPT4gJHVybFxuIjsKfQoKJHdpZGdldHNfbWF0Y2hlZCA9IDA7CiRlZGl0c19hcHBsaWVkICAgPSBhcnJheSgpOwoKZnVuY3Rpb24gZml4X2NhdF9saW5rcyggJiRlbGVtZW50cywgJGxpbmtzLCAmJHdpZGdldHNfbWF0Y2hlZCwgJiRlZGl0c19hcHBsaWVkICkgewoJZm9yZWFjaCAoICRlbGVtZW50cyBhcyAmJGVsICkgewoJCWlmICggaXNzZXQoICRlbFsnc2V0dGluZ3MnXVsnaHRtbCddICkgJiYgaXNfc3RyaW5nKCAkZWxbJ3NldHRpbmdzJ11bJ2h0bWwnXSApICYmIHN0cnBvcyggJGVsWydzZXR0aW5ncyddWydodG1sJ10sICdjYXQtZ3JpZCcgKSAhPT0gZmFsc2UgKSB7CgkJCSR3aWRnZXRzX21hdGNoZWQrKzsKCQkJJGh0bWwgICAgPSAkZWxbJ3NldHRpbmdzJ11bJ2h0bWwnXTsKCQkJJG9sZF91cmwgPSAnaHR0cHM6Ly9sdW5hY2liYXJjZWxvbmEuY29tL3Nob3AvJzsKCgkJCWZvcmVhY2ggKCAkbGlua3MgYXMgJGxhYmVsID0+ICRuZXdfdXJsICkgewoJCQkJJG1hcmtlciAgICAgPSAnPGRpdiBjbGFzcz0iY2F0LW5hbWUiPicgLiAkbGFiZWwgLiAnPC9kaXY+JzsKCQkJCSRtYXJrZXJfcG9zID0gc3RycG9zKCAkaHRtbCwgJG1hcmtlciApOwoJCQkJaWYgKCAkbWFya2VyX3BvcyA9PT0gZmFsc2UgKSB7CgkJCQkJZWNobyAiQUJPUlQ6IGNvdWxkIG5vdCBmaW5kIG1hcmtlciAnJG1hcmtlcicgaW5zaWRlIHRoZSBodG1sIHdpZGdldFxuIjsKCQkJCQlleGl0KCAxICk7CgkJCQl9CgkJCQkkdXJsX3BvcyA9IHN0cnBvcyggJGh0bWwsICRvbGRfdXJsLCAkbWFya2VyX3BvcyApOwoJCQkJaWYgKCAkdXJsX3BvcyA9PT0gZmFsc2UgKSB7CgkJCQkJZWNobyAiQUJPUlQ6IGNvdWxkIG5vdCBmaW5kICckb2xkX3VybCcgYWZ0ZXIgbWFya2VyIGZvciBsYWJlbCAnJGxhYmVsJ1xuIjsKCQkJCQlleGl0KCAxICk7CgkJCQl9CgkJCQkkZGlzdGFuY2UgPSAkdXJsX3BvcyAtICRtYXJrZXJfcG9zOwoJCQkJaWYgKCAkZGlzdGFuY2UgPiA0MDAgKSB7CgkJCQkJZWNobyAiQUJPUlQ6ICckb2xkX3VybCcgZm91bmQgdG9vIGZhciAoJGRpc3RhbmNlIGNoYXJzKSBhZnRlciBtYXJrZXIgZm9yIGxhYmVsICckbGFiZWwnIC0gcmVmdXNpbmcgdG8gZ3Vlc3NcbiI7CgkJCQkJZXhpdCggMSApOwoJCQkJfQoJCQkJJGh0bWwgICAgICAgICAgICAgICAgPSBzdWJzdHJfcmVwbGFjZSggJGh0bWwsICRuZXdfdXJsLCAkdXJsX3Bvcywgc3RybGVuKCAkb2xkX3VybCApICk7CgkJCQkkZWRpdHNfYXBwbGllZFtdICAgICA9ICIkbGFiZWw6IG1hcmtlcl9wb3M9JG1hcmtlcl9wb3MgdXJsX3Bvcz0kdXJsX3BvcyBkaXN0YW5jZT0kZGlzdGFuY2Ugb2xkPSckb2xkX3VybCcgbmV3PSckbmV3X3VybCciOwoJCQl9CgoJCQlmb3JlYWNoICggJGxpbmtzIGFzICRsYWJlbCA9PiAkbmV3X3VybCApIHsKCQkJCSRtYXJrZXIgICAgICA9ICc8ZGl2IGNsYXNzPSJjYXQtbmFtZSI+JyAuICRsYWJlbCAuICc8L2Rpdj4nOwoJCQkJJG1hcmtlcl9wb3MgID0gc3RycG9zKCAkaHRtbCwgJG1hcmtlciApOwoJCQkJJGNoZWNrX3BvcyAgID0gc3RycG9zKCAkaHRtbCwgJG5ld191cmwsICRtYXJrZXJfcG9zICk7CgkJCQlpZiAoICRjaGVja19wb3MgPT09IGZhbHNlIHx8ICggJGNoZWNrX3BvcyAtICRtYXJrZXJfcG9zICkgPiA0MDAgKSB7CgkJCQkJZWNobyAiQUJPUlQ6IHBvc3QtZWRpdCB2ZXJpZmljYXRpb24gZmFpbGVkIC0gbmV3IFVSTCBmb3IgJyRsYWJlbCcgbm90IGZvdW5kIG5lYXIgaXRzIG1hcmtlclxuIjsKCQkJCQlleGl0KCAxICk7CgkJCQl9CgkJCX0KCgkJCSRlbFsnc2V0dGluZ3MnXVsnaHRtbCddID0gJGh0bWw7CgkJfQoJCWlmICggISBlbXB0eSggJGVsWydlbGVtZW50cyddICkgKSB7CgkJCWZpeF9jYXRfbGlua3MoICRlbFsnZWxlbWVudHMnXSwgJGxpbmtzLCAkd2lkZ2V0c19tYXRjaGVkLCAkZWRpdHNfYXBwbGllZCApOwoJCX0KCX0KfQoKZml4X2NhdF9saW5rcyggJGRlY29kZWQsICRsaW5rcywgJHdpZGdldHNfbWF0Y2hlZCwgJGVkaXRzX2FwcGxpZWQgKTsKCmlmICggJHdpZGdldHNfbWF0Y2hlZCAhPT0gMSApIHsKCWVjaG8gIkFCT1JUOiBleHBlY3RlZCBleGFjdGx5IDEgd2lkZ2V0IGNvbnRhaW5pbmcgJ2NhdC1ncmlkJywgZm91bmQgJHdpZGdldHNfbWF0Y2hlZFxuIjsKCWV4aXQoIDEgKTsKfQppZiAoIGNvdW50KCAkZWRpdHNfYXBwbGllZCApICE9PSA0ICkgewoJZWNobyAiQUJPUlQ6IGV4cGVjdGVkIGV4YWN0bHkgNCBlZGl0cywgZ290ICIgLiBjb3VudCggJGVkaXRzX2FwcGxpZWQgKSAuICJcbiI7CglleGl0KCAxICk7Cn0KZWNobyBpbXBsb2RlKCAiXG4iLCAkZWRpdHNfYXBwbGllZCApIC4gIlxuIjsKCiRuZXdfcmF3ID0gd3BfanNvbl9lbmNvZGUoICRkZWNvZGVkLCBKU09OX1VORVNDQVBFRF9TTEFTSEVTIHwgSlNPTl9VTkVTQ0FQRURfVU5JQ09ERSApOwppZiAoICEgJG5ld19yYXcgKSB7CgllY2hvICJBQk9SVDoganNvbl9lbmNvZGUgZmFpbGVkIGZvciBtb2RpZmllZCBkYXRhXG4iOwoJZXhpdCggMSApOwp9CiRhZnRlcl9sZW4gPSBzdHJsZW4oICRuZXdfcmF3ICk7CmVjaG8gImFmdGVyX2xlbj0kYWZ0ZXJfbGVuXG4iOwplY2hvICJsZW5fZGlmZj0iIC4gKCAkYWZ0ZXJfbGVuIC0gJGJlZm9yZV9sZW4gKSAuICJcbiI7Cgokcm91bmR0cmlwID0ganNvbl9kZWNvZGUoICRuZXdfcmF3LCB0cnVlICk7CmlmICggJHJvdW5kdHJpcCAhPT0gJGRlY29kZWQgKSB7CgllY2hvICJBQk9SVDogcm91bmQtdHJpcCBtaXNtYXRjaCBiZXR3ZWVuIG1vZGlmaWVkIGFycmF5IGFuZCByZS1kZWNvZGVkIGpzb25fZW5jb2RlIG91dHB1dCAtIHJlZnVzaW5nIHRvIHNhdmVcbiI7CglleGl0KCAxICk7Cn0KCiRvcmlnaW5hbF9mcmVzaCA9IGpzb25fZGVjb2RlKCAkcmF3LCB0cnVlICk7CiRkaWZmX2NvdW50ICAgICA9IDA7CgpmdW5jdGlvbiBjb3VudF9kZWVwX2RpZmYoICRhLCAkYiwgJiRkaWZmX2NvdW50LCAkcGF0aCA9ICcnICkgewoJaWYgKCBpc19hcnJheSggJGEgKSAmJiBpc19hcnJheSggJGIgKSApIHsKCQkka2V5cyA9IGFycmF5X3VuaXF1ZSggYXJyYXlfbWVyZ2UoIGFycmF5X2tleXMoICRhICksIGFycmF5X2tleXMoICRiICkgKSApOwoJCWZvcmVhY2ggKCAka2V5cyBhcyAkayApIHsKCQkJJGF2ID0gYXJyYXlfa2V5X2V4aXN0cyggJGssICRhICkgPyAkYVsgJGsgXSA6IG51bGw7CgkJCSRidiA9IGFycmF5X2tleV9leGlzdHMoICRrLCAkYiApID8gJGJbICRrIF0gOiBudWxsOwoJCQljb3VudF9kZWVwX2RpZmYoICRhdiwgJGJ2LCAkZGlmZl9jb3VudCwgJHBhdGggLiAnLycgLiAkayApOwoJCX0KCX0gZWxzZWlmICggJGEgIT09ICRiICkgewoJCSRkaWZmX2NvdW50Kys7CgkJZWNobyAiRElGRiBhdCAkcGF0aFxuIjsKCX0KfQpjb3VudF9kZWVwX2RpZmYoICRvcmlnaW5hbF9mcmVzaCwgJGRlY29kZWQsICRkaWZmX2NvdW50ICk7CmVjaG8gInRvdGFsX3NjYWxhcl9kaWZmcz0kZGlmZl9jb3VudFxuIjsKaWYgKCAkZGlmZl9jb3VudCAhPT0gMSApIHsKCWVjaG8gIkFCT1JUOiBleHBlY3RlZCBleGFjdGx5IDEgY2hhbmdlZCBzY2FsYXIgZmllbGQgKHRoZSBodG1sIHdpZGdldCdzIGh0bWwgc3RyaW5nKSwgZm91bmQgJGRpZmZfY291bnQgLSByZWZ1c2luZyB0byBzYXZlXG4iOwoJZXhpdCggMSApOwp9CgpmaWxlX3B1dF9jb250ZW50cyggJy90bXAvbmV3X2VsZW1lbnRvcl9kYXRhX2NhbmRpZGF0ZS5qc29uJywgJG5ld19yYXcgKTsKZWNobyAiT0s6IGNhbmRpZGF0ZSB3cml0dGVuIHRvIC90bXAvbmV3X2VsZW1lbnRvcl9kYXRhX2NhbmRpZGF0ZS5qc29uIChub3QgeWV0IHNhdmVkIHRvIERCKVxuIjsK" | base64 -d > /tmp/prepare-cat-link-fix.php;
+             php -l /tmp/prepare-cat-link-fix.php;
+
+             echo "---STEP 2: RUN PREPARE (writes candidate JSON only if all checks pass)---";
+             wp eval-file /tmp/prepare-cat-link-fix.php --path="$WP_PATH";
+             PREPARE_STATUS=$?;
+             if [ "$PREPARE_STATUS" -ne 0 ]; then
+               echo "ABORT: prepare step failed - no DB write attempted";
+               exit 1;
+             fi;
+
+             echo "---STEP 3: VALIDATE CANDIDATE IS WELL-FORMED JSON---";
+             php -r "\$c = file_get_contents(\"/tmp/new_elementor_data_candidate.json\"); json_decode(\$c); if (json_last_error() !== JSON_ERROR_NONE) { echo \"INVALID JSON: \" . json_last_error_msg() . \"\n\"; exit(1);} echo \"JSON OK\n\";";
+             JSONCHECK_STATUS=$?;
+             if [ "$JSONCHECK_STATUS" -ne 0 ]; then
+               echo "ABORT: candidate JSON check failed - no DB write attempted";
+               exit 1;
+             fi;
+
+             echo "---STEP 4: COMMIT (only reached if steps 1-3 passed; wraps value with wp_slash() before update_post_meta, verifies via direct DB read against the in-memory computed value)---";
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJHBvc3RfaWQgID0gNjE7CiRtZXRhX2tleSA9ICdfZWxlbWVudG9yX2RhdGEnOwokZmlsZSAgICAgPSAnL3RtcC9uZXdfZWxlbWVudG9yX2RhdGFfY2FuZGlkYXRlLmpzb24nOwoKJG5ld19yYXcgPSBmaWxlX2dldF9jb250ZW50cyggJGZpbGUgKTsKaWYgKCAkbmV3X3JhdyA9PT0gZmFsc2UgfHwgJG5ld19yYXcgPT09ICcnICkgewoJZWNobyAiQUJPUlQ6IGNvdWxkIG5vdCByZWFkIGNhbmRpZGF0ZSBmaWxlXG4iOwoJZXhpdCggMSApOwp9CgokZGVjb2RlZCA9IGpzb25fZGVjb2RlKCAkbmV3X3JhdywgdHJ1ZSApOwppZiAoICEgaXNfYXJyYXkoICRkZWNvZGVkICkgKSB7CgllY2hvICJBQk9SVDogY2FuZGlkYXRlIGZpbGUgaXMgbm90IHZhbGlkIEpTT04gLSByZWZ1c2luZyB0byBzYXZlXG4iOwoJZXhpdCggMSApOwp9Cgp1cGRhdGVfcG9zdF9tZXRhKCAkcG9zdF9pZCwgJG1ldGFfa2V5LCB3cF9zbGFzaCggJG5ld19yYXcgKSApOwoKJHZlcmlmeSA9ICR3cGRiLT5nZXRfdmFyKCAkd3BkYi0+cHJlcGFyZSggIlNFTEVDVCBtZXRhX3ZhbHVlIEZST00geyR3cGRiLT5wb3N0bWV0YX0gV0hFUkUgcG9zdF9pZCA9ICVkIEFORCBtZXRhX2tleSA9ICVzIiwgJHBvc3RfaWQsICRtZXRhX2tleSApICk7CgokZXhwZWN0ZWRfbGVuID0gc3RybGVuKCAkbmV3X3JhdyApOwokYWN0dWFsX2xlbiAgID0gc3RybGVuKCAoc3RyaW5nKSAkdmVyaWZ5ICk7CmVjaG8gImV4cGVjdGVkX2xlbmd0aD0kZXhwZWN0ZWRfbGVuXG4iOwplY2hvICJhY3R1YWxfbGVuZ3RoPSRhY3R1YWxfbGVuXG4iOwoKaWYgKCAkdmVyaWZ5ICE9PSAkbmV3X3JhdyApIHsKCSRtaW5fbGVuICA9IG1pbiggc3RybGVuKCAoc3RyaW5nKSAkdmVyaWZ5ICksIHN0cmxlbiggJG5ld19yYXcgKSApOwoJJGRpZmZfcG9zID0gLTE7Cglmb3IgKCAkaSA9IDA7ICRpIDwgJG1pbl9sZW47ICRpKysgKSB7CgkJaWYgKCAkdmVyaWZ5WyAkaSBdICE9PSAkbmV3X3Jhd1sgJGkgXSApIHsKCQkJJGRpZmZfcG9zID0gJGk7CgkJCWJyZWFrOwoJCX0KCX0KCWVjaG8gIkVSUk9SOiBieXRlLWZvci1ieXRlIHBvc3Qtd3JpdGUgdmVyaWZpY2F0aW9uIGZhaWxlZCAoZGlyZWN0IERCIHJlYWQpLiBmaXJzdF9kaWZmX3Bvcz0kZGlmZl9wb3NcbiI7CglpZiAoICRkaWZmX3BvcyA+PSAwICkgewoJCWVjaG8gImV4cGVjdGVkX2NvbnRleHQ9JyIgLiBzdWJzdHIoICRuZXdfcmF3LCBtYXgoIDAsICRkaWZmX3BvcyAtIDIwICksIDQwICkgLiAiJ1xuIjsKCQllY2hvICJhY3R1YWxfY29udGV4dD0nIiAuIHN1YnN0ciggKHN0cmluZykgJHZlcmlmeSwgbWF4KCAwLCAkZGlmZl9wb3MgLSAyMCApLCA0MCApIC4gIidcbiI7Cgl9CglleGl0KCAxICk7Cn0KCmVjaG8gIk9LOiBfZWxlbWVudG9yX2RhdGEgdXBkYXRlZCBmb3IgcG9zdCAkcG9zdF9pZCBhbmQgdmVyaWZpZWQgYnl0ZS1mb3ItYnl0ZSB2aWEgZGlyZWN0IERCIHJlYWQgKCRhY3R1YWxfbGVuIGJ5dGVzKVxuIjsKCmRlbGV0ZV9wb3N0X21ldGEoICRwb3N0X2lkLCAnX2VsZW1lbnRvcl9jc3MnICk7CmVjaG8gIk9LOiBjbGVhcmVkIF9lbGVtZW50b3JfY3NzIGNhY2hlIG1ldGEgdG8gZm9yY2UgcmVnZW5lcmF0aW9uXG4iOwo=" | base64 -d > /tmp/commit-cat-link-fix.php;
+             php -l /tmp/commit-cat-link-fix.php;
+             wp eval-file /tmp/commit-cat-link-fix.php --path="$WP_PATH";
+             COMMIT_STATUS=$?;
+             rm -f /tmp/prepare-cat-link-fix.php /tmp/commit-cat-link-fix.php /tmp/new_elementor_data_candidate.json;
+             if [ "$COMMIT_STATUS" -ne 0 ]; then
+               echo "ABORT: commit step failed verification - stopping here, NOT purging cache or claiming success";
+               exit 1;
+             fi;
+
+             echo "---STEP 5: PURGE CACHE---";
+             wp litespeed-purge all --path="$WP_PATH";
+             PURGE_STATUS=$?;
+             if [ "$PURGE_STATUS" -ne 0 ]; then
+               wp cache flush --path="$WP_PATH";
+             fi;
+
+             echo "---STEP 6: VERIFY LIVE PAGE (cache-bypassed, precise element counts)---";
+             http_code=$(curl -s -o /tmp/products_verify.html --connect-timeout 10 --max-time 20 -H "Cache-Control: no-cache" -w "%{http_code}" "https://lunacibarcelona.com/products/?nocache=$(date +%s)");
+             echo "http_code=$http_code";
+             echo "page size: $(wc -c < /tmp/products_verify.html) bytes";
+             grep -qi "fatal error\|critical error" /tmp/products_verify.html && echo "FOUND fatal/critical error string" || echo "no fatal/critical error string found";
+             echo "---precise element counts (exact class attribute match, not raw substring)---";
+             echo "cat-card: $(grep -o "class=\"cat-card\"" /tmp/products_verify.html | wc -l)";
+             echo "cat-link: $(grep -o "class=\"cat-link\"" /tmp/products_verify.html | wc -l)";
+             echo "cat-name: $(grep -o "class=\"cat-name\"" /tmp/products_verify.html | wc -l)";
+             echo "Discover Collection: $(grep -o "Discover Collection" /tmp/products_verify.html | wc -l)";
+             echo "---all cat-link hrefs (should be product-category links now, not /shop/)---";
+             grep -oE "href=\"[^\"]*\" class=\"cat-link\"" /tmp/products_verify.html;
+             echo "---remaining /shop/ cat-link occurrences (should be 0)---";
+             grep -oE "href=\"[^\"]*shop/?\" class=\"cat-link\"" /tmp/products_verify.html | wc -l;
+             rm -f /tmp/products_verify.html'

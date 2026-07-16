@@ -36,13 +36,16 @@ jobs:
                exit 1;
              fi;
              echo "WordPress found at: $WP_PATH";
-             wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path="$WP_PATH" && \
-             echo "---PRICES---" && \
-             wp post list --post_type=product --field=ID --path="$WP_PATH" | while read id; do \
-               price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
-               title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
-               echo "$id | $title | $price"; \
-             done'
+             echo "---FRESH DUMP of post 61 _elementor_data html widgets (right now)---";
+             echo "PD9waHAKJGRhdGEgPSBnZXRfcG9zdF9tZXRhKCA2MSwgJ19lbGVtZW50b3JfZGF0YScsIHRydWUgKTsKJGpzb24gPSBqc29uX2RlY29kZSggJGRhdGEsIHRydWUgKTsKaWYgKCAhIGlzX2FycmF5KCAkanNvbiApICkgewoJZWNobyAiQ09VTEQgTk9UIERFQ09ERSBKU09OXG4iOwoJZXhpdCggMSApOwp9CgpmdW5jdGlvbiBkdW1wX2h0bWwoICRlbGVtZW50cyApIHsKCWZvcmVhY2ggKCAkZWxlbWVudHMgYXMgJGVsICkgewoJCSRzZXR0aW5ncyA9IGlzc2V0KCAkZWxbJ3NldHRpbmdzJ10gKSA/ICRlbFsnc2V0dGluZ3MnXSA6IGFycmF5KCk7CgkJaWYgKCBpc3NldCggJHNldHRpbmdzWydodG1sJ10gKSAmJiBpc19zdHJpbmcoICRzZXR0aW5nc1snaHRtbCddICkgKSB7CgkJCWVjaG8gJHNldHRpbmdzWydodG1sJ107CgkJCWVjaG8gIlxuXG49PT1FTkQtT0YtSFRNTC1XSURHRVQ9PT1cblxuIjsKCQl9CgkJaWYgKCAhIGVtcHR5KCAkZWxbJ2VsZW1lbnRzJ10gKSApIHsKCQkJZHVtcF9odG1sKCAkZWxbJ2VsZW1lbnRzJ10gKTsKCQl9Cgl9Cn0KCmR1bXBfaHRtbCggJGpzb24gKTsK" | base64 -d > /tmp/dump-post61-html.php;
+             wp eval-file /tmp/dump-post61-html.php --path="$WP_PATH" > /tmp/post61-dump.txt;
+             rm -f /tmp/dump-post61-html.php;
+             echo "---grep for Discover Collection in fresh DB dump---";
+             grep -o ".\{60\}Discover Collection.\{100\}" /tmp/post61-dump.txt || echo "NOT FOUND in fresh DB dump";
+             echo "---grep for cat-link hrefs in fresh DB dump---";
+             grep -oE "href=\\\\?\"[^\"]*\\\\?\" class=\\\\?\"cat-link\\\\?\"" /tmp/post61-dump.txt || grep -oE "cat-link.{0,200}" /tmp/post61-dump.txt || echo "no cat-link markers found in dump";
+             echo "---wc -l /tmp/post61-dump.txt---";
+             wc -l /tmp/post61-dump.txt'
 
       - name: Curl /products/ page (public, read-only)
         run: |

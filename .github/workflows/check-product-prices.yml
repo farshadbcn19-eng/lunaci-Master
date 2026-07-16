@@ -60,3 +60,13 @@ jobs:
           grep -oE 'href="[^"]*"' /tmp/products.html | sort -u
           echo "---context around each 'Discover Collection' occurrence---"
           grep -o '.\{80\}Discover Collection.\{120\}' /tmp/products.html || echo "no 'Discover Collection' text found in rendered HTML"
+          echo "---check for other markers of the cat-grid section (cat-card, cat-grid, Philosophy strip text)---"
+          grep -oE 'class="cat-(grid|card|link|overlay|name|tag)"|Collection I{1,3}V?|philosophy' /tmp/products.html | sort -u || echo "none of these markers found"
+          echo "---retry with Cache-Control: no-cache header (read-only, no server state change)---"
+          http_code2=$(curl -s -o /tmp/products_nocache.html --connect-timeout 10 --max-time 20 -H "Cache-Control: no-cache" -H "Pragma: no-cache" -w "%{http_code}" "https://lunacibarcelona.com/products/?nocache=$(date +%s)")
+          echo "http_code2=$http_code2"
+          curl -s -D - -o /dev/null --connect-timeout 10 --max-time 20 -H "Cache-Control: no-cache" "https://lunacibarcelona.com/products/?nocache=$(date +%s)" | grep -i "x-litespeed-cache"
+          echo "---page size (bytes) of no-cache attempt---"
+          wc -c /tmp/products_nocache.html
+          echo "---'Discover Collection' in no-cache attempt---"
+          grep -o '.\{80\}Discover Collection.\{120\}' /tmp/products_nocache.html || echo "still not found in no-cache attempt"

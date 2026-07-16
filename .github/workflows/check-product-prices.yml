@@ -73,3 +73,7 @@ jobs:
           wc -c /tmp/products_nocache.html
           echo "---'Discover Collection' in no-cache attempt---"
           grep -o '.\{80\}Discover Collection.\{120\}' /tmp/products_nocache.html || echo "still not found in no-cache attempt"
+          echo "---current cat-link button text (whatever replaced 'Discover Collection')---"
+          grep -oE 'class="cat-link">[^<]*' /tmp/products_nocache.html || echo "no cat-link anchor text found"
+          echo "---full cat-card block context (first one) for manual inspection---"
+          grep -o 'cat-card.\{0,600}' /tmp/products_nocache.html | head -1

@@ -43,3 +43,20 @@ jobs:
                title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
                echo "$id | $title | $price"; \
              done'
+
+      - name: Curl /products/ page (public, read-only)
+        run: |
+          URL="https://lunacibarcelona.com/products/"
+          echo "-- $URL --"
+          http_code=$(curl -s -o /tmp/products.html --connect-timeout 10 --max-time 20 -w "%{http_code}" "$URL")
+          echo "http_code=$http_code"
+          echo "---response headers---"
+          curl -s -D - -o /dev/null --connect-timeout 10 --max-time 20 "$URL" | head -30
+          echo "---page size (bytes)---"
+          wc -c /tmp/products.html
+          echo "---check for fatal/critical error strings---"
+          grep -qi "fatal error\|critical error" /tmp/products.html && echo "FOUND fatal/critical error string" || echo "no fatal/critical error string found"
+          echo "---all hrefs found on the page---"
+          grep -oE 'href="[^"]*"' /tmp/products.html | sort -u
+          echo "---context around each 'Discover Collection' occurrence---"
+          grep -o '.\{80\}Discover Collection.\{120\}' /tmp/products.html || echo "no 'Discover Collection' text found in rendered HTML"

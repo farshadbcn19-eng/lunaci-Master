@@ -36,44 +36,10 @@ jobs:
                exit 1;
              fi;
              echo "WordPress found at: $WP_PATH";
-             echo "---FRESH DUMP of post 61 _elementor_data html widgets (right now)---";
-             echo "PD9waHAKJGRhdGEgPSBnZXRfcG9zdF9tZXRhKCA2MSwgJ19lbGVtZW50b3JfZGF0YScsIHRydWUgKTsKJGpzb24gPSBqc29uX2RlY29kZSggJGRhdGEsIHRydWUgKTsKaWYgKCAhIGlzX2FycmF5KCAkanNvbiApICkgewoJZWNobyAiQ09VTEQgTk9UIERFQ09ERSBKU09OXG4iOwoJZXhpdCggMSApOwp9CgpmdW5jdGlvbiBkdW1wX2h0bWwoICRlbGVtZW50cyApIHsKCWZvcmVhY2ggKCAkZWxlbWVudHMgYXMgJGVsICkgewoJCSRzZXR0aW5ncyA9IGlzc2V0KCAkZWxbJ3NldHRpbmdzJ10gKSA/ICRlbFsnc2V0dGluZ3MnXSA6IGFycmF5KCk7CgkJaWYgKCBpc3NldCggJHNldHRpbmdzWydodG1sJ10gKSAmJiBpc19zdHJpbmcoICRzZXR0aW5nc1snaHRtbCddICkgKSB7CgkJCWVjaG8gJHNldHRpbmdzWydodG1sJ107CgkJCWVjaG8gIlxuXG49PT1FTkQtT0YtSFRNTC1XSURHRVQ9PT1cblxuIjsKCQl9CgkJaWYgKCAhIGVtcHR5KCAkZWxbJ2VsZW1lbnRzJ10gKSApIHsKCQkJZHVtcF9odG1sKCAkZWxbJ2VsZW1lbnRzJ10gKTsKCQl9Cgl9Cn0KCmR1bXBfaHRtbCggJGpzb24gKTsK" | base64 -d > /tmp/dump-post61-html.php;
-             wp eval-file /tmp/dump-post61-html.php --path="$WP_PATH" > /tmp/post61-dump.txt;
-             rm -f /tmp/dump-post61-html.php;
-             echo "---grep for Discover Collection in fresh DB dump---";
-             grep -o ".\{60\}Discover Collection.\{100\}" /tmp/post61-dump.txt || echo "NOT FOUND in fresh DB dump";
-             echo "---grep for cat-link hrefs in fresh DB dump---";
-             grep -oE "href=\\\\?\"[^\"]*\\\\?\" class=\\\\?\"cat-link\\\\?\"" /tmp/post61-dump.txt || grep -oE "cat-link.{0,200}" /tmp/post61-dump.txt || echo "no cat-link markers found in dump";
-             echo "---wc -l /tmp/post61-dump.txt---";
-             wc -l /tmp/post61-dump.txt'
-
-      - name: Curl /products/ page (public, read-only)
-        run: |
-          URL="https://lunacibarcelona.com/products/"
-          echo "-- $URL --"
-          http_code=$(curl -s -o /tmp/products.html --connect-timeout 10 --max-time 20 -w "%{http_code}" "$URL")
-          echo "http_code=$http_code"
-          echo "---response headers---"
-          curl -s -D - -o /dev/null --connect-timeout 10 --max-time 20 "$URL" | head -30
-          echo "---page size (bytes)---"
-          wc -c /tmp/products.html
-          echo "---check for fatal/critical error strings---"
-          grep -qi "fatal error\|critical error" /tmp/products.html && echo "FOUND fatal/critical error string" || echo "no fatal/critical error string found"
-          echo "---all hrefs found on the page---"
-          grep -oE 'href="[^"]*"' /tmp/products.html | sort -u
-          echo "---context around each 'Discover Collection' occurrence---"
-          grep -o '.\{80\}Discover Collection.\{120\}' /tmp/products.html || echo "no 'Discover Collection' text found in rendered HTML"
-          echo "---check for other markers of the cat-grid section (cat-card, cat-grid, Philosophy strip text)---"
-          grep -oE 'class="cat-(grid|card|link|overlay|name|tag)"|Collection I{1,3}V?|philosophy' /tmp/products.html | sort -u || echo "none of these markers found"
-          echo "---retry with Cache-Control: no-cache header (read-only, no server state change)---"
-          http_code2=$(curl -s -o /tmp/products_nocache.html --connect-timeout 10 --max-time 20 -H "Cache-Control: no-cache" -H "Pragma: no-cache" -w "%{http_code}" "https://lunacibarcelona.com/products/?nocache=$(date +%s)")
-          echo "http_code2=$http_code2"
-          curl -s -D - -o /dev/null --connect-timeout 10 --max-time 20 -H "Cache-Control: no-cache" "https://lunacibarcelona.com/products/?nocache=$(date +%s)" | grep -i "x-litespeed-cache"
-          echo "---page size (bytes) of no-cache attempt---"
-          wc -c /tmp/products_nocache.html
-          echo "---'Discover Collection' in no-cache attempt---"
-          grep -o '.\{80\}Discover Collection.\{120\}' /tmp/products_nocache.html || echo "still not found in no-cache attempt"
-          echo "---current cat-link button text (whatever replaced 'Discover Collection')---"
-          grep -oE 'class="cat-link">[^<]*' /tmp/products_nocache.html || echo "no cat-link anchor text found"
-          echo "---full cat-card block context (first one) for manual inspection---"
-          grep -o 'cat-card.\{0,600}' /tmp/products_nocache.html | head -1
+             wp post list --post_type=product --fields=ID,post_title,post_status --format=table --path="$WP_PATH" && \
+             echo "---PRICES---" && \
+             wp post list --post_type=product --field=ID --path="$WP_PATH" | while read id; do \
+               price=$(wp post meta get $id _regular_price --path="$WP_PATH"); \
+               title=$(wp post get $id --field=post_title --path="$WP_PATH"); \
+               echo "$id | $title | $price"; \
+             done'

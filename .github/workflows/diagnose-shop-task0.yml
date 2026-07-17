@@ -1,0 +1,57 @@
+name: Diagnose Shop Task 0 - product images and variation prices (Read-Only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Read product thumbnails, media library matches, variation prices (no writes)
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJHByb2R1Y3RzID0gYXJyYXkoCgkzMjQgPT4gYXJyYXkoICduYW1lJyA9PiAnRm91bmRhdGlvbicsICAgICAgICAgICAgJ3R5cGUnID0+ICd2YXJpYWJsZScsICdzbHVncycgPT4gYXJyYXkoICdsdW5hY2ktZm91bmRhdGlvbicgKSApLAoJMzI1ID0+IGFycmF5KCAnbmFtZScgPT4gJ0NvbXBhY3QgUG93ZGVyJywgICAgICAgICd0eXBlJyA9PiAndmFyaWFibGUnLCAnc2x1Z3MnID0+IGFycmF5KCAnbHVuYWNpLWNvbXBhY3QtcG93ZGVyJyApICksCgkzMjYgPT4gYXJyYXkoICduYW1lJyA9PiAnQmx1c2hlcicsICAgICAgICAgICAgICAgJ3R5cGUnID0+ICd2YXJpYWJsZScsICdzbHVncycgPT4gYXJyYXkoICdsdW5hY2ktYmx1c2gnLCAnbHVuYWNpLWJsdXNoZXInICkgKSwKCTMyNyA9PiBhcnJheSggJ25hbWUnID0+ICdMaXBnbG9zcyBWZWx2w6l0JywgICAgICAgJ3R5cGUnID0+ICd2YXJpYWJsZScsICdzbHVncycgPT4gYXJyYXkoICdsdW5hY2ktbGlwZ2xvc3MtdmVsdmV0JywgJ2x1bmFjaS1saXBnbG9zcycgKSApLAoJMzI4ID0+IGFycmF5KCAnbmFtZScgPT4gJ0xpcCBGaXgnLCAgICAgICAgICAgICAgICd0eXBlJyA9PiAndmFyaWFibGUnLCAnc2x1Z3MnID0+IGFycmF5KCAnbHVuYWNpLWxpcC1maXgnICkgKSwKCTMyOSA9PiBhcnJheSggJ25hbWUnID0+ICdMaXBzdGljaycsICAgICAgICAgICAgICAndHlwZScgPT4gJ3ZhcmlhYmxlJywgJ3NsdWdzJyA9PiBhcnJheSggJ2x1bmFjaS1saXBzdGljaycgKSApLAoJNDkxID0+IGFycmF5KCAnbmFtZScgPT4gJ0xpcCBQZW5jaWwnLCAgICAgICAgICAgICd0eXBlJyA9PiAndmFyaWFibGUnLCAnc2x1Z3MnID0+IGFycmF5KCAnbHVuYWNpLWxpcC1wZW5jaWwnLCAnbGlwLXBlbmNpbCcsICdsdW5hY2ktbGlwbGluZXInLCAnbHVuYWNpLWxpcC1saW5lcicgKSApLAoJNDk3ID0+IGFycmF5KCAnbmFtZScgPT4gJ0V5ZWJyb3cgUGVuY2lsJywgICAgICAgICd0eXBlJyA9PiAndmFyaWFibGUnLCAnc2x1Z3MnID0+IGFycmF5KCAnbHVuYWNpLWV5ZWJyb3ctcGVuY2lsJywgJ2V5ZWJyb3ctcGVuY2lsJywgJ2x1bmFjaS1icm93LXBlbmNpbCcgKSApLAoJNTAxID0+IGFycmF5KCAnbmFtZScgPT4gJ0V5ZSBQZW5jaWwnLCAgICAgICAgICAgICd0eXBlJyA9PiAnc2ltcGxlJywgICAnc2x1Z3MnID0+IGFycmF5KCAnbHVuYWNpLWV5ZS1wZW5jaWwnLCAnZXllLXBlbmNpbCcgKSApLAoJNTAyID0+IGFycmF5KCAnbmFtZScgPT4gJ05haWwgUG9saXNoIExvbmcgTGFzdGluZycsICd0eXBlJyA9PiAndmFyaWFibGUnLCAnc2x1Z3MnID0+IGFycmF5KCAnbHVuYWNpLW5haWwtcG9saXNoJyApICksCgk1MTUgPT4gYXJyYXkoICduYW1lJyA9PiAnU2hhZG93JywgICAgICAgICAgICAgICAgJ3R5cGUnID0+ICdzaW1wbGUnLCAgICdzbHVncycgPT4gYXJyYXkoICdsdW5hY2ktc2hhZG93JywgJ3NoYWRvdycsICdsdW5hY2ktZXllc2hhZG93JyApICksCik7CgpmdW5jdGlvbiBmaW5kX21lZGlhX2J5X3NsdWcoICRzbHVnICkgewoJZ2xvYmFsICR3cGRiOwoJJGxpa2UgPSAnJScgLiAkd3BkYi0+ZXNjX2xpa2UoICRzbHVnICkgLiAnJSc7CglyZXR1cm4gJHdwZGItPmdldF9yZXN1bHRzKAoJCSR3cGRiLT5wcmVwYXJlKAoJCQkiU0VMRUNUIHAuSUQsIHAucG9zdF90aXRsZSwgcG0ubWV0YV92YWx1ZSBhcyBmaWxlCgkJCSBGUk9NIHskd3BkYi0+cG9zdHN9IHAKCQkJIEpPSU4geyR3cGRiLT5wb3N0bWV0YX0gcG0gT04gcG0ucG9zdF9pZCA9IHAuSUQgQU5EIHBtLm1ldGFfa2V5ID0gJ193cF9hdHRhY2hlZF9maWxlJwoJCQkgV0hFUkUgcC5wb3N0X3R5cGUgPSAnYXR0YWNobWVudCcgQU5EIHBtLm1ldGFfdmFsdWUgTElLRSAlcwoJCQkgT1JERVIgQlkgcC5JRCIsCgkJCSRsaWtlCgkJKSwKCQlBUlJBWV9BCgkpOwp9CgpmdW5jdGlvbiBjaGVja19maWxlX29uX2Rpc2soICRhdHRhY2hlZF9maWxlX3JlbGF0aXZlICkgewoJJHVwbG9hZF9kaXIgPSB3cF91cGxvYWRfZGlyKCk7CgkkZnVsbF9wYXRoICA9IHRyYWlsaW5nc2xhc2hpdCggJHVwbG9hZF9kaXJbJ2Jhc2VkaXInXSApIC4gbHRyaW0oICRhdHRhY2hlZF9maWxlX3JlbGF0aXZlLCAnLycgKTsKCSRleGlzdHMgICAgID0gZmlsZV9leGlzdHMoICRmdWxsX3BhdGggKTsKCSRvdXQgICAgICAgID0gYXJyYXkoCgkJJ2NsYWltZWRfcGF0aCcgICA9PiAkZnVsbF9wYXRoLAoJCSdjbGFpbWVkX2V4aXN0cycgPT4gJGV4aXN0cyA/ICd5ZXMnIDogJ25vJywKCQknY2xhaW1lZF9leHQnICAgID0+IHBhdGhpbmZvKCAkZnVsbF9wYXRoLCBQQVRISU5GT19FWFRFTlNJT04gKSwKCSk7CglpZiAoICEgJGV4aXN0cyApIHsKCQkkcGF0aGluZm8gPSBwYXRoaW5mbyggJGZ1bGxfcGF0aCApOwoJCSRiYXNlICAgICA9ICggJHBhdGhpbmZvWydkaXJuYW1lJ10gPz8gJy4nICkgLiAnLycgLiAoICRwYXRoaW5mb1snZmlsZW5hbWUnXSA/PyAnJyApOwoJCWZvcmVhY2ggKCBhcnJheSggJ2pwZycsICdqcGVnJywgJ3BuZycsICd3ZWJwJywgJ2dpZicgKSBhcyAkZXh0ICkgewoJCQkkYWx0ID0gJGJhc2UgLiAnLicgLiAkZXh0OwoJCQlpZiAoIGZpbGVfZXhpc3RzKCAkYWx0ICkgKSB7CgkJCQkkb3V0WydhbHRfZm91bmRfcGF0aCddID0gJGFsdDsKCQkJCSRvdXRbJ2FsdF9mb3VuZF9leHQnXSAgPSAkZXh0OwoJCQkJYnJlYWs7CgkJCX0KCQl9Cgl9CglyZXR1cm4gJG91dDsKfQoKZm9yZWFjaCAoICRwcm9kdWN0cyBhcyAkcHJvZHVjdF9pZCA9PiAkaW5mbyApIHsKCWVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwoJZWNobyAiUFJPRFVDVCAkcHJvZHVjdF9pZCAtIHskaW5mb1snbmFtZSddfSAoeyRpbmZvWyd0eXBlJ119KVxuIjsKCWVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwoKCSRwb3N0ID0gZ2V0X3Bvc3QoICRwcm9kdWN0X2lkICk7CglpZiAoICEgJHBvc3QgfHwgJHBvc3QtPnBvc3RfdHlwZSAhPT0gJ3Byb2R1Y3QnICkgewoJCWVjaG8gIkFCT1JULUxPQ0FMOiBwb3N0ICRwcm9kdWN0X2lkIG5vdCBmb3VuZCBvciBub3QgYSBwcm9kdWN0IChwb3N0X3R5cGU9IiAuICggJHBvc3QtPnBvc3RfdHlwZSA/PyAnTlVMTCcgKSAuICIpXG5cbiI7CgkJY29udGludWU7Cgl9CgllY2hvICJwb3N0X3RpdGxlPSIgLiAkcG9zdC0+cG9zdF90aXRsZSAuICIgfCBwb3N0X3N0YXR1cz0iIC4gJHBvc3QtPnBvc3Rfc3RhdHVzIC4gIlxuIjsKCgkvLyAoYSkgY3VycmVudCBfdGh1bWJuYWlsX2lkCgkkdGh1bWJfaWQgPSBnZXRfcG9zdF9tZXRhKCAkcHJvZHVjdF9pZCwgJ190aHVtYm5haWxfaWQnLCB0cnVlICk7CgllY2hvICIoYSkgX3RodW1ibmFpbF9pZD0iIC4gKCAkdGh1bWJfaWQgPyAkdGh1bWJfaWQgOiAnKG5vbmUvZW1wdHkpJyApIC4gIlxuIjsKCWlmICggJHRodW1iX2lkICkgewoJCSR0aHVtYl9maWxlID0gZ2V0X3Bvc3RfbWV0YSggJHRodW1iX2lkLCAnX3dwX2F0dGFjaGVkX2ZpbGUnLCB0cnVlICk7CgkJZWNobyAiICAgIHRodW1ibmFpbCBhdHRhY2hlZCBmaWxlPSIgLiAkdGh1bWJfZmlsZSAuICJcbiI7CgkJJGRpc2sgPSBjaGVja19maWxlX29uX2Rpc2soICR0aHVtYl9maWxlICk7CgkJZWNobyAiICAgIHRodW1ibmFpbCBleGlzdHMgb24gZGlzaz0iIC4gJGRpc2tbJ2NsYWltZWRfZXhpc3RzJ10gLiAiIGV4dD0iIC4gJGRpc2tbJ2NsYWltZWRfZXh0J10gLiAiXG4iOwoJfQoKCS8vIGdhbGxlcnkgaW1hZ2VzCgkkZ2FsbGVyeSA9IGdldF9wb3N0X21ldGEoICRwcm9kdWN0X2lkLCAnX3Byb2R1Y3RfaW1hZ2VfZ2FsbGVyeScsIHRydWUgKTsKCWVjaG8gImdhbGxlcnkgaWRzPSIgLiAoICRnYWxsZXJ5ID8gJGdhbGxlcnkgOiAnKG5vbmUpJyApIC4gIlxuIjsKCgkvLyBhbnkgYXR0YWNobWVudCB3aXRoIHBvc3RfcGFyZW50ID0gcHJvZHVjdF9pZAoJJGNoaWxkcmVuX2F0dGFjaG1lbnRzID0gJHdwZGItPmdldF9yZXN1bHRzKAoJCSR3cGRiLT5wcmVwYXJlKAoJCQkiU0VMRUNUIElELCBwb3N0X3RpdGxlIEZST00geyR3cGRiLT5wb3N0c30gV0hFUkUgcG9zdF90eXBlID0gJ2F0dGFjaG1lbnQnIEFORCBwb3N0X3BhcmVudCA9ICVkIiwKCQkJJHByb2R1Y3RfaWQKCQkpLAoJCUFSUkFZX0EKCSk7CgllY2hvICJhdHRhY2htZW50cyB3aXRoIHBvc3RfcGFyZW50PSRwcm9kdWN0X2lkOiAiIC4gKCBlbXB0eSggJGNoaWxkcmVuX2F0dGFjaG1lbnRzICkgPyAnKG5vbmUpJyA6IGpzb25fZW5jb2RlKCAkY2hpbGRyZW5fYXR0YWNobWVudHMgKSApIC4gIlxuIjsKCgkvLyAoYikvKGMpIG1lZGlhIGxpYnJhcnkgc2VhcmNoIGJ5IHNsdWcgcGF0dGVybnMKCWVjaG8gIihiKS8oYykgTWVkaWEgTGlicmFyeSBzZWFyY2ggYnkgc2x1ZyBwYXR0ZXJuKHMpOlxuIjsKCSRmb3VuZF9hbnkgPSBmYWxzZTsKCWZvcmVhY2ggKCAkaW5mb1snc2x1Z3MnXSBhcyAkc2x1ZyApIHsKCQkkbWF0Y2hlcyA9IGZpbmRfbWVkaWFfYnlfc2x1ZyggJHNsdWcgKTsKCQlpZiAoIGVtcHR5KCAkbWF0Y2hlcyApICkgewoJCQllY2hvICIgIHBhdHRlcm4gJyRzbHVnJzogbm8gbWF0Y2hlc1xuIjsKCQkJY29udGludWU7CgkJfQoJCSRmb3VuZF9hbnkgPSB0cnVlOwoJCWZvcmVhY2ggKCAkbWF0Y2hlcyBhcyAkbSApIHsKCQkJJGRpc2sgPSBjaGVja19maWxlX29uX2Rpc2soICRtWydmaWxlJ10gKTsKCQkJZWNobyAiICBwYXR0ZXJuICckc2x1ZycgLT4gYXR0YWNobWVudCBJRD17JG1bJ0lEJ119IHRpdGxlPSd7JG1bJ3Bvc3RfdGl0bGUnXX0nIGZpbGU9eyRtWydmaWxlJ119XG4iOwoJCQllY2hvICIgICAgICBleGlzdHNfb25fZGlzaz17JGRpc2tbJ2NsYWltZWRfZXhpc3RzJ119IGNsYWltZWRfZXh0PXskZGlza1snY2xhaW1lZF9leHQnXX0iOwoJCQlpZiAoIGlzc2V0KCAkZGlza1snYWx0X2ZvdW5kX2V4dCddICkgKSB7CgkJCQllY2hvICIgUkVBTF9GSUxFX0ZPVU5EX1dJVEhfRVhUPXskZGlza1snYWx0X2ZvdW5kX2V4dCddfSBhdCB7JGRpc2tbJ2FsdF9mb3VuZF9wYXRoJ119IjsKCQkJfQoJCQllY2hvICJcbiI7CgkJfQoJfQoJaWYgKCAhICRmb3VuZF9hbnkgKSB7CgkJZWNobyAiICBOTyBNRURJQSBMSUJSQVJZIE1BVENIRVMgRk9VTkQgZm9yIGFueSBzbHVnIHBhdHRlcm4gZm9yIHRoaXMgcHJvZHVjdFxuIjsKCX0KCgkvLyAoZCkgdmFyaWF0aW9ucyBmb3IgdmFyaWFibGUgcHJvZHVjdHMKCWlmICggJGluZm9bJ3R5cGUnXSA9PT0gJ3ZhcmlhYmxlJyApIHsKCQkkdmFyaWF0aW9ucyA9ICR3cGRiLT5nZXRfcmVzdWx0cygKCQkJJHdwZGItPnByZXBhcmUoCgkJCQkiU0VMRUNUIElEIEZST00geyR3cGRiLT5wb3N0c30gV0hFUkUgcG9zdF90eXBlID0gJ3Byb2R1Y3RfdmFyaWF0aW9uJyBBTkQgcG9zdF9wYXJlbnQgPSAlZCBBTkQgcG9zdF9zdGF0dXMgPSAncHVibGlzaCcgT1JERVIgQlkgSUQiLAoJCQkJJHByb2R1Y3RfaWQKCQkJKSwKCQkJQVJSQVlfQQoJCSk7CgkJZWNobyAiKGQpIHZhcmlhdGlvbnMgZm91bmQ6ICIgLiBjb3VudCggJHZhcmlhdGlvbnMgKSAuICJcbiI7CgkJZm9yZWFjaCAoICR2YXJpYXRpb25zIGFzICR2ICkgewoJCQkkdmlkICAgICAgICAgICAgPSAkdlsnSUQnXTsKCQkJJHJlZ3VsYXJfcHJpY2UgID0gZ2V0X3Bvc3RfbWV0YSggJHZpZCwgJ19yZWd1bGFyX3ByaWNlJywgdHJ1ZSApOwoJCQkkcHJpY2UgICAgICAgICAgPSBnZXRfcG9zdF9tZXRhKCAkdmlkLCAnX3ByaWNlJywgdHJ1ZSApOwoJCQkkYXR0cl9tZXRhICAgICAgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoCgkJCQkkd3BkYi0+cHJlcGFyZSgKCQkJCQkiU0VMRUNUIG1ldGFfa2V5LCBtZXRhX3ZhbHVlIEZST00geyR3cGRiLT5wb3N0bWV0YX0gV0hFUkUgcG9zdF9pZCA9ICVkIEFORCBtZXRhX2tleSBMSUtFICdhdHRyaWJ1dGVfJSUnIiwKCQkJCQkkdmlkCgkJCQkpLAoJCQkJQVJSQVlfQQoJCQkpOwoJCQkkYXR0cnNfc3RyID0gYXJyYXkoKTsKCQkJZm9yZWFjaCAoICRhdHRyX21ldGEgYXMgJGFtICkgewoJCQkJJGF0dHJzX3N0cltdID0gJGFtWydtZXRhX2tleSddIC4gJz0nIC4gJGFtWydtZXRhX3ZhbHVlJ107CgkJCX0KCQkJZWNobyAiICB2YXJpYXRpb24gJHZpZCB8IGF0dHJzOiAiIC4gKCBlbXB0eSggJGF0dHJzX3N0ciApID8gJyhub25lKScgOiBpbXBsb2RlKCAnLCAnLCAkYXR0cnNfc3RyICkgKQoJCQkJLiAiIHwgX3JlZ3VsYXJfcHJpY2U9IiAuICggJHJlZ3VsYXJfcHJpY2UgIT09ICcnID8gJHJlZ3VsYXJfcHJpY2UgOiAnTk9UIFNFVCcgKQoJCQkJLiAiIHwgX3ByaWNlPSIgLiAoICRwcmljZSAhPT0gJycgPyAkcHJpY2UgOiAnTk9UIFNFVCcgKSAuICJcbiI7CgkJfQoJfSBlbHNlIHsKCQkkcmVndWxhcl9wcmljZSA9IGdldF9wb3N0X21ldGEoICRwcm9kdWN0X2lkLCAnX3JlZ3VsYXJfcHJpY2UnLCB0cnVlICk7CgkJJHByaWNlICAgICAgICAgPSBnZXRfcG9zdF9tZXRhKCAkcHJvZHVjdF9pZCwgJ19wcmljZScsIHRydWUgKTsKCQllY2hvICIoZCkgc2ltcGxlIHByb2R1Y3QgcHJpY2U6IF9yZWd1bGFyX3ByaWNlPSIgLiAoICRyZWd1bGFyX3ByaWNlICE9PSAnJyA/ICRyZWd1bGFyX3ByaWNlIDogJ05PVCBTRVQnICkgLiAiIF9wcmljZT0iIC4gKCAkcHJpY2UgIT09ICcnID8gJHByaWNlIDogJ05PVCBTRVQnICkgLiAiXG4iOwoJfQoKCWVjaG8gIlxuIjsKfQoKZWNobyAiT0s6IGRpYWdub3N0aWMgY29tcGxldGVkXG4iOwo=" | base64 -d > /tmp/diagnose-shop-task0.php;
+
+             php -l /tmp/diagnose-shop-task0.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-shop-task0.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-shop-task0.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-shop-task0.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - diagnostic did NOT complete successfully";
+               exit 1;
+             fi;
+             echo "OK: diagnostic workflow completed successfully"'

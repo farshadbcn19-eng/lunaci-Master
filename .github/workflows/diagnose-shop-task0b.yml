@@ -1,0 +1,57 @@
+name: Diagnose Shop Task 0b - variation status widening (Read-Only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Read ALL-status variations for products 324/325/327/328/329 (no writes)
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJHByb2R1Y3RfaWRzID0gYXJyYXkoIDMyNCwgMzI1LCAzMjcsIDMyOCwgMzI5ICk7Cgpmb3JlYWNoICggJHByb2R1Y3RfaWRzIGFzICRwcm9kdWN0X2lkICkgewoJZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgllY2hvICJQUk9EVUNUICRwcm9kdWN0X2lkIC0gdmFyaWF0aW9uIHN0YXR1cyB3aWRlbmluZyAoQUxMIHN0YXR1c2VzLCBubyBmaWx0ZXIpXG4iOwoJZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgoJJHBvc3QgPSBnZXRfcG9zdCggJHByb2R1Y3RfaWQgKTsKCWlmICggISAkcG9zdCB8fCAkcG9zdC0+cG9zdF90eXBlICE9PSAncHJvZHVjdCcgKSB7CgkJZWNobyAiQUJPUlQtTE9DQUw6IHBvc3QgJHByb2R1Y3RfaWQgbm90IGZvdW5kIG9yIG5vdCBhIHByb2R1Y3QgKHBvc3RfdHlwZT0iIC4gKCAkcG9zdC0+cG9zdF90eXBlID8/ICdOVUxMJyApIC4gIilcblxuIjsKCQljb250aW51ZTsKCX0KCWVjaG8gInBvc3RfdGl0bGU9IiAuICRwb3N0LT5wb3N0X3RpdGxlIC4gIiB8IHBvc3Rfc3RhdHVzPSIgLiAkcG9zdC0+cG9zdF9zdGF0dXMgLiAiXG4iOwoKCS8vIFBhcmVudCBwcm9kdWN0IGNvbnRleHQKCSRwYXJlbnRfcHJpY2UgICAgICAgICA9IGdldF9wb3N0X21ldGEoICRwcm9kdWN0X2lkLCAnX3ByaWNlJywgdHJ1ZSApOwoJJHBhcmVudF9yZWd1bGFyX3ByaWNlID0gZ2V0X3Bvc3RfbWV0YSggJHByb2R1Y3RfaWQsICdfcmVndWxhcl9wcmljZScsIHRydWUgKTsKCSRwYXJlbnRfcHJvZHVjdF90eXBlICA9IHdwX2dldF9vYmplY3RfdGVybXMoICRwcm9kdWN0X2lkLCAncHJvZHVjdF90eXBlJywgYXJyYXkoICdmaWVsZHMnID0+ICduYW1lcycgKSApOwoJJHBhcmVudF92aXNpYmlsaXR5ICAgID0gd3BfZ2V0X29iamVjdF90ZXJtcyggJHByb2R1Y3RfaWQsICdwcm9kdWN0X3Zpc2liaWxpdHknLCBhcnJheSggJ2ZpZWxkcycgPT4gJ25hbWVzJyApICk7CgllY2hvICJwYXJlbnQgX3ByaWNlPSIgLiAoICRwYXJlbnRfcHJpY2UgIT09ICcnID8gJHBhcmVudF9wcmljZSA6ICdOT1QgU0VUJyApIC4gIlxuIjsKCWVjaG8gInBhcmVudCBfcmVndWxhcl9wcmljZT0iIC4gKCAkcGFyZW50X3JlZ3VsYXJfcHJpY2UgIT09ICcnID8gJHBhcmVudF9yZWd1bGFyX3ByaWNlIDogJ05PVCBTRVQnICkgLiAiXG4iOwoJZWNobyAicGFyZW50IHByb2R1Y3RfdHlwZSB0ZXJtcz0iIC4gKCBpc193cF9lcnJvciggJHBhcmVudF9wcm9kdWN0X3R5cGUgKSA/ICdFUlJPUjogJyAuICRwYXJlbnRfcHJvZHVjdF90eXBlLT5nZXRfZXJyb3JfbWVzc2FnZSgpIDogKCBlbXB0eSggJHBhcmVudF9wcm9kdWN0X3R5cGUgKSA/ICcobm9uZSknIDogaW1wbG9kZSggJywgJywgJHBhcmVudF9wcm9kdWN0X3R5cGUgKSApICkgLiAiXG4iOwoJZWNobyAicGFyZW50IHByb2R1Y3RfdmlzaWJpbGl0eSB0ZXJtcz0iIC4gKCBpc193cF9lcnJvciggJHBhcmVudF92aXNpYmlsaXR5ICkgPyAnRVJST1I6ICcgLiAkcGFyZW50X3Zpc2liaWxpdHktPmdldF9lcnJvcl9tZXNzYWdlKCkgOiAoIGVtcHR5KCAkcGFyZW50X3Zpc2liaWxpdHkgKSA/ICcobm9uZSknIDogaW1wbG9kZSggJywgJywgJHBhcmVudF92aXNpYmlsaXR5ICkgKSApIC4gIlxuIjsKCgkvLyBWYXJpYXRpb25zLCBBTlkgc3RhdHVzLCBubyBmaWx0ZXIKCSR2YXJpYXRpb25zID0gJHdwZGItPmdldF9yZXN1bHRzKAoJCSR3cGRiLT5wcmVwYXJlKAoJCQkiU0VMRUNUIElELCBwb3N0X3N0YXR1cyBGUk9NIHskd3BkYi0+cG9zdHN9IFdIRVJFIHBvc3RfdHlwZSA9ICdwcm9kdWN0X3ZhcmlhdGlvbicgQU5EIHBvc3RfcGFyZW50ID0gJWQgT1JERVIgQlkgSUQiLAoJCQkkcHJvZHVjdF9pZAoJCSksCgkJQVJSQVlfQQoJKTsKCglpZiAoIGVtcHR5KCAkdmFyaWF0aW9ucyApICkgewoJCWVjaG8gIlRSVUUgWkVSTyAtLSBubyB2YXJpYXRpb24gcG9zdHMgZXhpc3QgdW5kZXIgYW55IHN0YXR1cyBmb3IgcHJvZHVjdCAkcHJvZHVjdF9pZFxuIjsKCX0gZWxzZSB7CgkJZWNobyAidmFyaWF0aW9ucyBmb3VuZCAoYW55IHN0YXR1cyk6ICIgLiBjb3VudCggJHZhcmlhdGlvbnMgKSAuICJcbiI7CgkJZm9yZWFjaCAoICR2YXJpYXRpb25zIGFzICR2ICkgewoJCQkkdmlkICAgICAgICAgICA9ICR2WydJRCddOwoJCQkkdnN0YXR1cyAgICAgICA9ICR2Wydwb3N0X3N0YXR1cyddOwoJCQkkcmVndWxhcl9wcmljZSA9IGdldF9wb3N0X21ldGEoICR2aWQsICdfcmVndWxhcl9wcmljZScsIHRydWUgKTsKCQkJJHByaWNlICAgICAgICAgPSBnZXRfcG9zdF9tZXRhKCAkdmlkLCAnX3ByaWNlJywgdHJ1ZSApOwoJCQkkYXR0cl9tZXRhICAgICA9ICR3cGRiLT5nZXRfcmVzdWx0cygKCQkJCSR3cGRiLT5wcmVwYXJlKAoJCQkJCSJTRUxFQ1QgbWV0YV9rZXksIG1ldGFfdmFsdWUgRlJPTSB7JHdwZGItPnBvc3RtZXRhfSBXSEVSRSBwb3N0X2lkID0gJWQgQU5EIG1ldGFfa2V5IExJS0UgJ2F0dHJpYnV0ZV8lJSciLAoJCQkJCSR2aWQKCQkJCSksCgkJCQlBUlJBWV9BCgkJCSk7CgkJCSRhdHRyc19zdHIgPSBhcnJheSgpOwoJCQlmb3JlYWNoICggJGF0dHJfbWV0YSBhcyAkYW0gKSB7CgkJCQkkYXR0cnNfc3RyW10gPSAkYW1bJ21ldGFfa2V5J10gLiAnPScgLiAkYW1bJ21ldGFfdmFsdWUnXTsKCQkJfQoJCQllY2hvICIgIHZhcmlhdGlvbiAkdmlkIHwgcG9zdF9zdGF0dXM9JHZzdGF0dXMgfCBhdHRyczogIiAuICggZW1wdHkoICRhdHRyc19zdHIgKSA/ICcobm9uZSknIDogaW1wbG9kZSggJywgJywgJGF0dHJzX3N0ciApICkKCQkJCS4gIiB8IF9yZWd1bGFyX3ByaWNlPSIgLiAoICRyZWd1bGFyX3ByaWNlICE9PSAnJyA/ICRyZWd1bGFyX3ByaWNlIDogJ05PVCBTRVQnICkKCQkJCS4gIiB8IF9wcmljZT0iIC4gKCAkcHJpY2UgIT09ICcnID8gJHByaWNlIDogJ05PVCBTRVQnICkgLiAiXG4iOwoJCX0KCX0KCgllY2hvICJcbiI7Cn0KCmVjaG8gIk9LOiBkaWFnbm9zdGljIGNvbXBsZXRlZFxuIjsK" | base64 -d > /tmp/diagnose-shop-task0b.php;
+
+             php -l /tmp/diagnose-shop-task0b.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-shop-task0b.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-shop-task0b.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-shop-task0b.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - diagnostic did NOT complete successfully";
+               exit 1;
+             fi;
+             echo "OK: diagnostic workflow completed successfully"'

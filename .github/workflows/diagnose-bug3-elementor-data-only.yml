@@ -1,0 +1,57 @@
+name: Diagnose Bug 3 - post 61 _elementor_data only (Read-Only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Read post 61 _elementor_data only (no writes, no other checks)
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwokcG9zdF9pZCAgPSA2MTsKJG1ldGFfa2V5ID0gJ19lbGVtZW50b3JfZGF0YSc7CgokcmF3ID0gJHdwZGItPmdldF92YXIoICR3cGRiLT5wcmVwYXJlKCAiU0VMRUNUIG1ldGFfdmFsdWUgRlJPTSB7JHdwZGItPnBvc3RtZXRhfSBXSEVSRSBwb3N0X2lkID0gJWQgQU5EIG1ldGFfa2V5ID0gJXMiLCAkcG9zdF9pZCwgJG1ldGFfa2V5ICkgKTsKZWNobyAicmF3X2xlbmd0aD0iIC4gc3RybGVuKCAoc3RyaW5nKSAkcmF3ICkgLiAiXG4iOwoKJGRlY29kZWQgPSBqc29uX2RlY29kZSggJHJhdywgdHJ1ZSApOwplY2hvICJqc29uX2RlY29kZV9vaz0iIC4gKCBpc19hcnJheSggJGRlY29kZWQgKSA/ICd5ZXMnIDogJ25vJyApIC4gIlxuIjsKaWYgKCAhIGlzX2FycmF5KCAkZGVjb2RlZCApICkgewoJZWNobyAiQUJPUlQ6IGNvdWxkIG5vdCBqc29uX2RlY29kZSBfZWxlbWVudG9yX2RhdGEgLSBzZWUgcmF3X2xlbmd0aCBhYm92ZVxuIjsKCWV4aXQoIDEgKTsKfQoKZnVuY3Rpb24gZmluZF9lbGVtZW50X2J5X2lkKCAkZWxlbWVudHMsICR0YXJnZXRfaWQgKSB7Cglmb3JlYWNoICggJGVsZW1lbnRzIGFzICRlbCApIHsKCQlpZiAoIGlzc2V0KCAkZWxbJ2lkJ10gKSAmJiAkZWxbJ2lkJ10gPT09ICR0YXJnZXRfaWQgKSB7CgkJCXJldHVybiAkZWw7CgkJfQoJCWlmICggISBlbXB0eSggJGVsWydlbGVtZW50cyddICkgKSB7CgkJCSRmb3VuZCA9IGZpbmRfZWxlbWVudF9ieV9pZCggJGVsWydlbGVtZW50cyddLCAkdGFyZ2V0X2lkICk7CgkJCWlmICggJGZvdW5kICE9PSBudWxsICkgewoJCQkJcmV0dXJuICRmb3VuZDsKCQkJfQoJCX0KCX0KCXJldHVybiBudWxsOwp9CgokdGFyZ2V0ID0gZmluZF9lbGVtZW50X2J5X2lkKCAkZGVjb2RlZCwgJzAzMjkwODknICk7CmlmICggJHRhcmdldCA9PT0gbnVsbCApIHsKCWVjaG8gIkVsZW1lbnQgMDMyOTA4OSBOT1QgRk9VTkQuIFRvcC1sZXZlbCBlbGVtZW50czpcbiI7Cglmb3JlYWNoICggJGRlY29kZWQgYXMgJGVsICkgewoJCWVjaG8gIiAgaWQ9IiAuICggJGVsWydpZCddID8/ICc/JyApIC4gIiBlbFR5cGU9IiAuICggJGVsWydlbFR5cGUnXSA/PyAnPycgKSAuICIgaXNJbm5lcj0iIC4gKCAkZWxbJ2lzSW5uZXInXSA/PyAnPycgKSAuICJcbiI7Cgl9Cn0gZWxzZSB7CgllY2hvICJFbGVtZW50IDAzMjkwODkgZm91bmQuIGVsVHlwZT0iIC4gKCAkdGFyZ2V0WydlbFR5cGUnXSA/PyAnPycgKSAuICJcbiI7CgllY2hvICJzZXR0aW5ncz0iIC4ganNvbl9lbmNvZGUoICR0YXJnZXRbJ3NldHRpbmdzJ10gPz8gYXJyYXkoKSApIC4gIlxuIjsKCWVjaG8gImhhc19jb250ZW50X3dpZHRoX2tleT0iIC4gKCBpc3NldCggJHRhcmdldFsnc2V0dGluZ3MnXVsnY29udGVudF93aWR0aCddICkgPyAoICd5ZXMsIHZhbHVlPScgLiAkdGFyZ2V0WydzZXR0aW5ncyddWydjb250ZW50X3dpZHRoJ10gKSA6ICdubycgKSAuICJcbiI7Cn0KCmVjaG8gIlxuLS0tLS0gRlVMTCBSQVcgX2VsZW1lbnRvcl9kYXRhIEpTT04gLS0tLS1cbiI7CmVjaG8gJHJhdyAuICJcbiI7CmVjaG8gIi0tLS0tIEVORCBSQVcgLS0tLS1cbiI7CmVjaG8gIk9LOiBkaWFnbm9zdGljIGNvbXBsZXRlZFxuIjsK" | base64 -d > /tmp/diagnose-bug3-elementor-data-only.php;
+
+             php -l /tmp/diagnose-bug3-elementor-data-only.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-bug3-elementor-data-only.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-bug3-elementor-data-only.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-bug3-elementor-data-only.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - diagnostic did NOT complete successfully";
+               exit 1;
+             fi;
+             echo "OK: diagnostic workflow completed successfully"'

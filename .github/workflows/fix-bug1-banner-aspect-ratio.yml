@@ -1,0 +1,66 @@
+name: Fix Bug 1 - category banner mobile aspect-ratio (one-time write)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix-banner-aspect-ratio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Fix mobile aspect-ratio, purge cache, verify
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "---STEP 1: FIX (updates wp_snippets.code for snippet id=7 only if all safety checks pass)---";
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwokdGFibGUgICAgICA9ICR3cGRiLT5wcmVmaXggLiAnc25pcHBldHMnOwokc25pcHBldF9pZCA9IDc7CgokY29kZSA9ICR3cGRiLT5nZXRfdmFyKCAkd3BkYi0+cHJlcGFyZSggIlNFTEVDVCBjb2RlIEZST00geyR0YWJsZX0gV0hFUkUgaWQgPSAlZCIsICRzbmlwcGV0X2lkICkgKTsKaWYgKCAkY29kZSA9PT0gbnVsbCApIHsKCWVjaG8gIkFCT1JUOiBzbmlwcGV0ICRzbmlwcGV0X2lkIG5vdCBmb3VuZFxuIjsKCWV4aXQoIDEgKTsKfQokYmVmb3JlX2xlbiA9IHN0cmxlbiggJGNvZGUgKTsKZWNobyAiYmVmb3JlX2xlbj0kYmVmb3JlX2xlblxuIjsKCiRvbGRfdmFsdWUgICAgPSAnYXNwZWN0LXJhdGlvOiA0IC8gNSc7CiRuZXdfdmFsdWUgICAgPSAnYXNwZWN0LXJhdGlvOiAzIC8gMic7CiRtZWRpYV9tYXJrZXIgPSAnQG1lZGlhIChtYXgtd2lkdGg6IDc2OHB4KSc7Cgokb2xkX2NvdW50ID0gc3Vic3RyX2NvdW50KCAkY29kZSwgJG9sZF92YWx1ZSApOwppZiAoICRvbGRfY291bnQgIT09IDEgKSB7CgllY2hvICJBQk9SVDogZXhwZWN0ZWQgZXhhY3RseSAxIG9jY3VycmVuY2Ugb2YgJyRvbGRfdmFsdWUnLCBmb3VuZCAkb2xkX2NvdW50XG4iOwoJZXhpdCggMSApOwp9CiRtZWRpYV9wb3MgPSBzdHJwb3MoICRjb2RlLCAkbWVkaWFfbWFya2VyICk7CmlmICggJG1lZGlhX3BvcyA9PT0gZmFsc2UgKSB7CgllY2hvICJBQk9SVDogY291bGQgbm90IGZpbmQgbWVkaWEgcXVlcnkgbWFya2VyXG4iOwoJZXhpdCggMSApOwp9CiR2YWx1ZV9wb3MgPSBzdHJwb3MoICRjb2RlLCAkb2xkX3ZhbHVlLCAkbWVkaWFfcG9zICk7CmlmICggJHZhbHVlX3BvcyA9PT0gZmFsc2UgfHwgKCAkdmFsdWVfcG9zIC0gJG1lZGlhX3BvcyApID4gMjAwICkgewoJZWNobyAiQUJPUlQ6ICckb2xkX3ZhbHVlJyBub3QgZm91bmQgd2l0aGluIGV4cGVjdGVkIGRpc3RhbmNlIG9mIG1lZGlhIHF1ZXJ5IG1hcmtlclxuIjsKCWV4aXQoIDEgKTsKfQokZGVza3RvcF9jb3VudF9iZWZvcmUgPSBzdWJzdHJfY291bnQoICRjb2RlLCAnYXNwZWN0LXJhdGlvOiAyMSAvIDknICk7CmlmICggJGRlc2t0b3BfY291bnRfYmVmb3JlICE9PSAxICkgewoJZWNobyAiQUJPUlQ6IGV4cGVjdGVkIGV4YWN0bHkgMSBvY2N1cnJlbmNlIG9mIGRlc2t0b3AgJ2FzcGVjdC1yYXRpbzogMjEgLyA5JywgZm91bmQgJGRlc2t0b3BfY291bnRfYmVmb3JlXG4iOwoJZXhpdCggMSApOwp9CgokbmV3X2NvZGUgPSBzdHJfcmVwbGFjZSggJG9sZF92YWx1ZSwgJG5ld192YWx1ZSwgJGNvZGUgKTsKCmlmICggc3RybGVuKCAkbmV3X2NvZGUgKSAhPT0gc3RybGVuKCAkY29kZSApICkgewoJZWNobyAiQUJPUlQ6IHVuZXhwZWN0ZWQgbGVuZ3RoIGNoYW5nZSBhZnRlciByZXBsYWNlIChleHBlY3RlZCBzYW1lIGxlbmd0aClcbiI7CglleGl0KCAxICk7Cn0KaWYgKCBzdWJzdHJfY291bnQoICRuZXdfY29kZSwgJG5ld192YWx1ZSApICE9PSAxIHx8IHN1YnN0cl9jb3VudCggJG5ld19jb2RlLCAkb2xkX3ZhbHVlICkgIT09IDAgKSB7CgllY2hvICJBQk9SVDogcG9zdC1yZXBsYWNlIHN0cmluZyB2ZXJpZmljYXRpb24gZmFpbGVkXG4iOwoJZXhpdCggMSApOwp9CmlmICggc3Vic3RyX2NvdW50KCAkbmV3X2NvZGUsICdhc3BlY3QtcmF0aW86IDIxIC8gOScgKSAhPT0gMSApIHsKCWVjaG8gIkFCT1JUOiBkZXNrdG9wIGFzcGVjdC1yYXRpbyBjaGFuZ2VkIHVuZXhwZWN0ZWRseVxuIjsKCWV4aXQoIDEgKTsKfQoKJHVwZGF0ZWQgPSAkd3BkYi0+dXBkYXRlKCAkdGFibGUsIGFycmF5KCAnY29kZScgPT4gJG5ld19jb2RlICksIGFycmF5KCAnaWQnID0+ICRzbmlwcGV0X2lkICkgKTsKaWYgKCAkdXBkYXRlZCA9PT0gZmFsc2UgKSB7CgllY2hvICJBQk9SVDogZGIgdXBkYXRlIGZhaWxlZDogIiAuICR3cGRiLT5sYXN0X2Vycm9yIC4gIlxuIjsKCWV4aXQoIDEgKTsKfQoKJHZlcmlmeSA9ICR3cGRiLT5nZXRfdmFyKCAkd3BkYi0+cHJlcGFyZSggIlNFTEVDVCBjb2RlIEZST00geyR0YWJsZX0gV0hFUkUgaWQgPSAlZCIsICRzbmlwcGV0X2lkICkgKTsKaWYgKCAkdmVyaWZ5ICE9PSAkbmV3X2NvZGUgKSB7CgllY2hvICJFUlJPUjogc3RvcmVkIGNvZGUgZG9lcyBub3QgYnl0ZS1tYXRjaCBleHBlY3RlZCBuZXcgY29kZSAtIHJlZnVzaW5nIHRvIGNvbnNpZGVyIHRoaXMgYSBzdWNjZXNzXG4iOwoJZXhpdCggMSApOwp9CmVjaG8gIk9LOiBzbmlwcGV0ICRzbmlwcGV0X2lkIHVwZGF0ZWQsIG1vYmlsZSBhc3BlY3QtcmF0aW8gY2hhbmdlZCBmcm9tIDQvNSB0byAzLzIgKCIgLiBzdHJsZW4oICR2ZXJpZnkgKSAuICIgYnl0ZXMpXG4iOwo=" | base64 -d > /tmp/fix-bug1.php;
+             php -l /tmp/fix-bug1.php;
+             wp eval-file /tmp/fix-bug1.php --path="$WP_PATH";
+             FIX_STATUS=$?;
+             rm -f /tmp/fix-bug1.php;
+             if [ "$FIX_STATUS" -ne 0 ]; then
+               echo "ABORT: fix step failed - stopping here, NOT purging cache or claiming success";
+               exit 1;
+             fi;
+
+             echo "---STEP 2: PURGE CACHE---";
+             wp litespeed-purge all --path="$WP_PATH";
+             PURGE_STATUS=$?;
+             if [ "$PURGE_STATUS" -ne 0 ]; then
+               wp cache flush --path="$WP_PATH";
+             fi;
+
+             echo "---STEP 3: VERIFY LIVE CATEGORY PAGES (cache-bypassed)---";
+             for slug in face lips nails eyes; do
+               http_code=$(curl -s -o /tmp/cat_${slug}.html --connect-timeout 10 --max-time 20 -H "Cache-Control: no-cache" -w "%{http_code}" "https://lunacibarcelona.com/product-category/${slug}/?nocache=$(date +%s)");
+               echo "=== ${slug}: http_code=${http_code} ===";
+               grep -qi "fatal error\|critical error" /tmp/cat_${slug}.html && echo "FOUND fatal/critical error string" || echo "no fatal/critical error string found";
+               echo "aspect-ratio: 3 / 2 count: $(grep -o "aspect-ratio: 3 / 2" /tmp/cat_${slug}.html | wc -l)";
+               echo "aspect-ratio: 4 / 5 count (should be 0): $(grep -o "aspect-ratio: 4 / 5" /tmp/cat_${slug}.html | wc -l)";
+               rm -f /tmp/cat_${slug}.html;
+             done'

@@ -1,0 +1,82 @@
+name: Diagnose Shop Task 2 - read child_is_in_stock/child_is_on_backorder source (Read-Only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Locate and read child_is_in_stock/child_is_on_backorder source (plain file reads, no PHP execution)
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             WOO_INCLUDES="$WP_PATH/wp-content/plugins/woocommerce/includes";
+             if [ ! -d "$WOO_INCLUDES" ]; then
+               echo "ERROR: $WOO_INCLUDES not found";
+               exit 1;
+             fi;
+
+             echo "=====================================================";
+             echo "GREP: locating function child_is_in_stock / child_is_on_backorder across WooCommerce includes";
+             echo "=====================================================";
+             MATCHES=$(grep -rn "function child_is_in_stock\|function child_is_on_backorder" "$WOO_INCLUDES");
+             if [ -z "$MATCHES" ]; then
+               echo "NOT FOUND anywhere under $WOO_INCLUDES";
+             else
+               echo "$MATCHES";
+             fi;
+             echo "";
+
+             echo "=====================================================";
+             echo "SOURCE: printing each match with margin (10 lines before, 40 after)";
+             echo "=====================================================";
+             if [ -n "$MATCHES" ]; then
+               echo "$MATCHES" | while IFS=: read -r MFILE MLINE MREST; do
+                 echo "----- $MFILE : line $MLINE -----";
+                 START=$((MLINE > 10 ? MLINE - 10 : 1));
+                 END=$((MLINE + 40));
+                 sed -n "${START},${END}p" "$MFILE";
+                 echo "";
+               done;
+             fi;
+
+             echo "=====================================================";
+             echo "GREP: transient/cache patterns in class-wc-product-variable.php and abstract-wc-product.php";
+             echo "=====================================================";
+             CACHE_GREP=$(grep -n "get_transient\|set_transient\|wc_get_cache_prefix\|get_children(" \
+               "$WOO_INCLUDES/class-wc-product-variable.php" "$WOO_INCLUDES/abstract-wc-product.php" 2>/dev/null);
+             if [ -z "$CACHE_GREP" ]; then
+               echo "none found in those two files";
+             else
+               echo "$CACHE_GREP";
+             fi;
+             echo "";
+
+             echo "OK: source read completed (no writes, no PHP execution)"'

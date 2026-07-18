@@ -1,0 +1,57 @@
+name: Fix Shop Task 2 - stock status / visibility sync
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Sync parent stock status via WC_Product_Variable::sync_stock_status() (gated per product)
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJGV4cGVjdGVkID0gYXJyYXkoCgkzMjQgPT4gNiwKCTMyNSA9PiA0LAoJMzI2ID0+IDUsCgkzMjcgPT4gNCwKCTMyOCA9PiA2LAoJMzI5ID0+IDEyLAopOwoKJGFueV9lcnJvciA9IGZhbHNlOwoKZm9yZWFjaCAoICRleHBlY3RlZCBhcyAkcGFyZW50X2lkID0+ICRleHBlY3RlZF9jb3VudCApIHsKCWVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwoJZWNobyAiUFJPRFVDVCAkcGFyZW50X2lkXG4iOwoJZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgoJLy8gU1RFUCBBOiBQUkVQQVJFIC0gZnJlc2gtcmVhZCBjdXJyZW50IHN0YXRlCgkkc3RvY2tfc3RhdHVzX2JlZm9yZSA9IGdldF9wb3N0X21ldGEoICRwYXJlbnRfaWQsICdfc3RvY2tfc3RhdHVzJywgdHJ1ZSApOwoJZWNobyAiX3N0b2NrX3N0YXR1c19iZWZvcmU9IiAuICggJHN0b2NrX3N0YXR1c19iZWZvcmUgIT09ICcnID8gJHN0b2NrX3N0YXR1c19iZWZvcmUgOiAnKGVtcHR5KScgKSAuICJcbiI7CgoJJHZhcmlhdGlvbnMgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoCgkJJHdwZGItPnByZXBhcmUoICJTRUxFQ1QgSUQgRlJPTSB7JHdwZGItPnBvc3RzfSBXSEVSRSBwb3N0X3R5cGU9J3Byb2R1Y3RfdmFyaWF0aW9uJyBBTkQgcG9zdF9wYXJlbnQ9JWQgQU5EIHBvc3Rfc3RhdHVzPSdwdWJsaXNoJyIsICRwYXJlbnRfaWQgKSwKCQlBUlJBWV9BCgkpOwoJJHB1Ymxpc2hlZF9jb3VudCA9IGNvdW50KCAkdmFyaWF0aW9ucyApOwoJJGluc3RvY2tfY291bnQgICA9IDA7Cglmb3JlYWNoICggJHZhcmlhdGlvbnMgYXMgJHYgKSB7CgkJJHZzdG9jayA9IGdldF9wb3N0X21ldGEoICR2WydJRCddLCAnX3N0b2NrX3N0YXR1cycsIHRydWUgKTsKCQlpZiAoICR2c3RvY2sgPT09ICdpbnN0b2NrJyApIHsKCQkJJGluc3RvY2tfY291bnQrKzsKCQl9Cgl9CgllY2hvICJwdWJsaXNoZWRfdmFyaWF0aW9uX2NvdW50PSRwdWJsaXNoZWRfY291bnQgKGV4cGVjdGVkICRleHBlY3RlZF9jb3VudClcbiI7CgllY2hvICJpbnN0b2NrX3ZhcmlhdGlvbl9jb3VudD0kaW5zdG9ja19jb3VudFxuIjsKCglpZiAoICRzdG9ja19zdGF0dXNfYmVmb3JlICE9PSAnb3V0b2ZzdG9jaycgKSB7CgkJZWNobyAiU0tJUCBQUk9EVUNUICRwYXJlbnRfaWQ6IF9zdG9ja19zdGF0dXMgaXMgbm8gbG9uZ2VyICdvdXRvZnN0b2NrJyAoY3VycmVudGx5ICciIC4gJHN0b2NrX3N0YXR1c19iZWZvcmUgLiAiJykgLSBzb21lb25lIG1heSBoYXZlIGFscmVhZHkgZml4ZWQgaXQsIG5vdCB0b3VjaGluZ1xuXG4iOwoJCWNvbnRpbnVlOwoJfQoJaWYgKCAkcHVibGlzaGVkX2NvdW50ICE9PSAkZXhwZWN0ZWRfY291bnQgfHwgJGluc3RvY2tfY291bnQgIT09ICRwdWJsaXNoZWRfY291bnQgKSB7CgkJZWNobyAiU0tJUCBQUk9EVUNUICRwYXJlbnRfaWQ6IHZhcmlhdGlvbiBzdGF0ZSBubyBsb25nZXIgbWF0Y2hlcyBkaWFnbm9zdGljIGV4cGVjdGF0aW9ucyAocHVibGlzaGVkPSRwdWJsaXNoZWRfY291bnQgZXhwZWN0ZWQ9JGV4cGVjdGVkX2NvdW50IGluc3RvY2s9JGluc3RvY2tfY291bnQpIC0gbm90IHRvdWNoaW5nXG5cbiI7CgkJY29udGludWU7Cgl9CgllY2hvICJPSzogcHJlLXdyaXRlIHN0YXRlIGNvbmZpcm1lZCBhcyBleHBlY3RlZFxuIjsKCgkvLyBTVEVQIEI6IENPTU1JVCAtIG9mZmljaWFsIFdvb0NvbW1lcmNlIEFQSSBmb3IgdGhpcyBleGFjdCBzaXR1YXRpb24KCVdDX1Byb2R1Y3RfVmFyaWFibGU6OnN5bmNfc3RvY2tfc3RhdHVzKCAkcGFyZW50X2lkICk7CgllY2hvICJPSzogV0NfUHJvZHVjdF9WYXJpYWJsZTo6c3luY19zdG9ja19zdGF0dXMoICRwYXJlbnRfaWQgKSBjYWxsZWRcbiI7CgoJLy8gU1RFUCBDOiBWRVJJRlkKCSRzdG9ja19zdGF0dXNfYWZ0ZXIgPSBnZXRfcG9zdF9tZXRhKCAkcGFyZW50X2lkLCAnX3N0b2NrX3N0YXR1cycsIHRydWUgKTsKCSR2aXNfdGVybXNfYWZ0ZXIgICAgID0gd3BfZ2V0X29iamVjdF90ZXJtcyggJHBhcmVudF9pZCwgJ3Byb2R1Y3RfdmlzaWJpbGl0eScsIGFycmF5KCAnZmllbGRzJyA9PiAnbmFtZXMnICkgKTsKCSR2aXNfdGVybXNfc3RyICAgICAgID0gaXNfd3BfZXJyb3IoICR2aXNfdGVybXNfYWZ0ZXIgKSA/ICdFUlJPUjogJyAuICR2aXNfdGVybXNfYWZ0ZXItPmdldF9lcnJvcl9tZXNzYWdlKCkgOiAoIGVtcHR5KCAkdmlzX3Rlcm1zX2FmdGVyICkgPyAnKG5vbmUpJyA6IGltcGxvZGUoICcsICcsICR2aXNfdGVybXNfYWZ0ZXIgKSApOwoKCSRwcm9kdWN0X29iaiAgICAgID0gd2NfZ2V0X3Byb2R1Y3QoICRwYXJlbnRfaWQgKTsKCSRnZXR0ZXJfc3RhdHVzICAgID0gJHByb2R1Y3Rfb2JqID8gJHByb2R1Y3Rfb2JqLT5nZXRfc3RvY2tfc3RhdHVzKCkgOiAnKHdjX2dldF9wcm9kdWN0IHJldHVybmVkIG51bGwpJzsKCgllY2hvICJfc3RvY2tfc3RhdHVzX2FmdGVyPSIgLiAoICRzdG9ja19zdGF0dXNfYWZ0ZXIgIT09ICcnID8gJHN0b2NrX3N0YXR1c19hZnRlciA6ICcoZW1wdHkpJyApIC4gIlxuIjsKCWVjaG8gInByb2R1Y3RfdmlzaWJpbGl0eV90ZXJtc19hZnRlcj0kdmlzX3Rlcm1zX3N0clxuIjsKCWVjaG8gIndjX2dldF9wcm9kdWN0KCktPmdldF9zdG9ja19zdGF0dXMoKV9hZnRlcj0kZ2V0dGVyX3N0YXR1c1xuIjsKCgkkdmVyaWZ5X2ZhaWxlZCA9IGZhbHNlOwoJaWYgKCAkc3RvY2tfc3RhdHVzX2FmdGVyICE9PSAnaW5zdG9jaycgKSB7CgkJJHZlcmlmeV9mYWlsZWQgPSB0cnVlOwoJfQoJaWYgKCAhIGlzX3dwX2Vycm9yKCAkdmlzX3Rlcm1zX2FmdGVyICkgJiYgaW5fYXJyYXkoICdvdXRvZnN0b2NrJywgJHZpc190ZXJtc19hZnRlciwgdHJ1ZSApICkgewoJCSR2ZXJpZnlfZmFpbGVkID0gdHJ1ZTsKCX0KCWlmICggaXNfd3BfZXJyb3IoICR2aXNfdGVybXNfYWZ0ZXIgKSApIHsKCQkkdmVyaWZ5X2ZhaWxlZCA9IHRydWU7Cgl9CglpZiAoICRnZXR0ZXJfc3RhdHVzICE9PSAnaW5zdG9jaycgKSB7CgkJJHZlcmlmeV9mYWlsZWQgPSB0cnVlOwoJfQoKCWlmICggJHZlcmlmeV9mYWlsZWQgKSB7CgkJZWNobyAiRVJST1IgUFJPRFVDVCAkcGFyZW50X2lkOiB2ZXJpZmljYXRpb24gRkFJTEVEIGFmdGVyIHN5bmNfc3RvY2tfc3RhdHVzKCkgLSBzZWUgdmFsdWVzIGFib3ZlXG5cbiI7CgkJJGFueV9lcnJvciA9IHRydWU7CgkJY29udGludWU7Cgl9CgllY2hvICJPSzogdmVyaWZpY2F0aW9uIHBhc3NlZCAtIHByb2R1Y3QgJHBhcmVudF9pZCBub3cgaW5zdG9jayB3aXRoIG5vIG91dG9mc3RvY2sgdmlzaWJpbGl0eSB0ZXJtXG5cbiI7Cn0KCmVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwppZiAoICRhbnlfZXJyb3IgKSB7CgllY2hvICJBQk9SVDogYXQgbGVhc3Qgb25lIHByb2R1Y3QgZmFpbGVkIHZlcmlmaWNhdGlvbiBhZnRlciBzeW5jX3N0b2NrX3N0YXR1cygpIC0gc2VlIEVSUk9SIG5vdGljZShzKSBhYm92ZVxuIjsKCWV4aXQoIDEgKTsKfQplY2hvICJPSzogVGFzayAyIHN0b2NrIHN0YXR1cyBmaXggY29tcGxldGVkXG4iOwo=" | base64 -d > /tmp/fix-task2-stockstatus.php;
+
+             php -l /tmp/fix-task2-stockstatus.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on fix script";
+               rm -f /tmp/fix-task2-stockstatus.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/fix-task2-stockstatus.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/fix-task2-stockstatus.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - stock status fix did NOT complete successfully";
+               exit 1;
+             fi;
+             echo "OK: fix workflow completed successfully"'

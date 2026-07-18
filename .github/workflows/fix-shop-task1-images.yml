@@ -1,0 +1,57 @@
+name: Fix Shop Task 1 - assign product featured images
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Assign _thumbnail_id for 8 target products (gated by fresh re-read + on-disk file check)
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJHRhcmdldHMgPSBhcnJheSgKCTMyNCA9PiAyMTksCgkzMjUgPT4gMjUyLAoJMzI3ID0+IDI1NCwKCTMyOCA9PiAyMjAsCgkzMjkgPT4gNDA2LAoJNDk3ID0+IDI1MSwKCTUwMSA9PiAyNDAsCgk1MDIgPT4gMjI2LAopOwoKJHJlc3VsdHMgPSBhcnJheSgpOwoKZm9yZWFjaCAoICR0YXJnZXRzIGFzICRwcm9kdWN0X2lkID0+ICRhdHRhY2htZW50X2lkICkgewoJZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgllY2hvICJQUk9EVUNUICRwcm9kdWN0X2lkIC0+IGF0dGFjaG1lbnQgJGF0dGFjaG1lbnRfaWRcbiI7CgllY2hvICI9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKCgkkY3VycmVudF90aHVtYiA9IGdldF9wb3N0X21ldGEoICRwcm9kdWN0X2lkLCAnX3RodW1ibmFpbF9pZCcsIHRydWUgKTsKCWlmICggISBlbXB0eSggJGN1cnJlbnRfdGh1bWIgKSApIHsKCQllY2hvICJTS0lQOiBwcm9kdWN0ICRwcm9kdWN0X2lkIGFscmVhZHkgaGFzIF90aHVtYm5haWxfaWQ9JGN1cnJlbnRfdGh1bWIgKG5vIGxvbmdlciBlbXB0eSkgLSBub3Qgb3ZlcndyaXRpbmdcblxuIjsKCQkkcmVzdWx0c1sgJHByb2R1Y3RfaWQgXSA9ICdTS0lQUEVEIChhbHJlYWR5IHNldCB0byAnIC4gJGN1cnJlbnRfdGh1bWIgLiAnKSc7CgkJY29udGludWU7Cgl9CgllY2hvICJPSzogX3RodW1ibmFpbF9pZCBjb25maXJtZWQgZW1wdHlcbiI7CgoJJGF0dGFjaF9wb3N0ID0gZ2V0X3Bvc3QoICRhdHRhY2htZW50X2lkICk7CglpZiAoICEgJGF0dGFjaF9wb3N0IHx8ICRhdHRhY2hfcG9zdC0+cG9zdF90eXBlICE9PSAnYXR0YWNobWVudCcgKSB7CgkJZWNobyAiU0tJUDogYXR0YWNobWVudCAkYXR0YWNobWVudF9pZCBub3QgZm91bmQgb3Igbm90IGFuIGF0dGFjaG1lbnQgcG9zdFxuXG4iOwoJCSRyZXN1bHRzWyAkcHJvZHVjdF9pZCBdID0gJ1NLSVBQRUQgKGF0dGFjaG1lbnQgbWlzc2luZyknOwoJCWNvbnRpbnVlOwoJfQoJJGZpbGUgICAgICAgPSBnZXRfcG9zdF9tZXRhKCAkYXR0YWNobWVudF9pZCwgJ193cF9hdHRhY2hlZF9maWxlJywgdHJ1ZSApOwoJJHVwbG9hZF9kaXIgPSB3cF91cGxvYWRfZGlyKCk7CgkkZnVsbF9wYXRoICA9IHRyYWlsaW5nc2xhc2hpdCggJHVwbG9hZF9kaXJbJ2Jhc2VkaXInXSApIC4gbHRyaW0oIChzdHJpbmcpICRmaWxlLCAnLycgKTsKCWlmICggISBmaWxlX2V4aXN0cyggJGZ1bGxfcGF0aCApICkgewoJCWVjaG8gIlNLSVA6IGZpbGUgZm9yIGF0dGFjaG1lbnQgJGF0dGFjaG1lbnRfaWQgbm90IGZvdW5kIG9uIGRpc2sgYXQgJGZ1bGxfcGF0aFxuXG4iOwoJCSRyZXN1bHRzWyAkcHJvZHVjdF9pZCBdID0gJ1NLSVBQRUQgKGZpbGUgbWlzc2luZyBvbiBkaXNrKSc7CgkJY29udGludWU7Cgl9CgllY2hvICJPSzogYXR0YWNobWVudCBmaWxlIGNvbmZpcm1lZCBvbiBkaXNrICgkZnVsbF9wYXRoKVxuIjsKCgl1cGRhdGVfcG9zdF9tZXRhKCAkcHJvZHVjdF9pZCwgJ190aHVtYm5haWxfaWQnLCAkYXR0YWNobWVudF9pZCApOwoKCSR2ZXJpZnkgPSBnZXRfcG9zdF9tZXRhKCAkcHJvZHVjdF9pZCwgJ190aHVtYm5haWxfaWQnLCB0cnVlICk7CglpZiAoIChpbnQpICR2ZXJpZnkgIT09IChpbnQpICRhdHRhY2htZW50X2lkICkgewoJCWVjaG8gIkVSUk9SOiB2ZXJpZmljYXRpb24gZmFpbGVkIC0gZXhwZWN0ZWQgJGF0dGFjaG1lbnRfaWQsIGdvdCAiIC4gdmFyX2V4cG9ydCggJHZlcmlmeSwgdHJ1ZSApIC4gIlxuXG4iOwoJCSRyZXN1bHRzWyAkcHJvZHVjdF9pZCBdID0gJ0VSUk9SICh2ZXJpZnkgZmFpbGVkKSc7CgkJY29udGludWU7Cgl9CgllY2hvICJPSzogX3RodW1ibmFpbF9pZCBzZXQgYW5kIHZlcmlmaWVkID0gJGF0dGFjaG1lbnRfaWRcblxuIjsKCSRyZXN1bHRzWyAkcHJvZHVjdF9pZCBdID0gIk9LIChzZXQgdG8gJGF0dGFjaG1lbnRfaWQpIjsKfQoKZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CmVjaG8gIlNVTU1BUllcbiI7CmVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwpmb3JlYWNoICggJHJlc3VsdHMgYXMgJHBpZCA9PiAkc3RhdHVzICkgewoJZWNobyAicHJvZHVjdCAkcGlkOiAkc3RhdHVzXG4iOwp9CgokZmFpbGVkID0gZmFsc2U7CmZvcmVhY2ggKCAkcmVzdWx0cyBhcyAkc3RhdHVzICkgewoJaWYgKCBzdHJwb3MoICRzdGF0dXMsICdFUlJPUicgKSA9PT0gMCApIHsKCQkkZmFpbGVkID0gdHJ1ZTsKCX0KfQppZiAoICRmYWlsZWQgKSB7CgllY2hvICJcbkFCT1JUOiBhdCBsZWFzdCBvbmUgcHJvZHVjdCBoYWQgYSB2ZXJpZmljYXRpb24gRVJST1IgKG5vdCBhIGJlbmlnbiBza2lwKSAtIGZsYWdnaW5nIGFzIGZhaWx1cmVcbiI7CglleGl0KCAxICk7Cn0KZWNobyAiXG5PSzogVGFzayAxIGNvbXBsZXRlZFxuIjsK" | base64 -d > /tmp/fix-shop-task1-images.php;
+
+             php -l /tmp/fix-shop-task1-images.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on fix script";
+               rm -f /tmp/fix-shop-task1-images.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/fix-shop-task1-images.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/fix-shop-task1-images.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - Task 1 did NOT complete successfully";
+               exit 1;
+             fi;
+             echo "OK: Task 1 workflow completed successfully"'

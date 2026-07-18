@@ -1,0 +1,66 @@
+name: Diagnose Shop Task 2 - read sync_stock_status source (Read-Only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Read literal source of both sync_stock_status methods (plain file reads, no PHP execution)
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             FILE1="$WP_PATH/wp-content/plugins/woocommerce/includes/class-wc-product-variable.php";
+             FILE2="$WP_PATH/wp-content/plugins/woocommerce/includes/data-stores/class-wc-product-variable-data-store-cpt.php";
+
+             if [ ! -f "$FILE1" ]; then
+               echo "ERROR: $FILE1 not found";
+               exit 1;
+             fi;
+             if [ ! -f "$FILE2" ]; then
+               echo "ERROR: $FILE2 not found";
+               exit 1;
+             fi;
+
+             echo "=====================================================";
+             echo "SOURCE: WC_Product_Variable::sync_stock_status";
+             echo "FILE: $FILE1 (lines 725-755, method body is 734-748)";
+             echo "=====================================================";
+             sed -n "725,755p" "$FILE1";
+             echo "";
+
+             echo "=====================================================";
+             echo "SOURCE: WC_Product_Variable_Data_Store_CPT::sync_stock_status";
+             echo "FILE: $FILE2 (lines 888-915, method body is 898-906)";
+             echo "=====================================================";
+             sed -n "888,915p" "$FILE2";
+             echo "";
+
+             echo "OK: source read completed (no writes, no PHP execution)"'

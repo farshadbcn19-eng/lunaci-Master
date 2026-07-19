@@ -1,0 +1,87 @@
+name: Diagnose home.html + lunaci-mobile-nav-fix.php full contents (Read-Only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Cat full contents of home.html and lunaci-mobile-nav-fix.php, list sibling files (plain reads, no PHP execution)
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             HOME_HTML="$WP_PATH/wp-content/themes/lunaci/pages/home.html";
+             NAV_FIX="$WP_PATH/wp-content/mu-plugins/lunaci-mobile-nav-fix.php";
+             PAGES_DIR="$WP_PATH/wp-content/themes/lunaci/pages";
+             MU_DIR="$WP_PATH/wp-content/mu-plugins";
+
+             echo "=====================================================";
+             echo "PART 1: FULL CONTENTS OF $HOME_HTML";
+             echo "=====================================================";
+             if [ -f "$HOME_HTML" ]; then
+               wc -l "$HOME_HTML";
+               cat "$HOME_HTML";
+             else
+               echo "ERROR: $HOME_HTML not found";
+             fi;
+             echo "";
+
+             echo "=====================================================";
+             echo "PART 2: FULL CONTENTS OF $NAV_FIX";
+             echo "=====================================================";
+             if [ -f "$NAV_FIX" ]; then
+               wc -l "$NAV_FIX";
+               cat "$NAV_FIX";
+             else
+               echo "ERROR: $NAV_FIX not found";
+             fi;
+             echo "";
+
+             echo "=====================================================";
+             echo "PART 3: ls -la $PAGES_DIR";
+             echo "=====================================================";
+             if [ -d "$PAGES_DIR" ]; then
+               ls -la "$PAGES_DIR";
+             else
+               echo "ERROR: $PAGES_DIR not found";
+             fi;
+             echo "";
+
+             echo "=====================================================";
+             echo "PART 4: ls -la $MU_DIR";
+             echo "=====================================================";
+             if [ -d "$MU_DIR" ]; then
+               ls -la "$MU_DIR";
+             else
+               echo "ERROR: $MU_DIR not found";
+             fi;
+             echo "";
+
+             echo "OK: diagnostic completed (no writes, no PHP execution)"'

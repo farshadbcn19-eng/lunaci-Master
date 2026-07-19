@@ -1,0 +1,108 @@
+name: Diagnose Shop Task 2 - find actual write path to wc_product_meta_lookup (Read-Only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Locate the write path to wc_product_meta_lookup (plain file reads, no PHP execution)
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             WOO_ROOT="$WP_PATH/wp-content/plugins/woocommerce";
+             if [ ! -d "$WOO_ROOT" ]; then
+               echo "ERROR: $WOO_ROOT not found";
+               exit 1;
+             fi;
+
+             SEARCH_DIRS="$WOO_ROOT/includes";
+             if [ -d "$WOO_ROOT/src" ]; then
+               SEARCH_DIRS="$SEARCH_DIRS $WOO_ROOT/src";
+             fi;
+
+             echo "===== STEP 1: all wc_product_meta_lookup references =====";
+             ALL_MATCHES=$(grep -rn "wc_product_meta_lookup" $SEARCH_DIRS);
+             if [ -z "$ALL_MATCHES" ]; then
+               echo "NOT FOUND anywhere";
+             else
+               echo "$ALL_MATCHES";
+             fi;
+             echo "";
+
+             echo "===== STEP 2: filtering for WRITE-like matches (INSERT/REPLACE INTO/UPDATE/update_lookup_table/sync_lookup_table/handle_updated_product) =====";
+             WRITE_MATCHES=$(echo "$ALL_MATCHES" | grep -iE "INSERT|REPLACE INTO|UPDATE |update_lookup_table|sync_lookup_table|handle_updated_product");
+             if [ -z "$WRITE_MATCHES" ]; then
+               echo "NO WRITE-LIKE MATCHES FOUND by this filter - showing all matches for manual inspection instead";
+               WRITE_MATCHES="$ALL_MATCHES";
+             fi;
+             echo "$WRITE_MATCHES";
+             echo "";
+
+             echo "===== STEP 3: printing source for each write-like match (10 before, 40 after) =====";
+             if [ -n "$WRITE_MATCHES" ]; then
+               echo "$WRITE_MATCHES" | while IFS=: read -r MFILE MLINE MREST; do
+                 echo "----- $MFILE : line $MLINE -----";
+                 START=$((MLINE > 10 ? MLINE - 10 : 1));
+                 END=$((MLINE + 40));
+                 sed -n "${START},${END}p" "$MFILE";
+                 echo "";
+               done;
+             fi;
+
+             echo "===== STEP 4: get_changes( references in files that mention wc_product_meta_lookup =====";
+             FILES_WITH_LOOKUP=$(echo "$ALL_MATCHES" | cut -d: -f1 | sort -u);
+             if [ -n "$FILES_WITH_LOOKUP" ]; then
+               echo "$FILES_WITH_LOOKUP" | while read -r F; do
+                 GC=$(grep -n "get_changes(" "$F");
+                 if [ -n "$GC" ]; then
+                   echo "--- $F ---";
+                   echo "$GC";
+                 fi;
+               done;
+             fi;
+             echo "";
+
+             echo "===== STEP 5: lookup_table combined with as_schedule / regenerate (Action Scheduler check) =====";
+             LOOKUP_FILES=$(grep -rli "lookup_table" $SEARCH_DIRS);
+             if [ -n "$LOOKUP_FILES" ]; then
+               echo "$LOOKUP_FILES" | while read -r F; do
+                 SCHED=$(grep -n "as_schedule\|regenerate" "$F");
+                 if [ -n "$SCHED" ]; then
+                   echo "--- $F ---";
+                   echo "$SCHED";
+                 fi;
+               done;
+             else
+               echo "no files reference lookup_table (case-insensitive)";
+             fi;
+             echo "";
+
+             echo "OK: source read completed (no writes, no PHP execution)"'

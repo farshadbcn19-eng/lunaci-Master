@@ -1,0 +1,77 @@
+name: Purge cache and verify variation shade images are live (one-time write)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  purge-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Purge cache (no data writes) and verify the 5 product pages carry the new variation images
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "---STEP 1: PURGE CACHE (no data writes)---";
+             wp litespeed-purge all --path="$WP_PATH";
+             PURGE_STATUS=$?;
+             if [ "$PURGE_STATUS" -ne 0 ]; then
+               echo "litespeed-purge failed (status=$PURGE_STATUS), falling back to wp cache flush";
+               wp cache flush --path="$WP_PATH";
+             fi;
+
+             echo "---STEP 2: RESOLVE ID+URL FOR THE 5 PRODUCTS---";
+             wp post list --post_type=product --post__in=324,325,327,328,329 --fields=ID,url --format=csv --path="$WP_PATH" > /tmp/vimg_urls.csv;
+             cat /tmp/vimg_urls.csv;
+             echo "";
+
+             echo "---STEP 3: VERIFY EACH PRODUCT PAGE (cache-bypassed) FOR A REPRESENTATIVE SHADE FILENAME---";
+             tail -n +2 /tmp/vimg_urls.csv | while IFS=, read -r PID URL; do
+               if [ -z "$URL" ]; then
+                 continue;
+               fi;
+               case "$PID" in
+                 324) MARK="LUNACI-FOUND-01" ;;
+                 328) MARK="LUNACI-LIPFIX-01" ;;
+                 327) MARK="LUNACI-LGVELVET-01" ;;
+                 329) MARK="LUNACI-LS-01" ;;
+                 325) MARK="LUNACI-COMPACT-R01" ;;
+                 *) MARK="" ;;
+               esac;
+               echo "----- $URL (product_id=$PID, expecting marker=$MARK) -----";
+               http_code=$(curl -s -o /tmp/vimg_page.html --connect-timeout 10 --max-time 20 -H "Cache-Control: no-cache" -w "%{http_code}" "${URL}?nocache=$(date +%s)");
+               echo "http_code=$http_code";
+               echo "page size: $(wc -c < /tmp/vimg_page.html) bytes";
+               grep -qi "fatal error\|critical error" /tmp/vimg_page.html && echo "FOUND fatal/critical error string" || echo "no fatal/critical error string found";
+               if [ -n "$MARK" ]; then
+                 grep -qi "$MARK" /tmp/vimg_page.html && echo "marker $MARK FOUND on page (new variation image is live)" || echo "marker $MARK NOT found on page";
+               fi;
+               rm -f /tmp/vimg_page.html;
+               echo "";
+             done;
+             rm -f /tmp/vimg_urls.csv'

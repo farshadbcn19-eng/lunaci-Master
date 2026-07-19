@@ -1,0 +1,74 @@
+name: Purge cache and verify Task 2 product stock status is live (one-time write)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  purge-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Purge cache (no data writes) and verify the 6 Task 2 product pages are live
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "---STEP 1: PURGE CACHE (no data writes)---";
+             wp litespeed-purge all --path="$WP_PATH";
+             PURGE_STATUS=$?;
+             if [ "$PURGE_STATUS" -ne 0 ]; then
+               echo "litespeed-purge failed (status=$PURGE_STATUS), falling back to wp cache flush";
+               wp cache flush --path="$WP_PATH";
+             fi;
+
+             echo "---STEP 2: RESOLVE PERMALINKS FOR THE 6 TASK 2 PRODUCTS---";
+             wp post list --post_type=product --post__in=324,325,326,327,328,329 --field=url --path="$WP_PATH" > /tmp/task2_urls.txt;
+             cat /tmp/task2_urls.txt;
+             echo "";
+
+             echo "---STEP 3: VERIFY EACH PRODUCT PAGE (cache-bypassed)---";
+             while read -r URL; do
+               if [ -z "$URL" ]; then
+                 continue;
+               fi;
+               echo "----- $URL -----";
+               http_code=$(curl -s -o /tmp/task2_page.html --connect-timeout 10 --max-time 20 -H "Cache-Control: no-cache" -w "%{http_code}" "${URL}?nocache=$(date +%s)");
+               echo "http_code=$http_code";
+               echo "page size: $(wc -c < /tmp/task2_page.html) bytes";
+               grep -qi "fatal error\|critical error" /tmp/task2_page.html && echo "FOUND fatal/critical error string" || echo "no fatal/critical error string found";
+               grep -qi "class=\"[^\"]*outofstock" /tmp/task2_page.html && echo "outofstock CSS class STILL present on page" || echo "no outofstock CSS class found on page";
+               grep -qi ">Out of stock<" /tmp/task2_page.html && echo "\"Out of stock\" text STILL present on page" || echo "no \"Out of stock\" text found on page";
+               rm -f /tmp/task2_page.html;
+               echo "";
+             done < /tmp/task2_urls.txt;
+             rm -f /tmp/task2_urls.txt;
+
+             echo "---STEP 4: VERIFY /shop/ PAGE (cache-bypassed)---";
+             shop_http_code=$(curl -s -o /tmp/task2_shop.html --connect-timeout 10 --max-time 20 -H "Cache-Control: no-cache" -w "%{http_code}" "https://lunacibarcelona.com/shop/?nocache=$(date +%s)");
+             echo "shop_http_code=$shop_http_code";
+             grep -qi "fatal error\|critical error" /tmp/task2_shop.html && echo "FOUND fatal/critical error string on /shop/" || echo "no fatal/critical error string found on /shop/";
+             rm -f /tmp/task2_shop.html'

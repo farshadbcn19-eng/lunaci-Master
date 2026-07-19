@@ -1,0 +1,57 @@
+name: Fix Shop Task 2 - resave variations to populate stock lookup table
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Resave variations via wc_get_product()->save() and re-sync parent stock status (gated per product)
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJGV4cGVjdGVkID0gYXJyYXkoCgkzMjQgPT4gNiwKCTMyNSA9PiA0LAoJMzI2ID0+IDUsCgkzMjcgPT4gNCwKCTMyOCA9PiA2LAoJMzI5ID0+IDEyLAopOwoKJGFueV9lcnJvciA9IGZhbHNlOwoKZm9yZWFjaCAoICRleHBlY3RlZCBhcyAkcGFyZW50X2lkID0+ICRleHBlY3RlZF9jb3VudCApIHsKCWVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwoJZWNobyAiUFJPRFVDVCAkcGFyZW50X2lkXG4iOwoJZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgoJLy8gU1RFUCBBOiBQUkVQQVJFIC0gZnJlc2gtcmVhZCBwdWJsaXNoZWQgdmFyaWF0aW9uIElEcyBhbmQgY29uZmlybSBleHBlY3RlZCBzdGF0ZQoJJHZhcmlhdGlvbnMgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoCgkJJHdwZGItPnByZXBhcmUoICJTRUxFQ1QgSUQgRlJPTSB7JHdwZGItPnBvc3RzfSBXSEVSRSBwb3N0X3R5cGU9J3Byb2R1Y3RfdmFyaWF0aW9uJyBBTkQgcG9zdF9wYXJlbnQ9JWQgQU5EIHBvc3Rfc3RhdHVzPSdwdWJsaXNoJyIsICRwYXJlbnRfaWQgKSwKCQlBUlJBWV9BCgkpOwoJJHZhcmlhdGlvbl9pZHMgICA9IGFycmF5KCk7CgkkcHVibGlzaGVkX2NvdW50ID0gY291bnQoICR2YXJpYXRpb25zICk7Cglmb3JlYWNoICggJHZhcmlhdGlvbnMgYXMgJHYgKSB7CgkJJHZhcmlhdGlvbl9pZHNbXSA9IChpbnQpICR2WydJRCddOwoJfQoJZWNobyAicHVibGlzaGVkX3ZhcmlhdGlvbl9jb3VudD0kcHVibGlzaGVkX2NvdW50IChleHBlY3RlZCAkZXhwZWN0ZWRfY291bnQpXG4iOwoKCWlmICggJHB1Ymxpc2hlZF9jb3VudCAhPT0gJGV4cGVjdGVkX2NvdW50ICkgewoJCWVjaG8gIlNLSVAgUFJPRFVDVCAkcGFyZW50X2lkOiBwdWJsaXNoZWQgdmFyaWF0aW9uIGNvdW50IG5vIGxvbmdlciBtYXRjaGVzIGV4cGVjdGF0aW9uIC0gbm90IHRvdWNoaW5nXG5cbiI7CgkJY29udGludWU7Cgl9CgoJJGluc3RvY2tfY291bnQgPSAwOwoJZm9yZWFjaCAoICR2YXJpYXRpb25faWRzIGFzICR2aWQgKSB7CgkJJHZzdG9jayA9IGdldF9wb3N0X21ldGEoICR2aWQsICdfc3RvY2tfc3RhdHVzJywgdHJ1ZSApOwoJCWlmICggJHZzdG9jayA9PT0gJ2luc3RvY2snICkgewoJCQkkaW5zdG9ja19jb3VudCsrOwoJCX0KCX0KCWVjaG8gInBvc3RtZXRhX2luc3RvY2tfY291bnQ9JGluc3RvY2tfY291bnQgLyAkcHVibGlzaGVkX2NvdW50XG4iOwoKCWlmICggJGluc3RvY2tfY291bnQgIT09ICRwdWJsaXNoZWRfY291bnQgKSB7CgkJZWNobyAiU0tJUCBQUk9EVUNUICRwYXJlbnRfaWQ6IG5vdCBhbGwgdmFyaWF0aW9ucyBoYXZlIF9zdG9ja19zdGF0dXM9aW5zdG9jayBpbiBwb3N0bWV0YSAtIG5vdCB0b3VjaGluZ1xuXG4iOwoJCWNvbnRpbnVlOwoJfQoJZWNobyAiT0s6IHByZS13cml0ZSBzdGF0ZSBjb25maXJtZWQgYXMgZXhwZWN0ZWRcbiI7CgoJLy8gU1RFUCBCOiBDT01NSVQgLSByZXNhdmUgZWFjaCB2YXJpYXRpb24gdGhyb3VnaCB0aGUgc3RhbmRhcmQgV0MgQVBJIHRvIHBvcHVsYXRlIHdjX3Byb2R1Y3RfbWV0YV9sb29rdXAKCSRzYXZlZF9pZHMgID0gYXJyYXkoKTsKCSRmYWlsZWRfaWRzID0gYXJyYXkoKTsKCWZvcmVhY2ggKCAkdmFyaWF0aW9uX2lkcyBhcyAkdmlkICkgewoJCXRyeSB7CgkJCSR2cHJvZHVjdCA9IHdjX2dldF9wcm9kdWN0KCAkdmlkICk7CgkJCWlmICggISAkdnByb2R1Y3QgKSB7CgkJCQllY2hvICJFUlJPUjogd2NfZ2V0X3Byb2R1Y3QoICR2aWQgKSByZXR1cm5lZCBudWxsL2ZhbHNlIC0gY2Fubm90IHJlc2F2ZSwgY29udGludWluZyB0byBuZXh0IHZhcmlhdGlvblxuIjsKCQkJCSRmYWlsZWRfaWRzW10gPSAkdmlkOwoJCQkJJGFueV9lcnJvciAgICA9IHRydWU7CgkJCQljb250aW51ZTsKCQkJfQoJCQkkdnByb2R1Y3QtPnNhdmUoKTsKCQkJJHNhdmVkX2lkc1tdID0gJHZpZDsKCQkJZWNobyAiT0s6IHJlc2F2ZWQgdmFyaWF0aW9uICR2aWRcbiI7CgkJfSBjYXRjaCAoIFRocm93YWJsZSAkZSApIHsKCQkJZWNobyAiRVJST1I6IHJlc2F2aW5nIHZhcmlhdGlvbiAkdmlkIHRocmV3ICIgLiBnZXRfY2xhc3MoICRlICkgLiAiOiAiIC4gJGUtPmdldE1lc3NhZ2UoKSAuICIgLSBjb250aW51aW5nIHRvIG5leHQgdmFyaWF0aW9uXG4iOwoJCQkkZmFpbGVkX2lkc1tdID0gJHZpZDsKCQkJJGFueV9lcnJvciAgICA9IHRydWU7CgkJfQoJfQoJZWNobyAicmVzYXZlIHN1bW1hcnk6ICIgLiBjb3VudCggJHNhdmVkX2lkcyApIC4gIiBzYXZlZCwgIiAuIGNvdW50KCAkZmFpbGVkX2lkcyApIC4gIiBmYWlsZWQiIC4gKCBlbXB0eSggJGZhaWxlZF9pZHMgKSA/ICcnIDogJyAoSURzOiAnIC4gaW1wbG9kZSggJywgJywgJGZhaWxlZF9pZHMgKSAuICcpJyApIC4gIlxuIjsKCgkvLyBCZWx0LWFuZC1zdXNwZW5kZXJzIHJlLXN5bmMgbm93IHRoYXQgdGhlIGxvb2t1cCB0YWJsZSBzaG91bGQgYmUgY3VycmVudAoJV0NfUHJvZHVjdF9WYXJpYWJsZTo6c3luY19zdG9ja19zdGF0dXMoICRwYXJlbnRfaWQgKTsKCWVjaG8gIk9LOiBXQ19Qcm9kdWN0X1ZhcmlhYmxlOjpzeW5jX3N0b2NrX3N0YXR1cyggJHBhcmVudF9pZCApIGNhbGxlZCBhZ2FpbiBhZnRlciByZXNhdmVcbiI7CgoJLy8gU1RFUCBDOiBWRVJJRlkgKHRob3JvdWdoKQoJJHN0b2NrX3N0YXR1c19hZnRlciA9IGdldF9wb3N0X21ldGEoICRwYXJlbnRfaWQsICdfc3RvY2tfc3RhdHVzJywgdHJ1ZSApOwoJJHZpc190ZXJtc19hZnRlciAgICAgPSB3cF9nZXRfb2JqZWN0X3Rlcm1zKCAkcGFyZW50X2lkLCAncHJvZHVjdF92aXNpYmlsaXR5JywgYXJyYXkoICdmaWVsZHMnID0+ICduYW1lcycgKSApOwoJJHZpc190ZXJtc19zdHIgICAgICAgPSBpc193cF9lcnJvciggJHZpc190ZXJtc19hZnRlciApID8gJ0VSUk9SOiAnIC4gJHZpc190ZXJtc19hZnRlci0+Z2V0X2Vycm9yX21lc3NhZ2UoKSA6ICggZW1wdHkoICR2aXNfdGVybXNfYWZ0ZXIgKSA/ICcobm9uZSknIDogaW1wbG9kZSggJywgJywgJHZpc190ZXJtc19hZnRlciApICk7CgoJJHByb2R1Y3Rfb2JqICAgPSB3Y19nZXRfcHJvZHVjdCggJHBhcmVudF9pZCApOwoJJGdldHRlcl9zdGF0dXMgPSAkcHJvZHVjdF9vYmogPyAkcHJvZHVjdF9vYmotPmdldF9zdG9ja19zdGF0dXMoKSA6ICcod2NfZ2V0X3Byb2R1Y3QgcmV0dXJuZWQgbnVsbCknOwoKCSRsb29rdXBfaW5zdG9ja19jb3VudCA9IDA7CglpZiAoICEgZW1wdHkoICR2YXJpYXRpb25faWRzICkgKSB7CgkJJGZvcm1hdCAgICAgICAgICAgICAgID0gaW1wbG9kZSggJywnLCBhcnJheV9maWxsKCAwLCBjb3VudCggJHZhcmlhdGlvbl9pZHMgKSwgJyVkJyApICk7CgkJJGxvb2t1cF9pbnN0b2NrX2NvdW50ID0gKGludCkgJHdwZGItPmdldF92YXIoCgkJCSR3cGRiLT5wcmVwYXJlKAoJCQkJIlNFTEVDVCBDT1VOVChwcm9kdWN0X2lkKSBGUk9NIHskd3BkYi0+d2NfcHJvZHVjdF9tZXRhX2xvb2t1cH0gV0hFUkUgc3RvY2tfc3RhdHVzID0gJXMgQU5EIHByb2R1Y3RfaWQgSU4gKCRmb3JtYXQpIiwKCQkJCWFycmF5X21lcmdlKCBhcnJheSggJ2luc3RvY2snICksICR2YXJpYXRpb25faWRzICkKCQkJKQoJCSk7Cgl9CgoJZWNobyAiX3N0b2NrX3N0YXR1c19hZnRlcj0iIC4gKCAkc3RvY2tfc3RhdHVzX2FmdGVyICE9PSAnJyA/ICRzdG9ja19zdGF0dXNfYWZ0ZXIgOiAnKGVtcHR5KScgKSAuICJcbiI7CgllY2hvICJwcm9kdWN0X3Zpc2liaWxpdHlfdGVybXNfYWZ0ZXI9JHZpc190ZXJtc19zdHJcbiI7CgllY2hvICJ3Y19nZXRfcHJvZHVjdCgpLT5nZXRfc3RvY2tfc3RhdHVzKClfYWZ0ZXI9JGdldHRlcl9zdGF0dXNcbiI7CgllY2hvICJsb29rdXBfdGFibGVfaW5zdG9ja19jb3VudF9hZnRlcj0kbG9va3VwX2luc3RvY2tfY291bnQgLyAkcHVibGlzaGVkX2NvdW50XG4iOwoKCSR2ZXJpZnlfZmFpbGVkID0gZmFsc2U7CglpZiAoICRzdG9ja19zdGF0dXNfYWZ0ZXIgIT09ICdpbnN0b2NrJyApIHsKCQkkdmVyaWZ5X2ZhaWxlZCA9IHRydWU7Cgl9CglpZiAoIGlzX3dwX2Vycm9yKCAkdmlzX3Rlcm1zX2FmdGVyICkgfHwgaW5fYXJyYXkoICdvdXRvZnN0b2NrJywgKGFycmF5KSAkdmlzX3Rlcm1zX2FmdGVyLCB0cnVlICkgKSB7CgkJJHZlcmlmeV9mYWlsZWQgPSB0cnVlOwoJfQoJaWYgKCAkZ2V0dGVyX3N0YXR1cyAhPT0gJ2luc3RvY2snICkgewoJCSR2ZXJpZnlfZmFpbGVkID0gdHJ1ZTsKCX0KCWlmICggJGxvb2t1cF9pbnN0b2NrX2NvdW50ICE9PSAkcHVibGlzaGVkX2NvdW50ICkgewoJCSR2ZXJpZnlfZmFpbGVkID0gdHJ1ZTsKCX0KCglpZiAoICR2ZXJpZnlfZmFpbGVkICkgewoJCWVjaG8gIkVSUk9SIFBST0RVQ1QgJHBhcmVudF9pZDogdmVyaWZpY2F0aW9uIEZBSUxFRCBhZnRlciByZXNhdmUgKyBzeW5jX3N0b2NrX3N0YXR1cygpIC0gc2VlIHZhbHVlcyBhYm92ZVxuXG4iOwoJCSRhbnlfZXJyb3IgPSB0cnVlOwoJCWNvbnRpbnVlOwoJfQoJZWNobyAiT0s6IHZlcmlmaWNhdGlvbiBwYXNzZWQgLSBwcm9kdWN0ICRwYXJlbnRfaWQgbm93IGluc3RvY2ssIG5vIG91dG9mc3RvY2sgdmlzaWJpbGl0eSB0ZXJtLCBsb29rdXAgdGFibGUgY3VycmVudFxuXG4iOwp9CgplY2hvICI9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKaWYgKCAkYW55X2Vycm9yICkgewoJZWNobyAiQUJPUlQ6IGF0IGxlYXN0IG9uZSBwcm9kdWN0L3ZhcmlhdGlvbiBoYWQgYW4gZXJyb3IgLSBzZWUgRVJST1Igbm90aWNlKHMpIGFib3ZlXG4iOwoJZXhpdCggMSApOwp9CmVjaG8gIk9LOiBUYXNrIDIgbG9va3VwLXRhYmxlIHJlc2F2ZSBmaXggY29tcGxldGVkXG4iOwo=" | base64 -d > /tmp/fix-task2-lookup-resave.php;
+
+             php -l /tmp/fix-task2-lookup-resave.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on fix script";
+               rm -f /tmp/fix-task2-lookup-resave.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/fix-task2-lookup-resave.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/fix-task2-lookup-resave.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - lookup-table resave fix did NOT complete successfully";
+               exit 1;
+             fi;
+             echo "OK: fix workflow completed successfully"'

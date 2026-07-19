@@ -1,0 +1,117 @@
+name: Diagnose Shop Task 2 - read refresh_product_lookup_table verbatim source (Read-Only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Read refresh_product_lookup_table() and update_lookup_table() source, and find callers (plain file reads, no PHP execution)
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             WOO_ROOT="$WP_PATH/wp-content/plugins/woocommerce";
+             DS_FILE="$WOO_ROOT/includes/data-stores/class-wc-product-data-store-cpt.php";
+             if [ ! -f "$DS_FILE" ]; then
+               echo "ERROR: $DS_FILE not found";
+               exit 1;
+             fi;
+
+             echo "=====================================================";
+             echo "STEP 1: locate function update_lookup_table and function refresh_product_lookup_table";
+             echo "=====================================================";
+             MATCHES=$(grep -n "function update_lookup_table\|function refresh_product_lookup_table" "$DS_FILE");
+             if [ -z "$MATCHES" ]; then
+               echo "NOT FOUND in $DS_FILE";
+             else
+               echo "$MATCHES";
+             fi;
+             echo "";
+
+             echo "=====================================================";
+             echo "STEP 2: full verbatim source, lines 880-1030 of $DS_FILE (covers both methods with margin)";
+             echo "=====================================================";
+             TOTAL_LINES=$(wc -l < "$DS_FILE");
+             echo "file total lines: $TOTAL_LINES";
+             sed -n "880,1030p" "$DS_FILE";
+             echo "";
+
+             echo "=====================================================";
+             echo "STEP 3: if refresh_product_lookup_table body extends past line 1030, print an extra safety window around its own match line";
+             echo "=====================================================";
+             REFRESH_LINE=$(grep -n "function refresh_product_lookup_table" "$DS_FILE" | head -1 | cut -d: -f1);
+             if [ -n "$REFRESH_LINE" ]; then
+               START=$((REFRESH_LINE > 15 ? REFRESH_LINE - 15 : 1));
+               END=$((REFRESH_LINE + 60));
+               echo "----- $DS_FILE : refresh_product_lookup_table at line $REFRESH_LINE, printing ${START}-${END} -----";
+               sed -n "${START},${END}p" "$DS_FILE";
+             else
+               echo "refresh_product_lookup_table not found - skipping safety window";
+             fi;
+             echo "";
+
+             echo "=====================================================";
+             echo "STEP 4: grep for other callers of refresh_product_lookup_table across includes/ and src/";
+             echo "=====================================================";
+             SEARCH_DIRS="$WOO_ROOT/includes";
+             if [ -d "$WOO_ROOT/src" ]; then
+               SEARCH_DIRS="$SEARCH_DIRS $WOO_ROOT/src";
+             fi;
+             CALLER_MATCHES=$(grep -rn "refresh_product_lookup_table" $SEARCH_DIRS);
+             if [ -z "$CALLER_MATCHES" ]; then
+               echo "NO CALLERS FOUND anywhere under $SEARCH_DIRS";
+             else
+               echo "$CALLER_MATCHES";
+             fi;
+             echo "";
+
+             echo "=====================================================";
+             echo "STEP 5: printing source context (10 before, 25 after) for each caller match outside the data-store file itself";
+             echo "=====================================================";
+             if [ -n "$CALLER_MATCHES" ]; then
+               echo "$CALLER_MATCHES" | while IFS=: read -r MFILE MLINE MREST; do
+                 if [ "$MFILE" = "$DS_FILE" ]; then
+                   continue;
+                 fi;
+                 echo "----- $MFILE : line $MLINE -----";
+                 START=$((MLINE > 10 ? MLINE - 10 : 1));
+                 END=$((MLINE + 25));
+                 sed -n "${START},${END}p" "$MFILE";
+                 echo "";
+               done;
+             fi;
+
+             echo "=====================================================";
+             echo "STEP 6: class declaration line of $DS_FILE, for context on whether these are instance methods";
+             echo "=====================================================";
+             grep -n "^class \|^abstract class \|^final class " "$DS_FILE";
+             echo "";
+
+             echo "OK: source read completed (no writes, no PHP execution)"'

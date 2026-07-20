@@ -1,0 +1,120 @@
+name: Fix header spacing + retire old mobile-nav mu-plugin
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: "PART A: add top-spacing CSS to snippet id=8 | PART B: retire old mu-plugin"
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJHNuaXBwZXRfaWQgPSA4OwoKLy8gRXhhY3QgY29kZSByZS1lbWJlZGRlZCBmcm9tIHRoZSB2YWx1ZSB2ZXJpZmllZCBsaXZlIGFmdGVyIFN0ZXAgMgovLyBhY3RpdmF0aW9uIChsZW5ndGggMzYwNykgLSBTdGVwIDIgb25seSBjaGFuZ2VkIGBhY3RpdmVgLCBub3QgYGNvZGVgLAovLyBzbyB0aGlzIGlzIHN0aWxsIHRoZSBjb3JyZWN0IGJ5dGUtZm9yLWJ5dGUgYmFzZWxpbmUgdG8gZHJpZnQtY2hlY2sgYWdhaW5zdC4KJGV4cGVjdGVkX2NvZGVfYmVmb3JlID0gPDw8J0xVTkFDSV9TTklQUEVUX0NPREUnCmFkZF9hY3Rpb24oICd3cF9mb290ZXInLCBmdW5jdGlvbiAoKSB7Cgk/Pgo8c3R5bGUgaWQ9Imx1bmFjaS1nbG9iYWwtaGVhZGVyLWNzcyI+Ci5sbi1uYXZ7cG9zaXRpb246Zml4ZWQ7dG9wOjA7bGVmdDowO3JpZ2h0OjA7ei1pbmRleDo5OTk5O2Rpc3BsYXk6ZmxleDthbGlnbi1pdGVtczpjZW50ZXI7anVzdGlmeS1jb250ZW50OnNwYWNlLWJldHdlZW47cGFkZGluZzoxNnB4IDUlO2JhY2tncm91bmQ6bGluZWFyLWdyYWRpZW50KHRvIGJvdHRvbSxyZ2JhKDExLDExLDExLC45NSksdHJhbnNwYXJlbnQpO3RyYW5zaXRpb246YmFja2dyb3VuZCAuNHM7Ym9yZGVyLWJvdHRvbToxcHggc29saWQgdHJhbnNwYXJlbnQ7fQoubG4tbmF2LnNjcm9sbGVke2JhY2tncm91bmQ6cmdiYSgxMSwxMSwxMSwuOTcpO2JvcmRlci1ib3R0b20tY29sb3I6cmdiYSgyMTIsMTc1LDU1LC4xNSk7fQoubG4tbmF2X19sb2dvIGltZ3toZWlnaHQ6OTBweDt3aWR0aDphdXRvO2Rpc3BsYXk6YmxvY2s7bWl4LWJsZW5kLW1vZGU6bGlnaHRlbjt9Ci5sbi1uYXZfX2xpbmtze2Rpc3BsYXk6ZmxleDtnYXA6MzZweDtsaXN0LXN0eWxlOm5vbmU7bWFyZ2luOjA7cGFkZGluZzowO30KLmxuLW5hdl9fbGlua3MgYXtmb250LWZhbWlseTonTW9udHNlcnJhdCcsc2Fucy1zZXJpZjtmb250LXNpemU6MTBweDtmb250LXdlaWdodDo0MDA7bGV0dGVyLXNwYWNpbmc6LjNlbTt0ZXh0LXRyYW5zZm9ybTp1cHBlcmNhc2U7Y29sb3I6cmdiYSgyNDcsMjQ0LDIzOCwuOSk7dGV4dC1kZWNvcmF0aW9uOm5vbmU7dHJhbnNpdGlvbjpjb2xvciAuM3M7fQoubG4tbmF2X19saW5rcyBhOmhvdmVye2NvbG9yOiNENEFGMzc7fQoubG4tbmF2X19jYXJ0IGF7Y29sb3I6cmdiYSgyNDcsMjQ0LDIzOCwuOSk7dGV4dC1kZWNvcmF0aW9uOm5vbmU7fQpAbWVkaWEobWF4LXdpZHRoOjc2OHB4KXsubG4tbmF2X19saW5rc3tkaXNwbGF5Om5vbmU7fS5sbi1uYXZ7cGFkZGluZzoxNHB4IDUlO319Ci5sbi1uYXYtdG9nZ2xle2Rpc3BsYXk6bm9uZTtiYWNrZ3JvdW5kOm5vbmU7Ym9yZGVyOm5vbmU7fQpAbWVkaWEobWF4LXdpZHRoOjc2OHB4KXsKICAubG4tbmF2X19saW5rcy5vcGVue2Rpc3BsYXk6ZmxleCFpbXBvcnRhbnQ7ZmxleC1kaXJlY3Rpb246Y29sdW1uO3Bvc2l0aW9uOmFic29sdXRlO3RvcDoxMDAlO2xlZnQ6MDtyaWdodDowO2JhY2tncm91bmQ6IzBCMEIwQjtwYWRkaW5nOjIwcHggMzJweDtib3JkZXItdG9wOjFweCBzb2xpZCByZ2JhKDIxMiwxNzUsNTUsLjIpO3otaW5kZXg6OTk5OTt9CiAgLmxuLW5hdi10b2dnbGV7ZGlzcGxheTpmbGV4IWltcG9ydGFudDtmbGV4LWRpcmVjdGlvbjpjb2x1bW47Z2FwOjVweDtjdXJzb3I6cG9pbnRlcjtwYWRkaW5nOjhweDtiYWNrZ3JvdW5kOm5vbmU7Ym9yZGVyOm5vbmU7fQogIC5sbi1uYXYtdG9nZ2xlIHNwYW57ZGlzcGxheTpibG9jazt3aWR0aDoyNHB4O2hlaWdodDoycHg7YmFja2dyb3VuZDojRDRBRjM3O30KfQoKI2xuTmF2IHsgZGlzcGxheTogbm9uZSAhaW1wb3J0YW50OyB9CiNsbmFOYXYgeyBkaXNwbGF5OiBub25lICFpbXBvcnRhbnQ7IH0KLmxwLWhlYWRlciB7IGRpc3BsYXk6IG5vbmUgIWltcG9ydGFudDsgfQouc2l0ZS1oZWFkZXIsIGhlYWRlci5zaXRlLWhlYWRlciwKLmVsZW1lbnRvci1sb2NhdGlvbi1oZWFkZXIsICNtYXN0aGVhZCB7CglkaXNwbGF5OiBub25lICFpbXBvcnRhbnQ7Cn0KPC9zdHlsZT4KPG5hdiBjbGFzcz0ibG4tbmF2IiBpZD0ibHVuYWNpR2xvYmFsTmF2Ij4KICA8YSBocmVmPSJodHRwczovL2x1bmFjaWJhcmNlbG9uYS5jb20vIiBjbGFzcz0ibG4tbmF2X19sb2dvIj4KICAgIDxpbWcgc3JjPSJodHRwczovL2x1bmFjaWJhcmNlbG9uYS5jb20vd3AtY29udGVudC91cGxvYWRzLzIwMjYvMDUvYjMyMDQyN2ItYmRiZC00MjIwLTkyNmQtYzJmZWNjZTdlOWU0LmpwZWciIGFsdD0iTFVOQUNJIEJhcmNlbG9uYSIgc3R5bGU9ImhlaWdodDo5MHB4O3dpZHRoOmF1dG87bWl4LWJsZW5kLW1vZGU6bGlnaHRlbjsiPgogIDwvYT4KICA8dWwgY2xhc3M9ImxuLW5hdl9fbGlua3MiIGlkPSJsdW5hY2lHbG9iYWxOYXZMaW5rcyI+CiAgICA8bGk+PGEgaHJlZj0iaHR0cHM6Ly9sdW5hY2liYXJjZWxvbmEuY29tLyI+SG9tZTwvYT48L2xpPgogICAgPGxpPjxhIGhyZWY9Imh0dHBzOi8vbHVuYWNpYmFyY2Vsb25hLmNvbS9wcm9kdWN0cy8iPlByb2R1Y3RzPC9hPjwvbGk+CiAgICA8bGk+PGEgaHJlZj0iaHR0cHM6Ly9sdW5hY2liYXJjZWxvbmEuY29tL2Fib3V0LXVzLyI+QWJvdXQ8L2E+PC9saT4KICAgIDxsaT48YSBocmVmPSJodHRwczovL2x1bmFjaWJhcmNlbG9uYS5jb20vY29udGFjdCI+Q29udGFjdDwvYT48L2xpPgogIDwvdWw+CiAgPGRpdiBjbGFzcz0ibG4tbmF2X19jYXJ0Ij4KICAgIDxhIGhyZWY9Imh0dHBzOi8vbHVuYWNpYmFyY2Vsb25hLmNvbS9jYXJ0Ij4KICAgICAgPHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI0NywyNDQsMjM4LC45KSIgc3Ryb2tlLXdpZHRoPSIxLjUiPjxwYXRoIGQ9Ik02IDIgMyA2djE0YTIgMiAwIDAgMCAyIDJoMTRhMiAyIDAgMCAwIDItMlY2bC0zLTR6Ii8+PGxpbmUgeDE9IjMiIHkxPSI2IiB4Mj0iMjEiIHkyPSI2Ii8+PHBhdGggZD0iTTE2IDEwYTQgNCAwIDAgMS04IDAiLz48L3N2Zz4KICAgIDwvYT4KICA8L2Rpdj4KICA8YnV0dG9uIHR5cGU9ImJ1dHRvbiIgY2xhc3M9ImxuLW5hdi10b2dnbGUiIGlkPSJsdW5hY2lHbG9iYWxOYXZUb2dnbGUiIGFyaWEtbGFiZWw9IlRvZ2dsZSBuYXZpZ2F0aW9uIG1lbnUiIGFyaWEtZXhwYW5kZWQ9ImZhbHNlIiBhcmlhLWNvbnRyb2xzPSJsdW5hY2lHbG9iYWxOYXZMaW5rcyI+CiAgICA8c3Bhbj48L3NwYW4+CiAgICA8c3Bhbj48L3NwYW4+CiAgICA8c3Bhbj48L3NwYW4+CiAgPC9idXR0b24+CjwvbmF2Pgo8c2NyaXB0IGlkPSJsdW5hY2ktZ2xvYmFsLWhlYWRlci1qcyI+CihmdW5jdGlvbiAoKSB7CiAgdmFyIG5hdlRvZ2dsZSA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdsdW5hY2lHbG9iYWxOYXZUb2dnbGUnKTsKICB2YXIgbmF2TGlua3MgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnbHVuYWNpR2xvYmFsTmF2TGlua3MnKTsKICBpZiAobmF2VG9nZ2xlICYmIG5hdkxpbmtzKSB7CiAgICBuYXZUb2dnbGUuYWRkRXZlbnRMaXN0ZW5lcignY2xpY2snLCBmdW5jdGlvbiAoKSB7CiAgICAgIHZhciBpc09wZW4gPSBuYXZMaW5rcy5jbGFzc0xpc3QudG9nZ2xlKCdvcGVuJyk7CiAgICAgIG5hdlRvZ2dsZS5zZXRBdHRyaWJ1dGUoJ2FyaWEtZXhwYW5kZWQnLCBpc09wZW4gPyAndHJ1ZScgOiAnZmFsc2UnKTsKICAgIH0pOwogICAgbmF2TGlua3MucXVlcnlTZWxlY3RvckFsbCgnYScpLmZvckVhY2goZnVuY3Rpb24gKGxpbmspIHsKICAgICAgbGluay5hZGRFdmVudExpc3RlbmVyKCdjbGljaycsIGZ1bmN0aW9uICgpIHsKICAgICAgICBuYXZMaW5rcy5jbGFzc0xpc3QucmVtb3ZlKCdvcGVuJyk7CiAgICAgICAgbmF2VG9nZ2xlLnNldEF0dHJpYnV0ZSgnYXJpYS1leHBhbmRlZCcsICdmYWxzZScpOwogICAgICB9KTsKICAgIH0pOwogIH0KfSkoKTsKPC9zY3JpcHQ+Cgk8P3BocAp9LCAxMDAgKTsKTFVOQUNJX1NOSVBQRVRfQ09ERTsKCiRjc3NfYmxvY2tfdG9faW5zZXJ0ID0gIlxuYm9keTpub3QoLmhvbWUpIHsgcGFkZGluZy10b3A6IDEyOHB4OyB9XG5AbWVkaWEgKG1heC13aWR0aDogNzY4cHgpIHtcbiAgYm9keTpub3QoLmhvbWUpIHsgcGFkZGluZy10b3A6IDExMHB4OyB9XG59XG4iOwoKZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CmVjaG8gIlBBUlQgQSAvIFNURVAgQTE6IFBSRVBBUkUgLSBmcmVzaC1yZWFkIHNuaXBwZXQgaWQ9JHNuaXBwZXRfaWQgYW5kIHZhbGlkYXRlIHByZWNvbmRpdGlvbnNcbiI7CmVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwoKJHNuaXBwZXRzX3RhYmxlID0gJHdwZGItPnByZWZpeCAuICdzbmlwcGV0cyc7CiRyb3cgPSAkd3BkYi0+Z2V0X3JvdygKCSR3cGRiLT5wcmVwYXJlKCAiU0VMRUNUIGlkLCBuYW1lLCBhY3RpdmUsIHNjb3BlLCBjb2RlIEZST00gJHNuaXBwZXRzX3RhYmxlIFdIRVJFIGlkID0gJWQiLCAkc25pcHBldF9pZCApLAoJQVJSQVlfQQopOwoKaWYgKCAhICRyb3cgKSB7CgllY2hvICJFUlJPUjogbm8gc25pcHBldCByb3cgZm91bmQgd2l0aCBpZD0kc25pcHBldF9pZFxuIjsKCWVjaG8gIkFCT1JUOiBjYW5ub3QgbW9kaWZ5IGEgcm93IHRoYXQgZG9lcyBub3QgZXhpc3RcbiI7CglleGl0KCAxICk7Cn0KZWNobyAiZm91bmQgcm93OiBpZD17JHJvd1snaWQnXX0gIG5hbWU9XCJ7JHJvd1snbmFtZSddfVwiICBhY3RpdmU9eyRyb3dbJ2FjdGl2ZSddfSAgc2NvcGU9eyRyb3dbJ3Njb3BlJ119XG4iOwoKaWYgKCAxICE9PSAoaW50KSAkcm93WydhY3RpdmUnXSApIHsKCWVjaG8gIkVSUk9SOiBleHBlY3RlZCBhY3RpdmU9MSAocG9zdCBTdGVwIDIgYWN0aXZhdGlvbiksIGZvdW5kIGFjdGl2ZT17JHJvd1snYWN0aXZlJ119XG4iOwoJZWNobyAiQUJPUlRcbiI7CglleGl0KCAxICk7Cn0KZWNobyAiT0s6IGFjdGl2ZT0xIGNvbmZpcm1lZFxuIjsKCmVjaG8gImV4cGVjdGVkIGNvZGUgbGVuZ3RoPSIgLiBzdHJsZW4oICRleHBlY3RlZF9jb2RlX2JlZm9yZSApIC4gIlxuIjsKZWNobyAic3RvcmVkIGNvZGUgbGVuZ3RoPSIgLiBzdHJsZW4oICRyb3dbJ2NvZGUnXSApIC4gIlxuIjsKJGNvZGVfbWF0Y2hlcyA9ICggJHJvd1snY29kZSddID09PSAkZXhwZWN0ZWRfY29kZV9iZWZvcmUgKTsKZWNobyAic3RvcmVkIGNvZGUgbWF0Y2hlcyBleHBlY3RlZCBwcmUtY2hhbmdlIHZhbHVlIGJ5dGUtZm9yLWJ5dGU6ICIgLiAoICRjb2RlX21hdGNoZXMgPyAnWUVTJyA6ICdOTycgKSAuICJcbiI7CgppZiAoICEgJGNvZGVfbWF0Y2hlcyApIHsKCWVjaG8gIkVSUk9SOiBzdG9yZWQgY29kZSBoYXMgZHJpZnRlZCBzaW5jZSBTdGVwIDIgLSByZWZ1c2luZyB0byBtb2RpZnlcbiI7CgllY2hvICJBQk9SVFxuIjsKCWV4aXQoIDEgKTsKfQplY2hvICJPSzogY29kZSBkcmlmdCBjaGVjayBwYXNzZWRcbiI7CgplY2hvICJcbj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwplY2hvICJQQVJUIEEgLyBTVEVQIEEyOiBDT01NSVQgLSBhcHBlbmQgdG9wLXNwYWNpbmcgQ1NTIGJlZm9yZSBjbG9zaW5nIDwvc3R5bGU+IHRhZ1xuIjsKZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgokbmVlZGxlICAgICAgID0gJzwvc3R5bGU+JzsKJHVwZGF0ZWRfY29kZSA9IHN0cl9yZXBsYWNlKCAkbmVlZGxlLCAkY3NzX2Jsb2NrX3RvX2luc2VydCAuICRuZWVkbGUsICRyb3dbJ2NvZGUnXSwgJHJlcGxhY2VfY291bnQgKTsKZWNobyAicmVwbGFjZW1lbnRzIG1hZGU6ICRyZXBsYWNlX2NvdW50XG4iOwoKaWYgKCAxICE9PSAkcmVwbGFjZV9jb3VudCApIHsKCWVjaG8gIkVSUk9SOiBleHBlY3RlZCBleGFjdGx5IDEgcmVwbGFjZW1lbnQgb2YgPC9zdHlsZT4sIG1hZGUgJHJlcGxhY2VfY291bnQgLSByZWZ1c2luZyB0byBtb2RpZnkgKGFtYmlndW91cyBpbnNlcnRpb24gcG9pbnQpXG4iOwoJZWNobyAiQUJPUlRcbiI7CglleGl0KCAxICk7Cn0KZWNobyAiT0s6IGNvbXB1dGVkIHVwZGF0ZWQgY29kZSBsb2NhbGx5LCBuZXcgbGVuZ3RoPSIgLiBzdHJsZW4oICR1cGRhdGVkX2NvZGUgKSAuICIgKHdhcyAiIC4gc3RybGVuKCAkcm93Wydjb2RlJ10gKSAuICIpXG4iOwoKJHVwZGF0ZV9vayA9ICR3cGRiLT51cGRhdGUoCgkkc25pcHBldHNfdGFibGUsCglhcnJheSggJ2NvZGUnID0+ICR1cGRhdGVkX2NvZGUgKSwKCWFycmF5KCAnaWQnID0+ICRzbmlwcGV0X2lkICksCglhcnJheSggJyVzJyApLAoJYXJyYXkoICclZCcgKQopOwoKaWYgKCBmYWxzZSA9PT0gJHVwZGF0ZV9vayApIHsKCWVjaG8gIkVSUk9SOiBcJHdwZGItPnVwZGF0ZSgpIGZhaWxlZDogeyR3cGRiLT5sYXN0X2Vycm9yfVxuIjsKCWVjaG8gIkFCT1JUXG4iOwoJZXhpdCggMSApOwp9CmVjaG8gIk9LOiB1cGRhdGUoKSByZXR1cm5lZCAkdXBkYXRlX29rIChyb3dzIGFmZmVjdGVkKVxuIjsKCmVjaG8gIlxuPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CmVjaG8gIlBBUlQgQSAvIFNURVAgQTM6IFZFUklGWSAtIHJlLXJlYWQsIGNvbmZpcm0gbmV3IHJ1bGUgcHJlc2VudCwgYWN0aXZlIHN0aWxsIDEsIHJlc3QgdW5jaGFuZ2VkXG4iOwplY2hvICI9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKCiRhbnlfZXJyb3IgPSBmYWxzZTsKCiR2ZXJpZnlfcm93ID0gJHdwZGItPmdldF9yb3coCgkkd3BkYi0+cHJlcGFyZSggIlNFTEVDVCBpZCwgbmFtZSwgYWN0aXZlLCBzY29wZSwgY29kZSBGUk9NICRzbmlwcGV0c190YWJsZSBXSEVSRSBpZCA9ICVkIiwgJHNuaXBwZXRfaWQgKSwKCUFSUkFZX0EKKTsKCmlmICggISAkdmVyaWZ5X3JvdyApIHsKCWVjaG8gIkVSUk9SOiBjb3VsZCBub3QgcmUtcmVhZCByb3cgaWQ9JHNuaXBwZXRfaWQgYWZ0ZXIgdXBkYXRlXG4iOwoJJGFueV9lcnJvciA9IHRydWU7Cn0gZWxzZSB7CgllY2hvICJyZS1yZWFkIGlkPXskdmVyaWZ5X3Jvd1snaWQnXX0gIG5hbWU9XCJ7JHZlcmlmeV9yb3dbJ25hbWUnXX1cIiAgYWN0aXZlPXskdmVyaWZ5X3Jvd1snYWN0aXZlJ119ICBzY29wZT17JHZlcmlmeV9yb3dbJ3Njb3BlJ119XG4iOwoKCSRhY3RpdmVfb2sgPSAoIDEgPT09IChpbnQpICR2ZXJpZnlfcm93WydhY3RpdmUnXSApOwoJZWNobyAiYWN0aXZlIGlzIHN0aWxsIGV4YWN0bHkgMTogIiAuICggJGFjdGl2ZV9vayA/ICdZRVMnIDogJ05PJyApIC4gIlxuIjsKCgkkaGFzX25ld19ydWxlID0gKCBmYWxzZSAhPT0gc3RycG9zKCAkdmVyaWZ5X3Jvd1snY29kZSddLCAnYm9keTpub3QoLmhvbWUpJyApICk7CgllY2hvICJuZXcgcnVsZSAnYm9keTpub3QoLmhvbWUpJyBwcmVzZW50IGluIHN0b3JlZCBjb2RlOiAiIC4gKCAkaGFzX25ld19ydWxlID8gJ1lFUycgOiAnTk8nICkgLiAiXG4iOwoKCSRleGFjdF9tYXRjaCA9ICggJHZlcmlmeV9yb3dbJ2NvZGUnXSA9PT0gJHVwZGF0ZWRfY29kZSApOwoJZWNobyAic3RvcmVkIGNvZGUgbWF0Y2hlcyBjb21wdXRlZCB1cGRhdGVkIGNvZGUgYnl0ZS1mb3ItYnl0ZSAocmVzdCBvZiBzbmlwcGV0IHVuY2hhbmdlZCk6ICIgLiAoICRleGFjdF9tYXRjaCA/ICdZRVMnIDogJ05PJyApIC4gIlxuIjsKCglpZiAoICEgJGFjdGl2ZV9vayB8fCAhICRoYXNfbmV3X3J1bGUgfHwgISAkZXhhY3RfbWF0Y2ggKSB7CgkJZWNobyAiRVJST1I6IHZlcmlmaWNhdGlvbiBGQUlMRURcbiI7CgkJJGFueV9lcnJvciA9IHRydWU7Cgl9IGVsc2UgewoJCWVjaG8gIk9LOiB2ZXJpZmljYXRpb24gcGFzc2VkXG4iOwoJfQoKCWVjaG8gIlxuLS0tIEZVTEwgU1RPUkVEIENPREUgQUZURVIgVVBEQVRFICh2ZXJiYXRpbSkgLS0tXG4iOwoJZWNobyAkdmVyaWZ5X3Jvd1snY29kZSddIC4gIlxuIjsKCWVjaG8gIi0tLSBFTkQgU1RPUkVEIENPREUgLS0tXG4iOwp9CgplY2hvICJcbj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwppZiAoICRhbnlfZXJyb3IgKSB7CgllY2hvICJBQk9SVDogdmVyaWZpY2F0aW9uIGVycm9yIC0gc2VlIEVSUk9SIG5vdGljZShzKSBhYm92ZS4gUmVjb21tZW5kIG1hbnVhbCBEQiBpbnNwZWN0aW9uIGltbWVkaWF0ZWx5LlxuIjsKCWV4aXQoIDEgKTsKfQplY2hvICJPSzogUEFSVCBBIGNvbXBsZXRlIC0gdG9wLXNwYWNpbmcgQ1NTIGFkZGVkIHRvIHNuaXBwZXQgaWQ9JHNuaXBwZXRfaWQsIGFjdGl2ZT0xLCByZXN0IG9mIGNvZGUgdW5jaGFuZ2VkLlxuIjsK" | base64 -d > /tmp/part-a-css-spacing.php;
+
+             php -l /tmp/part-a-css-spacing.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on PART A write script";
+               rm -f /tmp/part-a-css-spacing.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/part-a-css-spacing.php --path="$WP_PATH";
+             PART_A_STATUS=$?;
+             rm -f /tmp/part-a-css-spacing.php;
+             if [ "$PART_A_STATUS" -ne 0 ]; then
+               echo "ABORT: PART A failed (exit code $PART_A_STATUS) - stopping before PART B";
+               exit 1;
+             fi;
+
+             echo "";
+             echo "=====================================================";
+             echo "PART B / STEP B1: PREPARE - confirm mu-plugin file exists with expected size";
+             echo "=====================================================";
+             MU_PLUGIN_PATH="$WP_PATH/wp-content/mu-plugins/lunaci-mobile-nav-fix.php";
+             MU_PLUGIN_DISABLED_PATH="$WP_PATH/wp-content/mu-plugins/lunaci-mobile-nav-fix.php.disabled";
+             EXPECTED_SIZE=6861;
+
+             if [ ! -f "$MU_PLUGIN_PATH" ]; then
+               echo "ERROR: expected file not found at $MU_PLUGIN_PATH";
+               echo "ABORT";
+               exit 1;
+             fi;
+             ACTUAL_SIZE=$(stat -c%s "$MU_PLUGIN_PATH" 2>/dev/null || wc -c < "$MU_PLUGIN_PATH");
+             echo "found file: $MU_PLUGIN_PATH";
+             echo "expected size=$EXPECTED_SIZE  actual size=$ACTUAL_SIZE";
+             if [ "$ACTUAL_SIZE" -ne "$EXPECTED_SIZE" ]; then
+               echo "ERROR: size mismatch - unexpected drift since PR #50 diagnostic - refusing to rename";
+               echo "ABORT";
+               exit 1;
+             fi;
+             echo "OK: size matches expected 6861 bytes";
+
+             echo "";
+             echo "=====================================================";
+             echo "PART B / STEP B2: COMMIT - rename file to .disabled";
+             echo "=====================================================";
+             mv "$MU_PLUGIN_PATH" "$MU_PLUGIN_DISABLED_PATH";
+             MV_STATUS=$?;
+             if [ "$MV_STATUS" -ne 0 ]; then
+               echo "ERROR: mv failed with exit code $MV_STATUS";
+               echo "ABORT";
+               exit 1;
+             fi;
+             echo "OK: renamed to $MU_PLUGIN_DISABLED_PATH";
+
+             echo "";
+             echo "=====================================================";
+             echo "PART B / STEP B3: VERIFY - confirm original gone, disabled file present with same size";
+             echo "=====================================================";
+             if [ -f "$MU_PLUGIN_PATH" ]; then
+               echo "ERROR: original .php file still exists at $MU_PLUGIN_PATH after rename";
+               echo "ABORT";
+               exit 1;
+             fi;
+             echo "OK: original .php path no longer exists";
+
+             if [ ! -f "$MU_PLUGIN_DISABLED_PATH" ]; then
+               echo "ERROR: .disabled file not found at $MU_PLUGIN_DISABLED_PATH after rename";
+               echo "ABORT";
+               exit 1;
+             fi;
+             NEW_SIZE=$(stat -c%s "$MU_PLUGIN_DISABLED_PATH" 2>/dev/null || wc -c < "$MU_PLUGIN_DISABLED_PATH");
+             echo "disabled file size=$NEW_SIZE";
+             if [ "$NEW_SIZE" -ne "$EXPECTED_SIZE" ]; then
+               echo "ERROR: disabled file size ($NEW_SIZE) does not match pre-rename size ($EXPECTED_SIZE) - contents may have changed";
+               echo "ABORT";
+               exit 1;
+             fi;
+             echo "OK: verification passed - mu-plugin retired cleanly, contents unchanged";
+
+             echo "";
+             echo "OK: workflow completed successfully"'

@@ -1,0 +1,56 @@
+name: Purge cache (after header spacing fix + mu-plugin retirement)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Purge LiteSpeed cache (fallback to wp cache flush)
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "---PURGE CACHE---";
+             wp litespeed-purge all --path="$WP_PATH";
+             PURGE_STATUS=$?;
+             if [ "$PURGE_STATUS" -ne 0 ]; then
+               echo "litespeed-purge failed (status=$PURGE_STATUS), falling back to wp cache flush";
+               wp cache flush --path="$WP_PATH";
+               FLUSH_STATUS=$?;
+               if [ "$FLUSH_STATUS" -ne 0 ]; then
+                 echo "ABORT: both litespeed-purge and cache flush failed";
+                 exit 1;
+               fi;
+               echo "OK: wp cache flush succeeded";
+             else
+               echo "OK: litespeed-purge succeeded";
+             fi;
+
+             echo "OK: cache purge completed successfully"'

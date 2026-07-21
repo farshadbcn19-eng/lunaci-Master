@@ -1,0 +1,125 @@
+name: Diagnose products page CSS + category banner image dimensions (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Read products page CSS (.lp-section etc.) and category banner image dimensions
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            '             WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "";
+             echo "=====================================================";
+             echo "STEP 1: grep -rl for .lp-section across wp-content/themes/lunaci/";
+             echo "=====================================================";
+             MATCHES=$(grep -rl "\.lp-section" "$WP_PATH/wp-content/themes/lunaci/" 2>/dev/null);
+             if [ -z "$MATCHES" ]; then
+               echo "NO MATCHES FOUND for .lp-section under wp-content/themes/lunaci/";
+             else
+               echo "Matched files:";
+               echo "$MATCHES";
+             fi;
+
+             echo "";
+             echo "=====================================================";
+             echo "STEP 2: ls -la + FULL contents of each matched file";
+             echo "=====================================================";
+             if [ -n "$MATCHES" ]; then
+               echo "$MATCHES" | while IFS= read -r F; do
+                 echo "";
+                 echo "----- ls -la for: $F -----";
+                 ls -la "$F";
+                 echo "";
+                 echo "----- FULL CONTENTS: $F -----";
+                 cat -n "$F";
+                 echo "----- END FILE: $F -----";
+               done;
+             fi;
+
+             echo "";
+             echo "=====================================================";
+             echo "STEP 3: targeted grep - body/html background-color rules";
+             echo "=====================================================";
+             if [ -n "$MATCHES" ]; then
+               echo "$MATCHES" | while IFS= read -r F; do
+                 echo "--- grep in $F ---";
+                 grep -n -i -E "^\s*(body|html)\s*[,{]|background-color" "$F" || echo "no body/html background-color match in $F";
+               done;
+             fi;
+
+             echo "";
+             echo "=====================================================";
+             echo "STEP 4: targeted grep - .lp-section img rules (object-fit/position, width/height)";
+             echo "=====================================================";
+             if [ -n "$MATCHES" ]; then
+               echo "$MATCHES" | while IFS= read -r F; do
+                 echo "--- grep in $F ---";
+                 grep -n -B2 -A6 "\.lp-section[^{]*img" "$F" || echo "no .lp-section img rule found in $F";
+               done;
+             fi;
+
+             echo "";
+             echo "=====================================================";
+             echo "STEP 5: targeted grep - .lp-section container width/max-width/margin";
+             echo "=====================================================";
+             if [ -n "$MATCHES" ]; then
+               echo "$MATCHES" | while IFS= read -r F; do
+                 echo "--- grep in $F ---";
+                 grep -n -B1 -A8 "\.lp-section\s*{" "$F" || echo "no .lp-section container rule found in $F";
+               done;
+             fi;
+
+             echo "";
+             echo "=====================================================";
+             echo "STEP 6: read-only WP-CLI - actual pixel dimensions of the 4 category banner attachments";
+             echo "=====================================================";
+
+             echo "PD9waHAKLy8gUmVhZC1vbmx5OiByZXBvcnQgYWN0dWFsIHBpeGVsIGRpbWVuc2lvbnMgb2YgdGhlIDQgY2F0ZWdvcnkgYmFubmVyCi8vIGF0dGFjaG1lbnRzIChTbmlwcGV0IElEPTcpLCBmb3IgY29tcGFyaXNvbiBhZ2FpbnN0IHRoZSBpbnRlbmRlZAovLyAyMS85IGRlc2t0b3AgYW5kIDMvMiBtb2JpbGUgYXNwZWN0LXJhdGlvIGNyb3AuIE5vIHdyaXRlcy4KCiRpZHMgPSBhcnJheSggNjMzLCA2MzUsIDYzMSwgNjI5ICk7Cgpmb3JlYWNoICggJGlkcyBhcyAkaWQgKSB7CgkkZmlsZSA9IGdldF9hdHRhY2hlZF9maWxlKCAkaWQgKTsKCglpZiAoICEgJGZpbGUgfHwgISBmaWxlX2V4aXN0cyggJGZpbGUgKSApIHsKCQllY2hvICIkaWQ6IEZJTEUgTk9UIEZPVU5EIChnZXRfYXR0YWNoZWRfZmlsZSByZXR1cm5lZCAiIC4gdmFyX2V4cG9ydCggJGZpbGUsIHRydWUgKSAuICIpXG4iOwoJCWNvbnRpbnVlOwoJfQoKCSRzaXplID0gZ2V0aW1hZ2VzaXplKCAkZmlsZSApOwoKCWlmICggZmFsc2UgPT09ICRzaXplICkgewoJCWVjaG8gIiRpZDogZ2V0aW1hZ2VzaXplKCkgZmFpbGVkIGZvciAkZmlsZVxuIjsKCQljb250aW51ZTsKCX0KCgkkd2lkdGggID0gJHNpemVbMF07CgkkaGVpZ2h0ID0gJHNpemVbMV07CgkkcmF0aW8gID0gJGhlaWdodCA+IDAgPyByb3VuZCggJHdpZHRoIC8gJGhlaWdodCwgNCApIDogMDsKCgllY2hvICIkaWQ6IGZpbGU9JGZpbGUgIHdpZHRoPXskd2lkdGh9ICBoZWlnaHQ9eyRoZWlnaHR9ICByYXRpbyh3L2gpPXskcmF0aW99XG4iOwp9Cg==" | base64 -d > /tmp/read-banner-image-dims.php;
+
+             php -l /tmp/read-banner-image-dims.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on read-only script";
+               rm -f /tmp/read-banner-image-dims.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/read-banner-image-dims.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/read-banner-image-dims.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+
+             echo "";
+             echo "OK: diagnostic completed successfully"'

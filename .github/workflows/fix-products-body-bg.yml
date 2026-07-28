@@ -12,11 +12,16 @@ jobs:
         run: sudo apt-get install -y sshpass
 
       - name: Append body.page-id-61 background rule to WPCode post 483
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
         run: |
-          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
             -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
-            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
-            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
             'WP_PATH="";
              for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
                if [ -f "$candidate/wp-config.php" ]; then

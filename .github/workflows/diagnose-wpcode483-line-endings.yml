@@ -1,0 +1,62 @@
+name: Diagnose byte-level line-endings on WPCode post 483 (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Byte-level line-ending check on WPCode post 483 (read-only, no writes)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJHBvc3RfaWQgPSA0ODM7CgplY2hvICI9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKZWNobyAiQnl0ZS1sZXZlbCBsaW5lLWVuZGluZyBjaGVjayBvbiB3cF9wb3N0cyByb3cgSUQ9JHBvc3RfaWQgKHJlYWQtb25seSlcbiI7CmVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwoKJHJvdyA9ICR3cGRiLT5nZXRfcm93KAoJJHdwZGItPnByZXBhcmUoICJTRUxFQ1QgSUQsIHBvc3RfY29udGVudCBGUk9NIHskd3BkYi0+cG9zdHN9IFdIRVJFIElEID0gJWQiLCAkcG9zdF9pZCApLAoJQVJSQVlfQQopOwoKaWYgKCAhICRyb3cgKSB7CgllY2hvICJFUlJPUjogbm8gd3BfcG9zdHMgcm93IGZvdW5kIHdpdGggSUQ9JHBvc3RfaWRcbiI7CglleGl0KCAxICk7Cn0KCiRjb250ZW50ID0gJHJvd1sncG9zdF9jb250ZW50J107CgokdG90YWxfbGVuZ3RoICAgPSBzdHJsZW4oICRjb250ZW50ICk7CiRjcmxmX2NvdW50ICAgICA9IHN1YnN0cl9jb3VudCggJGNvbnRlbnQsICJcclxuIiApOwokbGZfY291bnQgICAgICAgPSBzdWJzdHJfY291bnQoICRjb250ZW50LCAiXG4iICk7CiRjcl9jb3VudCAgICAgICA9IHN1YnN0cl9jb3VudCggJGNvbnRlbnQsICJcciIgKTsKJGJhcmVfbGZfY291bnQgID0gJGxmX2NvdW50IC0gJGNybGZfY291bnQ7CiRiYXJlX2NyX2NvdW50ICA9ICRjcl9jb3VudCAtICRjcmxmX2NvdW50Owokc3RyaXBwZWRfbWQ1ICAgPSBtZDUoIHN0cl9yZXBsYWNlKCAiXHIiLCAnJywgJGNvbnRlbnQgKSApOwoKZWNobyAiMS4gdG90YWwgcG9zdF9jb250ZW50IGxlbmd0aCAoYnl0ZXMpOiAkdG90YWxfbGVuZ3RoXG4iOwplY2hvICIyLiBjb3VudCBvZiBcXHJcXG4gKENSTEYpIG9jY3VycmVuY2VzOiAkY3JsZl9jb3VudFxuIjsKZWNobyAiMy4gY291bnQgb2YgYmFyZSBcXG4gKG5vdCBwcmVjZWRlZCBieSBcXHIpOiAkYmFyZV9sZl9jb3VudFxuIjsKZWNobyAiNC4gY291bnQgb2YgYmFyZSBcXHIgKG5vdCBwYXJ0IG9mIFxcclxcbik6ICRiYXJlX2NyX2NvdW50XG4iOwplY2hvICI1LiBNRDUgb2YgY29udGVudCB3aXRoIGFsbCBcXHIgc3RyaXBwZWQ6ICRzdHJpcHBlZF9tZDVcbiI7CgplY2hvICJcbj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwplY2hvICJPSzogcmVhZC1vbmx5IGRpYWdub3N0aWMgY29tcGxldGUsIG5vIHdyaXRlcyBwZXJmb3JtZWRcbiI7CmVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwo=" | base64 -d > /tmp/diagnose-wpcode483-line-endings.php;
+
+             php -l /tmp/diagnose-wpcode483-line-endings.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-wpcode483-line-endings.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-wpcode483-line-endings.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-wpcode483-line-endings.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: read-only diagnostic completed successfully"'

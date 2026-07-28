@@ -1,0 +1,62 @@
+name: Diagnose current post_content of WPCode post 483 (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Read current wp_posts row ID=483 (read-only, no writes)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJHBvc3RfaWQgPSA0ODM7CgplY2hvICI9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKZWNobyAiUEFSVCAxOiBmcmVzaC1yZWFkIHdwX3Bvc3RzIHJvdyBJRD0kcG9zdF9pZCAocmVhZC1vbmx5KVxuIjsKZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7Cgokcm93ID0gJHdwZGItPmdldF9yb3coCgkkd3BkYi0+cHJlcGFyZSggIlNFTEVDVCBJRCwgcG9zdF9zdGF0dXMsIHBvc3RfbW9kaWZpZWQsIHBvc3RfbW9kaWZpZWRfZ210LCBwb3N0X2NvbnRlbnQgRlJPTSB7JHdwZGItPnBvc3RzfSBXSEVSRSBJRCA9ICVkIiwgJHBvc3RfaWQgKSwKCUFSUkFZX0EKKTsKCmlmICggISAkcm93ICkgewoJZWNobyAiRVJST1I6IG5vIHdwX3Bvc3RzIHJvdyBmb3VuZCB3aXRoIElEPSRwb3N0X2lkXG4iOwoJZXhpdCggMSApOwp9CgplY2hvICJJRD17JHJvd1snSUQnXX1cbiI7CmVjaG8gInBvc3Rfc3RhdHVzPXskcm93Wydwb3N0X3N0YXR1cyddfVxuIjsKZWNobyAicG9zdF9tb2RpZmllZD17JHJvd1sncG9zdF9tb2RpZmllZCddfVxuIjsKZWNobyAicG9zdF9tb2RpZmllZF9nbXQ9eyRyb3dbJ3Bvc3RfbW9kaWZpZWRfZ210J119XG4iOwplY2hvICJwb3N0X2NvbnRlbnQgbGVuZ3RoPSIgLiBzdHJsZW4oICRyb3dbJ3Bvc3RfY29udGVudCddICkgLiAiXG4iOwoKZWNobyAiXG49PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKZWNobyAiUEFSVCAyOiBGVUxMIHBvc3RfY29udGVudCAodmVyYmF0aW0sIG5vIHRydW5jYXRpb24pXG4iOwplY2hvICI9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKZWNobyAiXG4tLS0gRlVMTCBTVE9SRUQgUE9TVF9DT05URU5UICh2ZXJiYXRpbSkgLS0tXG4iOwplY2hvICRyb3dbJ3Bvc3RfY29udGVudCddIC4gIlxuIjsKZWNobyAiLS0tIEVORCBTVE9SRUQgUE9TVF9DT05URU5UIC0tLVxuIjsKCmVjaG8gIlxuPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CmVjaG8gIk9LOiByZWFkLW9ubHkgZGlhZ25vc3RpYyBjb21wbGV0ZSwgbm8gd3JpdGVzIHBlcmZvcm1lZFxuIjsKZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7Cg==" | base64 -d > /tmp/diagnose-wpcode483-current-content.php;
+
+             php -l /tmp/diagnose-wpcode483-current-content.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-wpcode483-current-content.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-wpcode483-current-content.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-wpcode483-current-content.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: read-only diagnostic completed successfully"'

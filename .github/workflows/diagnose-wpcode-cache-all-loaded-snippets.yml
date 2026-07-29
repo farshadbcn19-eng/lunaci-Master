@@ -1,0 +1,97 @@
+name: Diagnose WPCode cache_all_loaded_snippets() body (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Read cache_all_loaded_snippets() body and related cache internals (read-only, no writes)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            '             WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             PLUGIN_DIR="";
+             CANDIDATE=$(find "$WP_PATH/wp-content/plugins" -maxdepth 1 -type d \
+               \( -iname "*wpcode*" -o -iname "*insert-headers*" \) 2>/dev/null | head -1);
+             if [ -n "$CANDIDATE" ]; then
+               PLUGIN_DIR="$CANDIDATE";
+             fi;
+             if [ -z "$PLUGIN_DIR" ]; then
+               echo "ERROR: could not locate a WPCode plugin directory - ABORT diagnostic";
+               exit 1;
+             fi;
+             echo "using plugin directory: $PLUGIN_DIR";
+             CACHE_FILE="$PLUGIN_DIR/includes/class-wpcode-snippet-cache.php";
+
+             echo "";
+             echo "=====================================================";
+             echo "PART 1: full body of cache_all_loaded_snippets(), with margin, in class-wpcode-snippet-cache.php";
+             echo "=====================================================";
+             if [ ! -f "$CACHE_FILE" ]; then
+               echo "ERROR: $CACHE_FILE not found";
+             else
+               grep -n -B10 -A50 "function cache_all_loaded_snippets" "$CACHE_FILE" || echo "cache_all_loaded_snippets() not found";
+             fi;
+
+             echo "";
+             echo "=====================================================";
+             echo "PART 2: full body of get_cached_snippets(), with margin, in class-wpcode-snippet-cache.php";
+             echo "=====================================================";
+             if [ ! -f "$CACHE_FILE" ]; then
+               echo "ERROR: $CACHE_FILE not found";
+             else
+               grep -n -B5 -A20 "function get_cached_snippets(" "$CACHE_FILE" || echo "get_cached_snippets() not found";
+             fi;
+
+             echo "";
+             echo "=====================================================";
+             echo "PART 3: occurrences of in-memory property vs fresh-query indicators in class-wpcode-snippet-cache.php";
+             echo "=====================================================";
+             grep -n -E "cached_snippets|loaded_snippets|wp_load_alloptions|get_posts|WP_Query" "$CACHE_FILE" || echo "no matches found";
+
+             echo "";
+             echo "=====================================================";
+             echo "PART 4: direct sed dump of lines 55 to 95 in class-wpcode-snippet-cache.php, verbatim, to settle the possible duplicate-declaration question";
+             echo "=====================================================";
+             if [ ! -f "$CACHE_FILE" ]; then
+               echo "ERROR: $CACHE_FILE not found";
+             else
+               sed -n "55,95p" "$CACHE_FILE" | cat -n;
+             fi;
+
+             echo "";
+             echo "=====================================================";
+             echo "OK: read-only diagnostic complete, no writes performed, no WPCode function executed";
+             echo "=====================================================";'

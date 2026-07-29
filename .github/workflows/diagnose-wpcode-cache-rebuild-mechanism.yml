@@ -1,0 +1,97 @@
+name: Diagnose WPCode snippet-cache rebuild mechanism (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Grep WPCode plugin source for wpcode_snippets read/write sites (read-only, no writes)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            '             WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "=====================================================";
+             echo "PART 1: locate the WPCode plugin directory";
+             echo "=====================================================";
+             PLUGIN_DIR="";
+             CANDIDATE=$(find "$WP_PATH/wp-content/plugins" -maxdepth 1 -type d \
+               \( -iname "*wpcode*" -o -iname "*insert-headers*" \) 2>/dev/null | head -1);
+             if [ -n "$CANDIDATE" ]; then
+               PLUGIN_DIR="$CANDIDATE";
+             fi;
+             echo "all plugin directories matching wpcode/insert-headers:";
+             find "$WP_PATH/wp-content/plugins" -maxdepth 1 -type d \
+               \( -iname "*wpcode*" -o -iname "*insert-headers*" \) 2>/dev/null;
+             if [ -z "$PLUGIN_DIR" ]; then
+               echo "ERROR: could not locate a WPCode plugin directory - ABORT diagnostic";
+               exit 1;
+             fi;
+             echo "using plugin directory: $PLUGIN_DIR";
+
+             echo "";
+             echo "=====================================================";
+             echo "PART 2: all occurrences of wpcode_snippets (file:line, no context)";
+             echo "=====================================================";
+             grep -rn --include="*.php" "wpcode_snippets" "$PLUGIN_DIR" 2>/dev/null || echo "no occurrences found";
+
+             echo "";
+             echo "=====================================================";
+             echo "PART 3: full context (15 lines before / 30 lines after) around each occurrence";
+             echo "=====================================================";
+             grep -rn -B15 -A30 --include="*.php" "wpcode_snippets" "$PLUGIN_DIR" 2>/dev/null || echo "no occurrences found";
+
+             echo "";
+             echo "=====================================================";
+             echo "PART 4: main plugin class name(s)";
+             echo "=====================================================";
+             grep -rn --include="*.php" -iE "^[[:space:]]*(final[[:space:]]+)?class[[:space:]]+[A-Za-z0-9_]*wpcode[A-Za-z0-9_]*" "$PLUGIN_DIR" 2>/dev/null || echo "no class name matches found";
+
+             echo "";
+             echo "=====================================================";
+             echo "PART 5: candidate cache-rebuild / save-snippet function names";
+             echo "=====================================================";
+             echo "--- functions literally named save_snippet / update_snippet_cache / refresh_cache / rebuild_cache / update_cache ---";
+             grep -rn --include="*.php" -iE "function[[:space:]]+(save_snippet|update_snippet_cache|refresh_cache|rebuild_cache|update_cache|save_snippets_cache|cache_snippets)[[:space:]]*\(" "$PLUGIN_DIR" 2>/dev/null || echo "no exact matches found";
+             echo "";
+             echo "--- broader: any function with both cache and snippet in its name ---";
+             grep -rn --include="*.php" -iE "function[[:space:]]+[a-z0-9_]*(cache[a-z0-9_]*snippet|snippet[a-z0-9_]*cache)[a-z0-9_]*[[:space:]]*\(" "$PLUGIN_DIR" 2>/dev/null || echo "no matches found";
+             echo "";
+             echo "--- broader still: any function with save and snippet in its name ---";
+             grep -rn --include="*.php" -iE "function[[:space:]]+[a-z0-9_]*(save[a-z0-9_]*snippet|snippet[a-z0-9_]*save)[a-z0-9_]*[[:space:]]*\(" "$PLUGIN_DIR" 2>/dev/null || echo "no matches found";
+
+             echo "";
+             echo "=====================================================";
+             echo "OK: read-only diagnostic complete, no writes performed, no WPCode function executed";
+             echo "=====================================================";'

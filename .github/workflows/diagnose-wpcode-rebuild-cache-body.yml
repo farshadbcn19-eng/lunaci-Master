@@ -1,0 +1,99 @@
+name: Diagnose WPCode rebuild_cache() body and instantiation (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Read rebuild_cache() body, __construct(), and instantiation sites (read-only, no writes)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            '             WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             PLUGIN_DIR="";
+             CANDIDATE=$(find "$WP_PATH/wp-content/plugins" -maxdepth 1 -type d \
+               \( -iname "*wpcode*" -o -iname "*insert-headers*" \) 2>/dev/null | head -1);
+             if [ -n "$CANDIDATE" ]; then
+               PLUGIN_DIR="$CANDIDATE";
+             fi;
+             if [ -z "$PLUGIN_DIR" ]; then
+               echo "ERROR: could not locate a WPCode plugin directory - ABORT diagnostic";
+               exit 1;
+             fi;
+             echo "using plugin directory: $PLUGIN_DIR";
+             SNIPPET_FILE="$PLUGIN_DIR/includes/class-wpcode-snippet.php";
+
+             echo "";
+             echo "=====================================================";
+             echo "PART 1: full body of rebuild_cache(), with margin, in class-wpcode-snippet.php";
+             echo "=====================================================";
+             if [ ! -f "$SNIPPET_FILE" ]; then
+               echo "ERROR: $SNIPPET_FILE not found";
+             else
+               grep -n -B5 -A60 "function rebuild_cache" "$SNIPPET_FILE" || echo "rebuild_cache() not found";
+             fi;
+
+             echo "";
+             echo "=====================================================";
+             echo "PART 2: __construct() body, with margin, in class-wpcode-snippet.php";
+             echo "=====================================================";
+             if [ ! -f "$SNIPPET_FILE" ]; then
+               echo "ERROR: $SNIPPET_FILE not found";
+             else
+               grep -n -B5 -A40 "function __construct" "$SNIPPET_FILE" || echo "__construct() not found";
+             fi;
+
+             echo "";
+             echo "=====================================================";
+             echo "PART 3: all occurrences of new WPCode_Snippet( or WPCode_Snippet:: across the whole plugin";
+             echo "=====================================================";
+             grep -rn --include="*.php" -E "new WPCode_Snippet\(|WPCode_Snippet::" "$PLUGIN_DIR" 2>/dev/null || echo "no occurrences found";
+
+             echo "";
+             echo "=====================================================";
+             echo "PART 4: full context around each occurrence found in PART 3, 10 lines before, 20 after";
+             echo "=====================================================";
+             grep -rn -B10 -A20 --include="*.php" -E "new WPCode_Snippet\(|WPCode_Snippet::" "$PLUGIN_DIR" 2>/dev/null || echo "no occurrences found";
+
+             echo "";
+             echo "=====================================================";
+             echo "PART 5: any wpcode_get_snippet or get_snippet style helper functions";
+             echo "=====================================================";
+             grep -rn --include="*.php" -iE "function[[:space:]]+(wpcode_)?get_snippet[a-z0-9_]*[[:space:]]*\(" "$PLUGIN_DIR" 2>/dev/null || echo "no matches found";
+
+             echo "";
+             echo "=====================================================";
+             echo "OK: read-only diagnostic complete, no writes performed, no WPCode function executed";
+             echo "=====================================================";'

@@ -1,0 +1,92 @@
+name: Diagnose WPCode asset cache (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Check WPCode file-based cache and plugin settings (read-only, no writes)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            '             WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "=====================================================";
+             echo "PART 1: WPCode plugin status";
+             echo "=====================================================";
+             wp plugin list --path="$WP_PATH" | grep -i wpcode || echo "no wpcode plugin row found via grep";
+
+             echo "";
+             echo "=====================================================";
+             echo "PART 2: filesystem cache directories (read-only listing)";
+             echo "=====================================================";
+             echo "--- wp-content/uploads (searching for *wpcode*) ---";
+             find "$WP_PATH/wp-content/uploads" -maxdepth 3 -iname "*wpcode*" 2>/dev/null | while read -r d; do
+               echo "FOUND: $d";
+               ls -la "$d" 2>/dev/null;
+             done;
+             echo "";
+             echo "--- wp-content/cache (searching for *wpcode*) ---";
+             find "$WP_PATH/wp-content/cache" -maxdepth 3 -iname "*wpcode*" 2>/dev/null | while read -r d; do
+               echo "FOUND: $d";
+               ls -la "$d" 2>/dev/null;
+             done;
+             echo "";
+             echo "--- broad fallback search under wp-content (excluding plugins dir itself) ---";
+             find "$WP_PATH/wp-content" -maxdepth 3 -iname "*wpcode*" -not -path "*/plugins/*" 2>/dev/null;
+
+             echo "";
+             echo "=====================================================";
+             echo "PART 3: WPCode-related wp_options (read-only)";
+             echo "=====================================================";
+             wp option list --search="*wpcode*" --path="$WP_PATH";
+
+             echo "";
+             echo "--- full value of each matching option (JSON format) ---";
+             for opt in $(wp option list --search="*wpcode*" --path="$WP_PATH" --field=option_name); do
+               echo "";
+               echo "### option: $opt ###";
+               wp option get "$opt" --format=json --path="$WP_PATH";
+             done;
+
+             echo "";
+             echo "=====================================================";
+             echo "PART 4: check for a dedicated wp-cli wpcode command";
+             echo "=====================================================";
+             wp help wpcode --path="$WP_PATH" 2>&1 || echo "no dedicated wp wpcode command found";
+
+             echo "";
+             echo "=====================================================";
+             echo "OK: read-only diagnostic complete, no writes performed";
+             echo "=====================================================";'

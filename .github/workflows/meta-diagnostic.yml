@@ -1,0 +1,48 @@
+name: Meta App Diagnostic
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query Meta Graph API
+        env:
+          META_APP_ID: ${{ secrets.META_APP_ID }}
+          META_APP_SECRET: ${{ secrets.META_APP_SECRET }}
+          META_SYSTEM_USER_TOKEN: ${{ secrets.META_SYSTEM_USER_TOKEN }}
+          META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
+        run: |
+          GV="v25.0"
+          BUSINESS_ID="262540224272345"
+          echo "## LUNACI Meta App Diagnostic Report" >> report.md
+          echo "" >> report.md
+
+          echo "### 1. System User Token validity" >> report.md
+          curl -s "https://graph.facebook.com/$GV/debug_token?input_token=$META_SYSTEM_USER_TOKEN&access_token=$META_APP_ID|$META_APP_SECRET" \
+            | python3 -m json.tool >> report.md 2>&1 || echo "FAILED" >> report.md
+          echo "" >> report.md
+
+          echo "### 2. Business Portfolio connection" >> report.md
+          curl -s "https://graph.facebook.com/$GV/$BUSINESS_ID?fields=name,verification_status&access_token=$META_SYSTEM_USER_TOKEN" \
+            | python3 -m json.tool >> report.md 2>&1 || echo "FAILED" >> report.md
+          echo "" >> report.md
+
+          echo "### 3. Page + Instagram Business Account link" >> report.md
+          curl -s "https://graph.facebook.com/$GV/$META_PAGE_ID?fields=name,instagram_business_account{id,username}&access_token=$META_SYSTEM_USER_TOKEN" \
+            | python3 -m json.tool >> report.md 2>&1 || echo "FAILED" >> report.md
+          echo "" >> report.md
+
+          echo "### 4. Webhook subscriptions on Page" >> report.md
+          curl -s "https://graph.facebook.com/$GV/$META_PAGE_ID/subscribed_apps?access_token=$META_SYSTEM_USER_TOKEN" \
+            | python3 -m json.tool >> report.md 2>&1 || echo "FAILED" >> report.md
+
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: meta-diagnostic-report
+          path: report.md
+          retention-days: 14

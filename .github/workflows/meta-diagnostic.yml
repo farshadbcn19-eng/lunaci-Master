@@ -16,7 +16,7 @@ jobs:
         run: |
           GV="v25.0"
           BUSINESS_ID="262540224272345"
-          PAGE_ID_CLEAN=$(echo "$META_PAGE_ID" | tr -d '[:space:]')
+          PAGE_ID_CLEAN=$(echo -n "$META_PAGE_ID" | tr -cd '0-9')
           echo "## LUNACI Meta App Diagnostic Report" >> report.md
           echo "" >> report.md
 

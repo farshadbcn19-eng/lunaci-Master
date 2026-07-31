@@ -29,6 +29,7 @@ jobs:
           echo "" >> report.md
 
           echo "### 3. Page + Instagram Business Account link" >> report.md
+          echo "DEBUG: PAGE_ID_CLEAN = [$PAGE_ID_CLEAN]" >> report.md
           PAGE_TOKEN=$(curl -sg "https://graph.facebook.com/$GV/me/accounts?fields=name,id,access_token&access_token=$META_SYSTEM_USER_TOKEN" | jq -r --arg pid "$PAGE_ID_CLEAN" '.data[] | select(.id==$pid) | .access_token')
           if [ -z "$PAGE_TOKEN" ] || [ "$PAGE_TOKEN" = "null" ]; then
             echo "Could not extract Page Access Token for META_PAGE_ID" >> report.md

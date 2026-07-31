@@ -28,11 +28,20 @@ jobs:
           echo "" >> report.md
 
           echo "### 3. Page + Instagram Business Account link" >> report.md
-          curl -sg "https://graph.facebook.com/$GV/$META_PAGE_ID?fields=name&access_token=$META_SYSTEM_USER_TOKEN" >> report.md
+          PAGE_TOKEN=$(curl -sg "https://graph.facebook.com/$GV/me/accounts?fields=name,id,access_token&access_token=$META_SYSTEM_USER_TOKEN" | jq -r --arg pid "$META_PAGE_ID" '.data[] | select(.id==$pid) | .access_token')
+          if [ -z "$PAGE_TOKEN" ] || [ "$PAGE_TOKEN" = "null" ]; then
+            echo "Could not extract Page Access Token for META_PAGE_ID" >> report.md
+          else
+            curl -sg "https://graph.facebook.com/$GV/$META_PAGE_ID?fields=name,instagram_business_account{id,username}&access_token=$PAGE_TOKEN" >> report.md
+          fi
           echo "" >> report.md
 
           echo "### 4. Webhook subscriptions on Page" >> report.md
-          curl -sg "https://graph.facebook.com/$GV/$META_PAGE_ID/subscribed_apps?access_token=$META_SYSTEM_USER_TOKEN" >> report.md
+          if [ -z "$PAGE_TOKEN" ] || [ "$PAGE_TOKEN" = "null" ]; then
+            echo "Skipped - no Page Access Token available" >> report.md
+          else
+            curl -sg "https://graph.facebook.com/$GV/$META_PAGE_ID/subscribed_apps?access_token=$PAGE_TOKEN" >> report.md
+          fi
           echo "" >> report.md
 
           echo "### 5. List of Pages owned by this Business" >> report.md

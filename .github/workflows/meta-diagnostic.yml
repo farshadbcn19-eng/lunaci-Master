@@ -39,6 +39,10 @@ jobs:
           curl -sg "https://graph.facebook.com/$GV/$BUSINESS_ID/owned_pages?fields=id,name&access_token=$META_SYSTEM_USER_TOKEN" >> report.md
           echo "" >> report.md
 
+          echo "### 6. Pages accessible via /me/accounts" >> report.md
+          curl -sg "https://graph.facebook.com/$GV/me/accounts?fields=name,id&access_token=$META_SYSTEM_USER_TOKEN" >> report.md
+          echo "" >> report.md
+
           cat report.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload report as artifact

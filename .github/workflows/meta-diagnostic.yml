@@ -28,7 +28,7 @@ jobs:
           echo "" >> report.md
 
           echo "### 3. Page + Instagram Business Account link" >> report.md
-          curl -sg "https://graph.facebook.com/$GV/$META_PAGE_ID?fields=name,instagram_business_account{id,username}&access_token=$META_SYSTEM_USER_TOKEN" >> report.md
+          curl -sg "https://graph.facebook.com/$GV/$META_PAGE_ID?fields=name&access_token=$META_SYSTEM_USER_TOKEN" >> report.md
           echo "" >> report.md
 
           echo "### 4. Webhook subscriptions on Page" >> report.md

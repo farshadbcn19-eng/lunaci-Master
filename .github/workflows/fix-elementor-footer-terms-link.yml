@@ -1,0 +1,59 @@
+name: Fix Elementor Footer Terms of Service Link
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix-elementor-footer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get update -y && sudo apt-get install -y sshpass
+
+      - name: Patch _elementor_data on post_ids 57, 59, 61 only
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+             echo "PD9waHAKLyoqCiAqIExVTkFDSSBCYXJjZWxvbmEg4oCUIGFkZCBhICJUZXJtcyBvZiBTZXJ2aWNlIiBsaW5rIG5leHQgdG8gdGhlIGV4aXN0aW5nCiAqICJQcml2YWN5IFBvbGljeSIgbGluayBpbnNpZGUgX2VsZW1lbnRvcl9kYXRhIGZvciBleGFjdGx5IDMgcHVibGlzaGVkCiAqIHBhZ2VzIChIb21lPTU3LCBBYm91dCBVcz01OSwgUHJvZHVjdD02MSkuIE5vIG90aGVyIHBvc3QgaXMgdG91Y2hlZCwKICogYW5kIG5vIHJldmlzaW9uIGlzIHRvdWNoZWQuCiAqLwoKZnVuY3Rpb24gbHVuYWNpX2NvdW50X25lZWRsZV9pbl90cmVlKCAkbm9kZSwgJG5lZWRsZSApIHsKCSRjb3VudCA9IDA7CglpZiAoIGlzX2FycmF5KCAkbm9kZSApICkgewoJCWZvcmVhY2ggKCAkbm9kZSBhcyAkdmFsdWUgKSB7CgkJCWlmICggaXNfc3RyaW5nKCAkdmFsdWUgKSApIHsKCQkJCSRjb3VudCArPSBzdWJzdHJfY291bnQoICR2YWx1ZSwgJG5lZWRsZSApOwoJCQl9IGVsc2VpZiAoIGlzX2FycmF5KCAkdmFsdWUgKSApIHsKCQkJCSRjb3VudCArPSBsdW5hY2lfY291bnRfbmVlZGxlX2luX3RyZWUoICR2YWx1ZSwgJG5lZWRsZSApOwoJCQl9CgkJfQoJfQoJcmV0dXJuICRjb3VudDsKfQoKZnVuY3Rpb24gbHVuYWNpX3JlcGxhY2VfbmVlZGxlX2luX3RyZWUoICYkbm9kZSwgJG5lZWRsZSwgJHJlcGxhY2VtZW50ICkgewoJJHJlcGxhY2VkID0gZmFsc2U7CglpZiAoIGlzX2FycmF5KCAkbm9kZSApICkgewoJCWZvcmVhY2ggKCAkbm9kZSBhcyAka2V5ID0+ICYkdmFsdWUgKSB7CgkJCWlmICggJHJlcGxhY2VkICkgewoJCQkJYnJlYWs7CgkJCX0KCQkJaWYgKCBpc19zdHJpbmcoICR2YWx1ZSApICYmIGZhbHNlICE9PSBzdHJwb3MoICR2YWx1ZSwgJG5lZWRsZSApICkgewoJCQkJJG5vZGVbICRrZXkgXSA9IHN0cl9yZXBsYWNlKCAkbmVlZGxlLCAkcmVwbGFjZW1lbnQsICR2YWx1ZSApOwoJCQkJJHJlcGxhY2VkICAgICA9IHRydWU7CgkJCX0gZWxzZWlmICggaXNfYXJyYXkoICR2YWx1ZSApICkgewoJCQkJJHJlcGxhY2VkID0gbHVuYWNpX3JlcGxhY2VfbmVlZGxlX2luX3RyZWUoICR2YWx1ZSwgJG5lZWRsZSwgJHJlcGxhY2VtZW50ICk7CgkJCX0KCQl9CgkJdW5zZXQoICR2YWx1ZSApOwoJfQoJcmV0dXJuICRyZXBsYWNlZDsKfQoKJHRhcmdldHMgPSBhcnJheSgKCTU3ID0+ICdIb21lJywKCTU5ID0+ICdBYm91dCBVcycsCgk2MSA9PiAnUHJvZHVjdCcsCik7CgokbmVlZGxlX25vc2xhc2ggPSAnPGxpPjxhIGhyZWY9Imh0dHBzOi8vbHVuYWNpYmFyY2Vsb25hLmNvbS9wcml2YWN5LXBvbGljeSI+UHJpdmFjeSBQb2xpY3k8L2E+PC9saT4nOwokbmVlZGxlX3NsYXNoICAgPSAnPGxpPjxhIGhyZWY9Imh0dHBzOi8vbHVuYWNpYmFyY2Vsb25hLmNvbS9wcml2YWN5LXBvbGljeS8iPlByaXZhY3kgUG9saWN5PC9hPjwvbGk+JzsKJGluc2VydF9ub3NsYXNoID0gJzxsaT48YSBocmVmPSJodHRwczovL2x1bmFjaWJhcmNlbG9uYS5jb20vdGVybXMtb2Ytc2VydmljZSI+VGVybXMgb2YgU2VydmljZTwvYT48L2xpPic7CiRpbnNlcnRfc2xhc2ggICA9ICc8bGk+PGEgaHJlZj0iaHR0cHM6Ly9sdW5hY2liYXJjZWxvbmEuY29tL3Rlcm1zLW9mLXNlcnZpY2UvIj5UZXJtcyBvZiBTZXJ2aWNlPC9hPjwvbGk+JzsKCiRwYXRjaGVkID0gYXJyYXkoKTsKJHNraXBwZWQgPSBhcnJheSgpOwoKZm9yZWFjaCAoICR0YXJnZXRzIGFzICRwb3N0X2lkID0+ICRsYWJlbCApIHsKCWVjaG8gIj09PSBQcm9jZXNzaW5nIHBvc3RfaWQ9JHBvc3RfaWQgKCRsYWJlbCkgPT09XG4iOwoKCSRwb3N0ID0gZ2V0X3Bvc3QoICRwb3N0X2lkICk7CglpZiAoICEgJHBvc3QgfHwgJ3JldmlzaW9uJyA9PT0gJHBvc3QtPnBvc3RfdHlwZSApIHsKCQllY2hvICIgIFNLSVA6IHBvc3Qgbm90IGZvdW5kIG9yIGlzIGEgcmV2aXNpb24uIE5vIGNoYW5nZSBtYWRlLlxuIjsKCQkkc2tpcHBlZFsgJHBvc3RfaWQgXSA9ICdwb3N0IG5vdCBmb3VuZCBvciBpcyBhIHJldmlzaW9uJzsKCQljb250aW51ZTsKCX0KCWVjaG8gIiAgcG9zdF90eXBlPXskcG9zdC0+cG9zdF90eXBlfSAgcG9zdF9zdGF0dXM9eyRwb3N0LT5wb3N0X3N0YXR1c30gIHRpdGxlPVwieyRwb3N0LT5wb3N0X3RpdGxlfVwiXG4iOwoKCSRyYXcgPSBnZXRfcG9zdF9tZXRhKCAkcG9zdF9pZCwgJ19lbGVtZW50b3JfZGF0YScsIHRydWUgKTsKCWlmICggZW1wdHkoICRyYXcgKSApIHsKCQllY2hvICIgIFNLSVA6IG5vIF9lbGVtZW50b3JfZGF0YSBmb3VuZCBmb3IgdGhpcyBwb3N0LiBObyBjaGFuZ2UgbWFkZS5cbiI7CgkJJHNraXBwZWRbICRwb3N0X2lkIF0gPSAnbm8gX2VsZW1lbnRvcl9kYXRhIGZvdW5kJzsKCQljb250aW51ZTsKCX0KCgkkZGF0YSA9IGpzb25fZGVjb2RlKCAkcmF3LCB0cnVlICk7CglpZiAoIEpTT05fRVJST1JfTk9ORSAhPT0ganNvbl9sYXN0X2Vycm9yKCkgfHwgISBpc19hcnJheSggJGRhdGEgKSApIHsKCQkkZXJyID0ganNvbl9sYXN0X2Vycm9yX21zZygpOwoJCWVjaG8gIiAgU0tJUDogY291bGQgbm90IGpzb25fZGVjb2RlIF9lbGVtZW50b3JfZGF0YSAoJGVycikuIE5vIGNoYW5nZSBtYWRlLlxuIjsKCQkkc2tpcHBlZFsgJHBvc3RfaWQgXSA9ICJqc29uX2RlY29kZSBmYWlsZWQ6ICRlcnIiOwoJCWNvbnRpbnVlOwoJfQoKCSRjb3VudF9ub3NsYXNoID0gbHVuYWNpX2NvdW50X25lZWRsZV9pbl90cmVlKCAkZGF0YSwgJG5lZWRsZV9ub3NsYXNoICk7CgkkY291bnRfc2xhc2ggICA9IGx1bmFjaV9jb3VudF9uZWVkbGVfaW5fdHJlZSggJGRhdGEsICRuZWVkbGVfc2xhc2ggKTsKCWVjaG8gIiAgb2NjdXJyZW5jZXMgaW4gX2VsZW1lbnRvcl9kYXRhOiBuby1zbGFzaD0kY291bnRfbm9zbGFzaCwgd2l0aC1zbGFzaD0kY291bnRfc2xhc2hcbiI7CgoJaWYgKCAxID09PSAkY291bnRfbm9zbGFzaCAmJiAwID09PSAkY291bnRfc2xhc2ggKSB7CgkJJG5lZWRsZSAgPSAkbmVlZGxlX25vc2xhc2g7CgkJJGluc2VydCAgPSAkaW5zZXJ0X25vc2xhc2g7CgkJJHZhcmlhbnQgPSAnbm8tc2xhc2gnOwoJfSBlbHNlaWYgKCAwID09PSAkY291bnRfbm9zbGFzaCAmJiAxID09PSAkY291bnRfc2xhc2ggKSB7CgkJJG5lZWRsZSAgPSAkbmVlZGxlX3NsYXNoOwoJCSRpbnNlcnQgID0gJGluc2VydF9zbGFzaDsKCQkkdmFyaWFudCA9ICd3aXRoLXNsYXNoJzsKCX0gZWxzZSB7CgkJJHJlYXNvbiA9ICJleHBlY3RlZCBleGFjdGx5IDEgb2NjdXJyZW5jZSBvZiBleGFjdGx5IG9uZSB2YXJpYW50LCBmb3VuZCBuby1zbGFzaD0kY291bnRfbm9zbGFzaCB3aXRoLXNsYXNoPSRjb3VudF9zbGFzaCI7CgkJZWNobyAiICBTS0lQOiAkcmVhc29uLiBObyBjaGFuZ2UgbWFkZS5cbiI7CgkJJHNraXBwZWRbICRwb3N0X2lkIF0gPSAkcmVhc29uOwoJCWNvbnRpbnVlOwoJfQoKCSRyZXBsYWNlZCA9IGx1bmFjaV9yZXBsYWNlX25lZWRsZV9pbl90cmVlKCAkZGF0YSwgJG5lZWRsZSwgJG5lZWRsZSAuICRpbnNlcnQgKTsKCWlmICggISAkcmVwbGFjZWQgKSB7CgkJZWNobyAiICBTS0lQOiByZXBsYWNlbWVudCBmYWlsZWQgdW5leHBlY3RlZGx5IGRlc3BpdGUgcGFzc2luZyB0aGUgY291bnQgY2hlY2suIE5vIGNoYW5nZSBtYWRlLlxuIjsKCQkkc2tpcHBlZFsgJHBvc3RfaWQgXSA9ICdyZXBsYWNlbWVudCBmYWlsZWQgdW5leHBlY3RlZGx5JzsKCQljb250aW51ZTsKCX0KCgkkbmV3X2pzb24gPSB3cF9qc29uX2VuY29kZSggJGRhdGEgKTsKCWlmICggZmFsc2UgPT09ICRuZXdfanNvbiApIHsKCQkkZXJyID0ganNvbl9sYXN0X2Vycm9yX21zZygpOwoJCWVjaG8gIiAgU0tJUDogd3BfanNvbl9lbmNvZGUgZmFpbGVkIGFmdGVyIG1vZGlmaWNhdGlvbiAoJGVycikuIE5vIHdyaXRlIHBlcmZvcm1lZC5cbiI7CgkJJHNraXBwZWRbICRwb3N0X2lkIF0gPSAid3BfanNvbl9lbmNvZGUgZmFpbGVkOiAkZXJyIjsKCQljb250aW51ZTsKCX0KCgkkdXBkYXRlX3Jlc3VsdCA9IHVwZGF0ZV9wb3N0X21ldGEoICRwb3N0X2lkLCAnX2VsZW1lbnRvcl9kYXRhJywgd3Bfc2xhc2goICRuZXdfanNvbiApICk7CgllY2hvICcgIHVwZGF0ZV9wb3N0X21ldGEoKSByZXN1bHQ6ICcgLiB2YXJfZXhwb3J0KCAkdXBkYXRlX3Jlc3VsdCwgdHJ1ZSApIC4gIlxuIjsKCglkZWxldGVfcG9zdF9tZXRhKCAkcG9zdF9pZCwgJ19lbGVtZW50b3JfZWxlbWVudF9jYWNoZScgKTsKCWVjaG8gIiAgY2xlYXJlZCBfZWxlbWVudG9yX2VsZW1lbnRfY2FjaGUgZm9yIHBvc3RfaWQ9JHBvc3RfaWRcbiI7CgoJJHZlcmlmeV9yYXcgID0gZ2V0X3Bvc3RfbWV0YSggJHBvc3RfaWQsICdfZWxlbWVudG9yX2RhdGEnLCB0cnVlICk7CgkkdmVyaWZ5X2RhdGEgPSBqc29uX2RlY29kZSggJHZlcmlmeV9yYXcsIHRydWUgKTsKCWlmICggSlNPTl9FUlJPUl9OT05FICE9PSBqc29uX2xhc3RfZXJyb3IoKSB8fCAhIGlzX2FycmF5KCAkdmVyaWZ5X2RhdGEgKSApIHsKCQkkZXJyID0ganNvbl9sYXN0X2Vycm9yX21zZygpOwoJCWVjaG8gIiAgVkVSSUZZIEZBSUw6IHN0b3JlZCBfZWxlbWVudG9yX2RhdGEgaXMgbm90IHZhbGlkIEpTT04gYWZ0ZXIgdXBkYXRlICgkZXJyKS4gTWFudWFsIHJldmlldyBuZWVkZWQuXG4iOwoJCSRza2lwcGVkWyAkcG9zdF9pZCBdID0gInBvc3QtdXBkYXRlIHZlcmlmaWNhdGlvbiBmYWlsZWQ6IGludmFsaWQgSlNPTiAoJGVycikiOwoJCWNvbnRpbnVlOwoJfQoKCSR2ZXJpZnlfY291bnRfbmVlZGxlID0gbHVuYWNpX2NvdW50X25lZWRsZV9pbl90cmVlKCAkdmVyaWZ5X2RhdGEsICRuZWVkbGUgKTsKCSR2ZXJpZnlfY291bnRfaW5zZXJ0ID0gbHVuYWNpX2NvdW50X25lZWRsZV9pbl90cmVlKCAkdmVyaWZ5X2RhdGEsICRpbnNlcnQgKTsKCWVjaG8gIiAgVkVSSUZZICh2aWEganNvbl9kZWNvZGUpOiBwcml2YWN5LXBvbGljeSA8bGk+IG9jY3VycmVuY2VzPSR2ZXJpZnlfY291bnRfbmVlZGxlLCB0ZXJtcy1vZi1zZXJ2aWNlIDxsaT4gb2NjdXJyZW5jZXM9JHZlcmlmeV9jb3VudF9pbnNlcnRcbiI7CgoJaWYgKCAxID09PSAkdmVyaWZ5X2NvdW50X25lZWRsZSAmJiAxID09PSAkdmVyaWZ5X2NvdW50X2luc2VydCApIHsKCQllY2hvICIgIE9LOiBwYXRjaGVkIHBvc3RfaWQ9JHBvc3RfaWQgKCRsYWJlbCksIHZhcmlhbnQ9JHZhcmlhbnQsIHZlcmlmaWVkIHZpYSBqc29uX2RlY29kZS5cbiI7CgkJJHBhdGNoZWRbICRwb3N0X2lkIF0gPSAkdmFyaWFudDsKCX0gZWxzZSB7CgkJZWNobyAiICBWRVJJRlkgRkFJTDogdW5leHBlY3RlZCBvY2N1cnJlbmNlIGNvdW50cyBhZnRlciB1cGRhdGUgLSBtYW51YWwgcmV2aWV3IG5lZWRlZC5cbiI7CgkJJHNraXBwZWRbICRwb3N0X2lkIF0gPSAncG9zdC11cGRhdGUgdmVyaWZpY2F0aW9uIGZvdW5kIHVuZXhwZWN0ZWQgb2NjdXJyZW5jZSBjb3VudHMnOwoJfQoKCWVjaG8gIlxuIjsKfQoKZWNobyAiPT09IFN1bW1hcnkgPT09XG4iOwplY2hvICdQYXRjaGVkICgnIC4gY291bnQoICRwYXRjaGVkICkgLiAiKTogIjsKaWYgKCBlbXB0eSggJHBhdGNoZWQgKSApIHsKCWVjaG8gIihub25lKVxuIjsKfSBlbHNlIHsKCSRwYXJ0cyA9IGFycmF5KCk7Cglmb3JlYWNoICggJHBhdGNoZWQgYXMgJHBvc3RfaWQgPT4gJHZhcmlhbnQgKSB7CgkJJHBhcnRzW10gPSAiJHBvc3RfaWQgKHskdGFyZ2V0c1sgJHBvc3RfaWQgXX0sICR2YXJpYW50KSI7Cgl9CgllY2hvIGltcGxvZGUoICcsICcsICRwYXJ0cyApIC4gIlxuIjsKfQoKZWNobyAnU2tpcHBlZCAoJyAuIGNvdW50KCAkc2tpcHBlZCApIC4gIik6ICI7CmlmICggZW1wdHkoICRza2lwcGVkICkgKSB7CgllY2hvICIobm9uZSlcbiI7Cn0gZWxzZSB7CgkkcGFydHMgPSBhcnJheSgpOwoJZm9yZWFjaCAoICRza2lwcGVkIGFzICRwb3N0X2lkID0+ICRyZWFzb24gKSB7CgkJJGxhYmVsICAgPSBpc3NldCggJHRhcmdldHNbICRwb3N0X2lkIF0gKSA/ICR0YXJnZXRzWyAkcG9zdF9pZCBdIDogJ3Vua25vd24nOwoJCSRwYXJ0c1tdID0gIiRwb3N0X2lkICgkbGFiZWwpOiAkcmVhc29uIjsKCX0KCWVjaG8gaW1wbG9kZSggJzsgJywgJHBhcnRzICkgLiAiXG4iOwp9CgplY2hvICJcbj09PSBEb25lIChvbmx5IHBvc3RfaWRzIDU3LCA1OSwgNjEgd2VyZSB0b3VjaGVkOyBubyByZXZpc2lvbnMgb3Igb3RoZXIgcG9zdHMgbW9kaWZpZWQpID09PVxuIjsK" | base64 -d > /tmp/fix-elementor-footer-terms-link.php;
+             php -l /tmp/fix-elementor-footer-terms-link.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on fix script";
+               rm -f /tmp/fix-elementor-footer-terms-link.php;
+               exit 1;
+             fi;
+             wp eval-file /tmp/fix-elementor-footer-terms-link.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/fix-elementor-footer-terms-link.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - fix did NOT complete successfully";
+               exit 1;
+             fi' | tee fix-output.txt
+
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "## Elementor footer Terms of Service link fix" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat fix-output.txt >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || echo "(no output captured)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

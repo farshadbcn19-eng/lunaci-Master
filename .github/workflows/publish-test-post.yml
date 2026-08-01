@@ -1,0 +1,67 @@
+name: Publish Test Post
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Post message text'
+        required: false
+        default: "LUNACI Barcelona — testing our automated publishing tool. This post will be removed shortly."
+        type: string
+
+jobs:
+  publish-test-post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish message to Facebook Page
+        env:
+          META_SYSTEM_USER_TOKEN: ${{ secrets.META_SYSTEM_USER_TOKEN }}
+          META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
+          POST_MESSAGE: ${{ inputs.message }}
+        run: |
+          set -o pipefail
+          GV="v25.0"
+          PAGE_ID_CLEAN=$(echo -n "$META_PAGE_ID" | tr -cd '0-9')
+
+          PAGE_TOKEN=$(curl -sgL "https://graph.facebook.com/$GV/me/accounts?fields=name,id,access_token&access_token=$META_SYSTEM_USER_TOKEN" | jq -r --arg pid "$PAGE_ID_CLEAN" '.data[] | select(.id==$pid) | .access_token')
+
+          if [ -z "$PAGE_TOKEN" ] || [ "$PAGE_TOKEN" = "null" ]; then
+            echo "ERROR: could not extract Page Access Token for META_PAGE_ID"
+            echo "## Publish Test Post — FAILED" >> "$GITHUB_STEP_SUMMARY"
+            echo "Could not extract Page Access Token for META_PAGE_ID." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          RESPONSE=$(curl -sgL -X POST "https://graph.facebook.com/$GV/$PAGE_ID_CLEAN/feed" \
+            --data-urlencode "message=$POST_MESSAGE" \
+            --data-urlencode "access_token=$PAGE_TOKEN")
+          CURL_STATUS=$?
+
+          unset PAGE_TOKEN
+
+          if [ "$CURL_STATUS" -ne 0 ]; then
+            echo "ERROR: curl request to Facebook Graph API failed (exit code $CURL_STATUS)"
+            echo "## Publish Test Post — FAILED" >> "$GITHUB_STEP_SUMMARY"
+            echo "curl request failed with exit code $CURL_STATUS (no token or response content shown)." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          echo "$RESPONSE" > response.json
+
+          echo "## Publish Test Post" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat response.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+          POST_ID=$(jq -r '.id // empty' response.json)
+
+          if [ -z "$POST_ID" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "ERROR: response did not contain an \`id\` field - post may not have been created. See raw response above." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Post ID:** \`$POST_ID\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "[View post on Facebook](https://www.facebook.com/$POST_ID)" >> "$GITHUB_STEP_SUMMARY"

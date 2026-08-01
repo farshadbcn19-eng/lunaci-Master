@@ -1,0 +1,59 @@
+name: Diagnose Elementor Footer Privacy Link (Read-Only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get update -y && sudo apt-get install -y sshpass
+
+      - name: Scan wp_postmeta._elementor_data for privacy-policy references
+        run: |
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+             echo "PD9waHAKLyoqCiAqIExVTkFDSSBCYXJjZWxvbmEg4oCUIHJlYWQtb25seSBkaWFnbm9zdGljOiBsb2NhdGUgdGhlICJwcml2YWN5LXBvbGljeSIKICogZm9vdGVyIGxpbmsgaW5zaWRlIEVsZW1lbnRvcidzIF9lbGVtZW50b3JfZGF0YSBwb3N0bWV0YSwgc2luY2UgaXQgaXMKICogbm90IGZvdW5kIGluIHBsYWluIHBvc3RfY29udGVudCBvbiBhdCBsZWFzdCBvbmUgcGFnZSAoUHJvZHVjdHMpLgogKiBObyB3cml0ZXMgYXJlIHBlcmZvcm1lZC4KICovCgpnbG9iYWwgJHdwZGI7CgplY2hvICI9PT0gRGlhZ25vc3RpYzogd3BfcG9zdG1ldGEuX2VsZW1lbnRvcl9kYXRhIGNvbnRhaW5pbmcgJ3ByaXZhY3ktcG9saWN5JyA9PT1cblxuIjsKCiRyb3dzID0gJHdwZGItPmdldF9yZXN1bHRzKAoJIlNFTEVDVCBwbS5wb3N0X2lkLCBwbS5tZXRhX2lkLCBMRU5HVEgocG0ubWV0YV92YWx1ZSkgQVMgbWV0YV9sZW5ndGgsCgkgICAgICAgIHAucG9zdF90aXRsZSwgcC5wb3N0X3R5cGUsIHAucG9zdF9zdGF0dXMKCSBGUk9NIHskd3BkYi0+cG9zdG1ldGF9IHBtCgkgTEVGVCBKT0lOIHskd3BkYi0+cG9zdHN9IHAgT04gcC5JRCA9IHBtLnBvc3RfaWQKCSBXSEVSRSBwbS5tZXRhX2tleSA9ICdfZWxlbWVudG9yX2RhdGEnCgkgQU5EIHBtLm1ldGFfdmFsdWUgTElLRSAnJXByaXZhY3ktcG9saWN5JSciCik7CgplY2hvICJGb3VuZCAiIC4gY291bnQoICRyb3dzICkgLiAiIHJvdyhzKSB3aGVyZSBfZWxlbWVudG9yX2RhdGEgY29udGFpbnMgJ3ByaXZhY3ktcG9saWN5Jy5cblxuIjsKCmZvcmVhY2ggKCAkcm93cyBhcyAkcm93ICkgewoJZWNobyAicG9zdF9pZD17JHJvdy0+cG9zdF9pZH0gIG1ldGFfaWQ9eyRyb3ctPm1ldGFfaWR9ICBwb3N0X3R5cGU9eyRyb3ctPnBvc3RfdHlwZX0gIHBvc3Rfc3RhdHVzPXskcm93LT5wb3N0X3N0YXR1c30gIHRpdGxlPVwieyRyb3ctPnBvc3RfdGl0bGV9XCIgIG1ldGFfbGVuZ3RoPXskcm93LT5tZXRhX2xlbmd0aH1cbiI7CgoJJG1ldGFfdmFsdWUgPSAkd3BkYi0+Z2V0X3ZhcigKCQkkd3BkYi0+cHJlcGFyZSggIlNFTEVDVCBtZXRhX3ZhbHVlIEZST00geyR3cGRiLT5wb3N0bWV0YX0gV0hFUkUgbWV0YV9pZCA9ICVkIiwgJHJvdy0+bWV0YV9pZCApCgkpOwoJJGNvdW50ID0gc3Vic3RyX2NvdW50KCAoc3RyaW5nKSAkbWV0YV92YWx1ZSwgJ3ByaXZhY3ktcG9saWN5JyApOwoJZWNobyAiICBvY2N1cnJlbmNlcyBvZiAncHJpdmFjeS1wb2xpY3knOiAkY291bnRcbiI7CgoJJHBvcyA9IHN0cnBvcyggKHN0cmluZykgJG1ldGFfdmFsdWUsICdwcml2YWN5LXBvbGljeScgKTsKCWlmICggZmFsc2UgIT09ICRwb3MgKSB7CgkJJHN0YXJ0ID0gbWF4KCAwLCAkcG9zIC0gMTUwICk7CgkJJGN0eCAgID0gc3Vic3RyKCAoc3RyaW5nKSAkbWV0YV92YWx1ZSwgJHN0YXJ0LCA0MDAgKTsKCQllY2hvICIgIGNvbnRleHQ6IC4uLiIgLiAkY3R4IC4gIi4uLlxuIjsKCX0KCWVjaG8gIlxuIjsKfQoKZWNobyAiPT09IEVsZW1lbnRvciBsaWJyYXJ5IHRlbXBsYXRlcyAocG9zdF90eXBlID0gZWxlbWVudG9yX2xpYnJhcnkpID09PVxuIjsKJHRlbXBsYXRlcyA9ICR3cGRiLT5nZXRfcmVzdWx0cygKCSJTRUxFQ1QgSUQsIHBvc3RfdGl0bGUsIHBvc3Rfc3RhdHVzIEZST00geyR3cGRiLT5wb3N0c30gV0hFUkUgcG9zdF90eXBlID0gJ2VsZW1lbnRvcl9saWJyYXJ5JyIKKTsKZWNobyAiRm91bmQgIiAuIGNvdW50KCAkdGVtcGxhdGVzICkgLiAiIGVsZW1lbnRvcl9saWJyYXJ5IHBvc3QocykuXG4iOwpmb3JlYWNoICggJHRlbXBsYXRlcyBhcyAkdCApIHsKCWVjaG8gIiAgSUQ9eyR0LT5JRH0gIHRpdGxlPVwieyR0LT5wb3N0X3RpdGxlfVwiICBzdGF0dXM9eyR0LT5wb3N0X3N0YXR1c31cbiI7Cn0KCmVjaG8gIlxuPT09IF9lbGVtZW50b3JfdGVtcGxhdGVfdHlwZSBtZXRhIChpZGVudGlmaWVzIGhlYWRlci9mb290ZXIvc2luZ2xlIHRlbXBsYXRlcykgPT09XG4iOwokdHlwZXMgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoCgkiU0VMRUNUIHBvc3RfaWQsIG1ldGFfdmFsdWUgRlJPTSB7JHdwZGItPnBvc3RtZXRhfSBXSEVSRSBtZXRhX2tleSA9ICdfZWxlbWVudG9yX3RlbXBsYXRlX3R5cGUnIgopOwplY2hvICJGb3VuZCAiIC4gY291bnQoICR0eXBlcyApIC4gIiByb3cocykuXG4iOwpmb3JlYWNoICggJHR5cGVzIGFzICR0ICkgewoJZWNobyAiICBwb3N0X2lkPXskdC0+cG9zdF9pZH0gIHRlbXBsYXRlX3R5cGU9eyR0LT5tZXRhX3ZhbHVlfVxuIjsKfQoKZWNobyAiXG49PT0gQW55IG90aGVyIHBvc3RtZXRhIGtleSBjb250YWluaW5nICdlbGVtZW50b3InIHdob3NlIHZhbHVlIGNvbnRhaW5zICdwcml2YWN5LXBvbGljeScgPT09XG4iOwokb3RoZXIgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoCgkiU0VMRUNUIHBtLnBvc3RfaWQsIHBtLm1ldGFfaWQsIHBtLm1ldGFfa2V5LCBwLnBvc3RfdGl0bGUsIHAucG9zdF90eXBlCgkgRlJPTSB7JHdwZGItPnBvc3RtZXRhfSBwbQoJIExFRlQgSk9JTiB7JHdwZGItPnBvc3RzfSBwIE9OIHAuSUQgPSBwbS5wb3N0X2lkCgkgV0hFUkUgcG0ubWV0YV9rZXkgTElLRSAnJWVsZW1lbnRvciUnCgkgQU5EIHBtLm1ldGFfa2V5ICE9ICdfZWxlbWVudG9yX2RhdGEnCgkgQU5EIHBtLm1ldGFfdmFsdWUgTElLRSAnJXByaXZhY3ktcG9saWN5JSciCik7CmVjaG8gIkZvdW5kICIgLiBjb3VudCggJG90aGVyICkgLiAiIHJvdyhzKS5cbiI7CmZvcmVhY2ggKCAkb3RoZXIgYXMgJHJvdyApIHsKCWVjaG8gIiAgcG9zdF9pZD17JHJvdy0+cG9zdF9pZH0gIG1ldGFfaWQ9eyRyb3ctPm1ldGFfaWR9ICBtZXRhX2tleT17JHJvdy0+bWV0YV9rZXl9ICBwb3N0X3R5cGU9eyRyb3ctPnBvc3RfdHlwZX0gIHRpdGxlPVwieyRyb3ctPnBvc3RfdGl0bGV9XCJcbiI7Cn0KCmVjaG8gIlxuPT09IERvbmUgKHJlYWQtb25seSwgbm8gY2hhbmdlcyBtYWRlKSA9PT1cbiI7Cg==" | base64 -d > /tmp/diagnose-elementor-footer.php;
+             php -l /tmp/diagnose-elementor-footer.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-elementor-footer.php;
+               exit 1;
+             fi;
+             wp eval-file /tmp/diagnose-elementor-footer.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-elementor-footer.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi' | tee diagnose-output.txt
+
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "## Elementor footer privacy-policy diagnostic (read-only)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat diagnose-output.txt >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || echo "(no output captured)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

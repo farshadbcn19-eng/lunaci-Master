@@ -12,6 +12,7 @@ jobs:
 
       - name: Inspect post_content, _elementor_data, _elementor_element_cache, and active plugins
         run: |
+          set -o pipefail
           sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
             -p ${{ secrets.HOSTINGER_SSH_PORT }} \
             ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
@@ -52,6 +53,7 @@ jobs:
 
       - name: Fetch live rendered HTML and count actual occurrences
         run: |
+          set -o pipefail
           echo "## Live HTML ground truth" >> "$GITHUB_STEP_SUMMARY"
           for path in "" "about-us/" "product/"; do
             url="https://lunacibarcelona.com/$path"

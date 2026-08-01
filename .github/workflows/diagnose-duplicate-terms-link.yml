@@ -1,0 +1,76 @@
+name: Diagnose Duplicate Terms of Service Link (Read-Only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get update -y && sudo apt-get install -y sshpass
+
+      - name: Inspect post_content, _elementor_data, _elementor_element_cache, and active plugins
+        run: |
+          set -o pipefail
+          sshpass -p "${{ secrets.HOSTINGER_SSH_PASS }}" ssh -o StrictHostKeyChecking=no \
+            -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+             echo "PD9waHAKLyoqCiAqIExVTkFDSSBCYXJjZWxvbmEg4oCUIHJlYWQtb25seSBkaWFnbm9zdGljOiBpbnZlc3RpZ2F0ZSB3aHkgdGhlIGxpdmUKICogZm9vdGVyIHNob3dzICJUZXJtcyBvZiBTZXJ2aWNlIiB0d2ljZSBvbiBIb21lL0Fib3V0IFVzLiBDaGVja3MKICogcG9zdF9jb250ZW50LCBfZWxlbWVudG9yX2RhdGEsIF9lbGVtZW50b3JfZWxlbWVudF9jYWNoZSBmb3IgcG9zdF9pZHMKICogNTcsIDU5LCA2MSwgcGx1cyBhY3RpdmUgY2FjaGluZyBwbHVnaW5zLiBObyB3cml0ZXMgYXJlIHBlcmZvcm1lZC4KICovCgpmdW5jdGlvbiBsdW5hY2lfY291bnRfbmVlZGxlX2luX3RyZWUoICRub2RlLCAkbmVlZGxlICkgewoJJGNvdW50ID0gMDsKCWlmICggaXNfYXJyYXkoICRub2RlICkgKSB7CgkJZm9yZWFjaCAoICRub2RlIGFzICR2YWx1ZSApIHsKCQkJaWYgKCBpc19zdHJpbmcoICR2YWx1ZSApICkgewoJCQkJJGNvdW50ICs9IHN1YnN0cl9jb3VudCggJHZhbHVlLCAkbmVlZGxlICk7CgkJCX0gZWxzZWlmICggaXNfYXJyYXkoICR2YWx1ZSApICkgewoJCQkJJGNvdW50ICs9IGx1bmFjaV9jb3VudF9uZWVkbGVfaW5fdHJlZSggJHZhbHVlLCAkbmVlZGxlICk7CgkJCX0KCQl9Cgl9CglyZXR1cm4gJGNvdW50Owp9CgokdGFyZ2V0cyA9IGFycmF5KAoJNTcgPT4gJ0hvbWUnLAoJNTkgPT4gJ0Fib3V0IFVzJywKCTYxID0+ICdQcm9kdWN0JywKKTsKCiRuZWVkbGVfdGVybXNfbm9zbGFzaCA9ICdodHRwczovL2x1bmFjaWJhcmNlbG9uYS5jb20vdGVybXMtb2Ytc2VydmljZSInOwokbmVlZGxlX3Rlcm1zX3NsYXNoICAgID0gJ2h0dHBzOi8vbHVuYWNpYmFyY2Vsb25hLmNvbS90ZXJtcy1vZi1zZXJ2aWNlLyInOwokbmVlZGxlX3ByaXZhY3lfbm9zbGFzaCA9ICdodHRwczovL2x1bmFjaWJhcmNlbG9uYS5jb20vcHJpdmFjeS1wb2xpY3kiJzsKJG5lZWRsZV9wcml2YWN5X3NsYXNoICAgPSAnaHR0cHM6Ly9sdW5hY2liYXJjZWxvbmEuY29tL3ByaXZhY3ktcG9saWN5LyInOwoKZm9yZWFjaCAoICR0YXJnZXRzIGFzICRwb3N0X2lkID0+ICRsYWJlbCApIHsKCWVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKCWVjaG8gIj09PSBwb3N0X2lkPSRwb3N0X2lkICgkbGFiZWwpID09PVxuIjsKCWVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKCgkkcG9zdCA9IGdldF9wb3N0KCAkcG9zdF9pZCApOwoJZWNobyAicG9zdF90eXBlPXskcG9zdC0+cG9zdF90eXBlfSAgcG9zdF9zdGF0dXM9eyRwb3N0LT5wb3N0X3N0YXR1c31cblxuIjsKCgllY2hvICItLS0gcG9zdF9jb250ZW50IC0tLVxuIjsKCSRjb250ZW50ID0gZ2V0X3Bvc3RfZmllbGQoICdwb3N0X2NvbnRlbnQnLCAkcG9zdF9pZCApOwoJZWNobyAnbGVuZ3RoPScgLiBzdHJsZW4oIChzdHJpbmcpICRjb250ZW50ICkgLiAiXG4iOwoJZWNobyAndGVybXMtb2Ytc2VydmljZSAobm8tc2xhc2gpIGNvdW50OiAnIC4gc3Vic3RyX2NvdW50KCAoc3RyaW5nKSAkY29udGVudCwgJG5lZWRsZV90ZXJtc19ub3NsYXNoICkgLiAiXG4iOwoJZWNobyAndGVybXMtb2Ytc2VydmljZSAod2l0aC1zbGFzaCkgY291bnQ6ICcgLiBzdWJzdHJfY291bnQoIChzdHJpbmcpICRjb250ZW50LCAkbmVlZGxlX3Rlcm1zX3NsYXNoICkgLiAiXG4iOwoJZWNobyAncHJpdmFjeS1wb2xpY3kgKG5vLXNsYXNoKSBjb3VudDogJyAuIHN1YnN0cl9jb3VudCggKHN0cmluZykgJGNvbnRlbnQsICRuZWVkbGVfcHJpdmFjeV9ub3NsYXNoICkgLiAiXG4iOwoJZWNobyAncHJpdmFjeS1wb2xpY3kgKHdpdGgtc2xhc2gpIGNvdW50OiAnIC4gc3Vic3RyX2NvdW50KCAoc3RyaW5nKSAkY29udGVudCwgJG5lZWRsZV9wcml2YWN5X3NsYXNoICkgLiAiXG4iOwoKCWVjaG8gIlxuLS0tIF9lbGVtZW50b3JfZGF0YSAtLS1cbiI7CgkkcmF3ID0gZ2V0X3Bvc3RfbWV0YSggJHBvc3RfaWQsICdfZWxlbWVudG9yX2RhdGEnLCB0cnVlICk7CglpZiAoIGVtcHR5KCAkcmF3ICkgKSB7CgkJZWNobyAiZW1wdHkgLyBub3Qgc2V0XG4iOwoJfSBlbHNlIHsKCQllY2hvICdyYXcgbGVuZ3RoPScgLiBzdHJsZW4oIChzdHJpbmcpICRyYXcgKSAuICJcbiI7CgkJJGRhdGEgPSBqc29uX2RlY29kZSggJHJhdywgdHJ1ZSApOwoJCWlmICggSlNPTl9FUlJPUl9OT05FICE9PSBqc29uX2xhc3RfZXJyb3IoKSApIHsKCQkJZWNobyAnanNvbl9kZWNvZGUgRkFJTEVEOiAnIC4ganNvbl9sYXN0X2Vycm9yX21zZygpIC4gIlxuIjsKCQl9IGVsc2UgewoJCQllY2hvICd0ZXJtcy1vZi1zZXJ2aWNlIChuby1zbGFzaCkgY291bnQgKGRlY29kZWQgdHJlZSk6ICcgLiBsdW5hY2lfY291bnRfbmVlZGxlX2luX3RyZWUoICRkYXRhLCAkbmVlZGxlX3Rlcm1zX25vc2xhc2ggKSAuICJcbiI7CgkJCWVjaG8gJ3Rlcm1zLW9mLXNlcnZpY2UgKHdpdGgtc2xhc2gpIGNvdW50IChkZWNvZGVkIHRyZWUpOiAnIC4gbHVuYWNpX2NvdW50X25lZWRsZV9pbl90cmVlKCAkZGF0YSwgJG5lZWRsZV90ZXJtc19zbGFzaCApIC4gIlxuIjsKCQkJZWNobyAncHJpdmFjeS1wb2xpY3kgKG5vLXNsYXNoKSBjb3VudCAoZGVjb2RlZCB0cmVlKTogJyAuIGx1bmFjaV9jb3VudF9uZWVkbGVfaW5fdHJlZSggJGRhdGEsICRuZWVkbGVfcHJpdmFjeV9ub3NsYXNoICkgLiAiXG4iOwoJCQllY2hvICdwcml2YWN5LXBvbGljeSAod2l0aC1zbGFzaCkgY291bnQgKGRlY29kZWQgdHJlZSk6ICcgLiBsdW5hY2lfY291bnRfbmVlZGxlX2luX3RyZWUoICRkYXRhLCAkbmVlZGxlX3ByaXZhY3lfc2xhc2ggKSAuICJcbiI7CgkJfQoJfQoKCWVjaG8gIlxuLS0tIF9lbGVtZW50b3JfZWxlbWVudF9jYWNoZSAtLS1cbiI7CgkkY2FjaGUgPSBnZXRfcG9zdF9tZXRhKCAkcG9zdF9pZCwgJ19lbGVtZW50b3JfZWxlbWVudF9jYWNoZScsIHRydWUgKTsKCWlmICggZW1wdHkoICRjYWNoZSApICkgewoJCWVjaG8gImVtcHR5IC8gbm90IHNldCAoZ29vZCAtIHdhcyBjbGVhcmVkIGFuZCBoYXMgbm90IHJlZ2VuZXJhdGVkKVxuIjsKCX0gZWxzZSB7CgkJJGNhY2hlX3N0ciA9IGlzX3N0cmluZyggJGNhY2hlICkgPyAkY2FjaGUgOiB3cF9qc29uX2VuY29kZSggJGNhY2hlICk7CgkJZWNobyAnUFJFU0VOVCAtIGxlbmd0aD0nIC4gc3RybGVuKCAoc3RyaW5nKSAkY2FjaGVfc3RyICkgLiAiXG4iOwoJCWVjaG8gJ3Rlcm1zLW9mLXNlcnZpY2Ugb2NjdXJyZW5jZXMgaW4gY2FjaGU6ICcgLiBzdWJzdHJfY291bnQoIChzdHJpbmcpICRjYWNoZV9zdHIsICd0ZXJtcy1vZi1zZXJ2aWNlJyApIC4gIlxuIjsKCQllY2hvICdwcml2YWN5LXBvbGljeSBvY2N1cnJlbmNlcyBpbiBjYWNoZTogJyAuIHN1YnN0cl9jb3VudCggKHN0cmluZykgJGNhY2hlX3N0ciwgJ3ByaXZhY3ktcG9saWN5JyApIC4gIlxuIjsKCX0KCgllY2hvICJcbi0tLSBfZWxlbWVudG9yX2RhdGFfdXBkYXRlZF90aW1lIC8gZWRpdCBtb2RlIC0tLVxuIjsKCWVjaG8gJ19lbGVtZW50b3JfZWRpdF9tb2RlOiAnIC4gdmFyX2V4cG9ydCggZ2V0X3Bvc3RfbWV0YSggJHBvc3RfaWQsICdfZWxlbWVudG9yX2VkaXRfbW9kZScsIHRydWUgKSwgdHJ1ZSApIC4gIlxuIjsKCWVjaG8gJ19lbGVtZW50b3JfdGVtcGxhdGVfdHlwZTogJyAuIHZhcl9leHBvcnQoIGdldF9wb3N0X21ldGEoICRwb3N0X2lkLCAnX2VsZW1lbnRvcl90ZW1wbGF0ZV90eXBlJywgdHJ1ZSApLCB0cnVlICkgLiAiXG4iOwoJZWNobyAnX2VsZW1lbnRvcl92ZXJzaW9uOiAnIC4gdmFyX2V4cG9ydCggZ2V0X3Bvc3RfbWV0YSggJHBvc3RfaWQsICdfZWxlbWVudG9yX3ZlcnNpb24nLCB0cnVlICksIHRydWUgKSAuICJcbiI7CgoJZWNobyAiXG4iOwp9CgplY2hvICI9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CmVjaG8gIj09PSBBY3RpdmUgcGx1Z2lucyAobG9va2luZyBmb3IgY2FjaGluZyBwbHVnaW5zKSA9PT1cbiI7CmVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKJGFjdGl2ZV9wbHVnaW5zID0gZ2V0X29wdGlvbiggJ2FjdGl2ZV9wbHVnaW5zJywgYXJyYXkoKSApOwpmb3JlYWNoICggJGFjdGl2ZV9wbHVnaW5zIGFzICRwbHVnaW4gKSB7CgllY2hvICIgICRwbHVnaW5cbiI7Cn0KaWYgKCBpc19tdWx0aXNpdGUoKSApIHsKCSRuZXR3b3JrX2FjdGl2ZSA9IGdldF9zaXRlX29wdGlvbiggJ2FjdGl2ZV9zaXRld2lkZV9wbHVnaW5zJywgYXJyYXkoKSApOwoJZWNobyAiXG5OZXR3b3JrLWFjdGl2ZSBwbHVnaW5zOlxuIjsKCWZvcmVhY2ggKCBhcnJheV9rZXlzKCAkbmV0d29ya19hY3RpdmUgKSBhcyAkcGx1Z2luICkgewoJCWVjaG8gIiAgJHBsdWdpblxuIjsKCX0KfQoKZWNobyAiXG49PT0gT2JqZWN0IGNhY2hlIC8gcGFnZSBjYWNoZSBpbmRpY2F0b3JzID09PVxuIjsKZWNobyAnd3BfdXNpbmdfZXh0X29iamVjdF9jYWNoZSgpOiAnIC4gdmFyX2V4cG9ydCggZnVuY3Rpb25fZXhpc3RzKCAnd3BfdXNpbmdfZXh0X29iamVjdF9jYWNoZScgKSA/IHdwX3VzaW5nX2V4dF9vYmplY3RfY2FjaGUoKSA6ICduL2EnLCB0cnVlICkgLiAiXG4iOwplY2hvICdXUF9DQUNIRSBjb25zdGFudDogJyAuIHZhcl9leHBvcnQoIGRlZmluZWQoICdXUF9DQUNIRScgKSA/IFdQX0NBQ0hFIDogJ25vdCBkZWZpbmVkJywgdHJ1ZSApIC4gIlxuIjsKCiRsaXRlc3BlZWRfaW5kaWNhdG9ycyA9IGFycmF5KAoJV1BfQ09OVEVOVF9ESVIgLiAnL3BsdWdpbnMvbGl0ZXNwZWVkLWNhY2hlJywKCVdQX0NPTlRFTlRfRElSIC4gJy9jYWNoZS9saXRlc3BlZWQnLAoJV1BfQ09OVEVOVF9ESVIgLiAnL2FkdmFuY2VkLWNhY2hlLnBocCcsCik7CmZvcmVhY2ggKCAkbGl0ZXNwZWVkX2luZGljYXRvcnMgYXMgJHBhdGggKSB7CgllY2hvICJwYXRoIGV4aXN0cyAoJHBhdGgpOiAiIC4gdmFyX2V4cG9ydCggZmlsZV9leGlzdHMoICRwYXRoICksIHRydWUgKSAuICJcbiI7Cn0KCmVjaG8gIlxuPT09IERvbmUgKHJlYWQtb25seSwgbm8gY2hhbmdlcyBtYWRlKSA9PT1cbiI7Cg==" | base64 -d > /tmp/diagnose-double-terms-link.php;
+             php -l /tmp/diagnose-double-terms-link.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-double-terms-link.php;
+               exit 1;
+             fi;
+             wp eval-file /tmp/diagnose-double-terms-link.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-double-terms-link.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi' | tee wp-diagnose-output.txt
+
+      - name: Fetch live rendered HTML and count actual occurrences
+        run: |
+          set -o pipefail
+          echo "## Live HTML ground truth" >> "$GITHUB_STEP_SUMMARY"
+          for path in "" "about-us/" "product/"; do
+            url="https://lunacibarcelona.com/$path"
+            html=$(curl -sgL "$url")
+            code=$(curl -sgL -o /dev/null -w "%{http_code}" "$url")
+            terms_count=$(echo "$html" | grep -o "terms-of-service" | wc -l)
+            privacy_count=$(echo "$html" | grep -o "privacy-policy" | wc -l)
+            echo "URL: $url  HTTP=$code  'terms-of-service' occurrences=$terms_count  'privacy-policy' occurrences=$privacy_count" | tee -a live-html-output.txt
+          done
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat live-html-output.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Write job summary (WP-side diagnostic)
+        if: always()
+        run: |
+          echo "## Elementor/post_content duplicate-link diagnostic (read-only)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat wp-diagnose-output.txt >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || echo "(no output captured)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

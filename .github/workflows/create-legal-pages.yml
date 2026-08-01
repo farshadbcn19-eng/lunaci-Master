@@ -58,8 +58,8 @@ jobs:
       - name: Live curl verification
         run: |
           echo "## Live verification" >> "$GITHUB_STEP_SUMMARY"
-          PRIVACY_CODE=$(curl -sg -o /dev/null -w "%{http_code}" https://lunacibarcelona.com/privacy-policy)
-          TERMS_CODE=$(curl -sg -o /dev/null -w "%{http_code}" https://lunacibarcelona.com/terms-of-service)
+          PRIVACY_CODE=$(curl -sgL -o /dev/null -w "%{http_code}" https://lunacibarcelona.com/privacy-policy)
+          TERMS_CODE=$(curl -sgL -o /dev/null -w "%{http_code}" https://lunacibarcelona.com/terms-of-service)
           echo "- https://lunacibarcelona.com/privacy-policy -> HTTP $PRIVACY_CODE" >> "$GITHUB_STEP_SUMMARY"
           echo "- https://lunacibarcelona.com/terms-of-service -> HTTP $TERMS_CODE" >> "$GITHUB_STEP_SUMMARY"
           echo "privacy-policy: HTTP $PRIVACY_CODE"

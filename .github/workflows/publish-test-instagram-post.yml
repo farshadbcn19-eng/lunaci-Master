@@ -1,0 +1,99 @@
+name: Publish Test Instagram Post
+
+on:
+  workflow_dispatch:
+    inputs:
+      caption:
+        description: 'Instagram post caption'
+        required: false
+        default: "LUNACI Barcelona — testing our automated publishing tool. This post will be removed shortly."
+        type: string
+      image_url:
+        description: 'Publicly accessible image URL'
+        required: false
+        default: "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-lipstick.jpg"
+        type: string
+
+jobs:
+  publish-test-instagram-post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish caption + image to Instagram Business Account
+        env:
+          META_SYSTEM_USER_TOKEN: ${{ secrets.META_SYSTEM_USER_TOKEN }}
+          META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
+          POST_CAPTION: ${{ inputs.caption }}
+          POST_IMAGE_URL: ${{ inputs.image_url }}
+        run: |
+          set -o pipefail
+          GV="v25.0"
+          PAGE_ID_CLEAN=$(echo -n "$META_PAGE_ID" | tr -cd '0-9')
+
+          echo "## Publish Test Instagram Post" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "### Step 1: Extract Page Access Token" >> "$GITHUB_STEP_SUMMARY"
+          PAGE_TOKEN=$(curl -sgL "https://graph.facebook.com/$GV/me/accounts?fields=name,id,access_token&access_token=$META_SYSTEM_USER_TOKEN" | jq -r --arg pid "$PAGE_ID_CLEAN" '.data[] | select(.id==$pid) | .access_token')
+
+          if [ -z "$PAGE_TOKEN" ] || [ "$PAGE_TOKEN" = "null" ]; then
+            echo "**RESULT: FAILED at Step 1** — could not extract Page Access Token for META_PAGE_ID." >> "$GITHUB_STEP_SUMMARY"
+            echo "ERROR: could not extract Page Access Token"
+            exit 1
+          fi
+          echo "OK — Page Access Token extracted." >> "$GITHUB_STEP_SUMMARY"
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Step 2: Look up linked Instagram Business Account" >> "$GITHUB_STEP_SUMMARY"
+          IG_RESPONSE=$(curl -sgL "https://graph.facebook.com/$GV/$PAGE_ID_CLEAN?fields=instagram_business_account&access_token=$PAGE_TOKEN")
+          IG_USER_ID=$(echo "$IG_RESPONSE" | jq -r '.instagram_business_account.id // empty')
+
+          if [ -z "$IG_USER_ID" ]; then
+            unset PAGE_TOKEN
+            echo "**RESULT: FAILED at Step 2** — no \`instagram_business_account\` linked to this Page. Raw response:" >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            echo "$IG_RESPONSE" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "OK — Instagram Business Account ID: \`$IG_USER_ID\`" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Step 3: Create media container" >> "$GITHUB_STEP_SUMMARY"
+          CONTAINER_RESPONSE=$(curl -sgL -X POST "https://graph.facebook.com/$GV/$IG_USER_ID/media" \
+            --data-urlencode "image_url=$POST_IMAGE_URL" \
+            --data-urlencode "caption=$POST_CAPTION" \
+            --data-urlencode "access_token=$PAGE_TOKEN")
+          CREATION_ID=$(echo "$CONTAINER_RESPONSE" | jq -r '.id // empty')
+
+          if [ -z "$CREATION_ID" ]; then
+            unset PAGE_TOKEN
+            echo "**RESULT: FAILED at Step 3** — no \`creation_id\` returned. Raw response:" >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            echo "$CONTAINER_RESPONSE" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "OK — media container created, creation_id: \`$CREATION_ID\`" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Step 4: Publish the container" >> "$GITHUB_STEP_SUMMARY"
+          PUBLISH_RESPONSE=$(curl -sgL -X POST "https://graph.facebook.com/$GV/$IG_USER_ID/media_publish" \
+            --data-urlencode "creation_id=$CREATION_ID" \
+            --data-urlencode "access_token=$PAGE_TOKEN")
+
+          unset PAGE_TOKEN
+
+          POST_ID=$(echo "$PUBLISH_RESPONSE" | jq -r '.id // empty')
+
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          echo "$PUBLISH_RESPONSE" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -z "$POST_ID" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "## RESULT: FAILED at Step 4 — no \`id\` in media_publish response; post was NOT published." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## RESULT: SUCCESS" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Instagram Post ID:** \`$POST_ID\`" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,62 @@
+name: Diagnose - locate Hero markup in _elementor_data for post 57 (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Search wp_postmeta _elementor_data for post 57 (read-only, no writes)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJHBvc3RfaWQgPSA1NzsKCiRyb3cgPSAkd3BkYi0+Z2V0X3JvdygKCSR3cGRiLT5wcmVwYXJlKAoJCSJTRUxFQ1QgbWV0YV9pZCwgTEVOR1RIKG1ldGFfdmFsdWUpIEFTIGxlbiBGUk9NIHskd3BkYi0+cG9zdG1ldGF9IFdIRVJFIHBvc3RfaWQgPSAlZCBBTkQgbWV0YV9rZXkgPSAnX2VsZW1lbnRvcl9kYXRhJyIsCgkJJHBvc3RfaWQKCSksCglBUlJBWV9BCik7CgppZiAoICEgJHJvdyApIHsKCWVjaG8gIk5PIF9lbGVtZW50b3JfZGF0YSBST1cgRk9SIFBPU1QgNTdcbiI7CglleGl0KCAwICk7Cn0KCmVjaG8gIm1ldGFfaWQ9eyRyb3dbJ21ldGFfaWQnXX1cbiI7CmVjaG8gIm1ldGFfdmFsdWUgbGVuZ3RoPXskcm93WydsZW4nXX1cbiI7CgokbWV0YV92YWx1ZSA9ICR3cGRiLT5nZXRfdmFyKCAkd3BkYi0+cHJlcGFyZSggIlNFTEVDVCBtZXRhX3ZhbHVlIEZST00geyR3cGRiLT5wb3N0bWV0YX0gV0hFUkUgbWV0YV9pZCA9ICVkIiwgJHJvd1snbWV0YV9pZCddICkgKTsKCmZ1bmN0aW9uIGR1bXBfb2NjdXJyZW5jZSggJGNvbnRlbnQsICRuZWVkbGUsICRsYWJlbCwgJGJlZm9yZSwgJGFmdGVyICkgewoJJG9mZiA9IHN0cnBvcyggJGNvbnRlbnQsICRuZWVkbGUgKTsKCWVjaG8gIlxuPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgllY2hvICIkbGFiZWw6IHN0cnBvcygpPSIgLiAoICRvZmYgPT09IGZhbHNlID8gJ05PVCBGT1VORCcgOiAkb2ZmICkgLiAiXG4iOwoJZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgoJaWYgKCAkb2ZmID09PSBmYWxzZSApIHsKCQllY2hvICJURVhUIE5PVCBGT1VORFxuIjsKCQlyZXR1cm47Cgl9CgoJJHN0YXJ0ID0gbWF4KCAwLCAkb2ZmIC0gJGJlZm9yZSApOwoJJGxlbiAgID0gKCAkb2ZmICsgJGFmdGVyICkgLSAkc3RhcnQ7Cgkkc2xpY2UgPSBzdWJzdHIoICRjb250ZW50LCAkc3RhcnQsICRsZW4gKTsKCgllY2hvICItLS0tUkFXIFNUQVJULS0tLVxuIjsKCWVjaG8gJHNsaWNlIC4gIlxuIjsKCWVjaG8gIi0tLS1SQVcgRU5ELS0tLVxuIjsKCgllY2hvICItLS0tSlNPTi1FTkNPREVEIFNUQVJULS0tLVxuIjsKCWVjaG8ganNvbl9lbmNvZGUoICRzbGljZSApIC4gIlxuIjsKCWVjaG8gIi0tLS1KU09OLUVOQ09ERUQgRU5ELS0tLVxuIjsKfQoKJG5lZWRsZV90YWdfanNvbiA9IGpzb25fZW5jb2RlKCAnVGltZWxlc3MgQmVhdXR5JyApOwokbmVlZGxlX3RhZ19qc29uID0gdHJpbSggJG5lZWRsZV90YWdfanNvbiwgJyInICk7CgokbmVlZGxlX2Rlc2NfanNvbiA9IGpzb25fZW5jb2RlKCAnTWVkaXRlcnJhbmVhbiBlbGVnYW5jZScgKTsKJG5lZWRsZV9kZXNjX2pzb24gPSB0cmltKCAkbmVlZGxlX2Rlc2NfanNvbiwgJyInICk7CgplY2hvICJcbj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwplY2hvICJQQVJUIDE6ICdUaW1lbGVzcyBCZWF1dHknIChyYXcgZm9ybSlcbiI7CmVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwpkdW1wX29jY3VycmVuY2UoICRtZXRhX3ZhbHVlLCAnVGltZWxlc3MgQmVhdXR5JywgIidUaW1lbGVzcyBCZWF1dHknIChyYXcpIiwgMjAwLCA0MDAgKTsKCmVjaG8gIlxuPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CmVjaG8gIlBBUlQgMjogJ1RpbWVsZXNzIEJlYXV0eScgKEpTT04tZXNjYXBlZCBmb3JtLCBleHBlY3RlZCBpZGVudGljYWwpXG4iOwplY2hvICI9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKZHVtcF9vY2N1cnJlbmNlKCAkbWV0YV92YWx1ZSwgJG5lZWRsZV90YWdfanNvbiwgIidUaW1lbGVzcyBCZWF1dHknIChqc29uLWVzY2FwZWQpIiwgMjAwLCA0MDAgKTsKCmVjaG8gIlxuPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CmVjaG8gIlBBUlQgMzogJ01lZGl0ZXJyYW5lYW4gZWxlZ2FuY2UnIChyYXcgZm9ybSlcbiI7CmVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwpkdW1wX29jY3VycmVuY2UoICRtZXRhX3ZhbHVlLCAnTWVkaXRlcnJhbmVhbiBlbGVnYW5jZScsICInTWVkaXRlcnJhbmVhbiBlbGVnYW5jZScgKHJhdykiLCAyMDAsIDQwMCApOwoKZWNobyAiXG49PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKZWNobyAiUEFSVCA0OiAnTWVkaXRlcnJhbmVhbiBlbGVnYW5jZScgKEpTT04tZXNjYXBlZCBmb3JtLCBleHBlY3RlZCBpZGVudGljYWwpXG4iOwplY2hvICI9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKZHVtcF9vY2N1cnJlbmNlKCAkbWV0YV92YWx1ZSwgJG5lZWRsZV9kZXNjX2pzb24sICInTWVkaXRlcnJhbmVhbiBlbGVnYW5jZScgKGpzb24tZXNjYXBlZCkiLCAyMDAsIDQwMCApOwoKZWNobyAiXG49PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKZWNobyAiUEFSVCA1OiAnbG4taGVyb19fdGFnJyBkaXJlY3Qgc2VhcmNoIChsaWtlbHkgYSBjc3NfY2xhc3NlcyB2YWx1ZSlcbiI7CmVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwpkdW1wX29jY3VycmVuY2UoICRtZXRhX3ZhbHVlLCAnbG4taGVyb19fdGFnJywgIidsbi1oZXJvX190YWcnIiwgMTAwLCAzMDAgKTsKCmVjaG8gIlxuPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CmVjaG8gIlBBUlQgNjogJ2xuLWhlcm9fX2Rlc2MnIGRpcmVjdCBzZWFyY2ggKGxpa2VseSBhIGNzc19jbGFzc2VzIHZhbHVlKVxuIjsKZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CmR1bXBfb2NjdXJyZW5jZSggJG1ldGFfdmFsdWUsICdsbi1oZXJvX19kZXNjJywgIidsbi1oZXJvX19kZXNjJyIsIDEwMCwgMzAwICk7CgplY2hvICJcbj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwplY2hvICJPSzogX2VsZW1lbnRvcl9kYXRhIGRpYWdub3N0aWMgY29tcGxldGUsIG5vIHdyaXRlcyBwZXJmb3JtZWRcbiI7CmVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwo=" | base64 -d > /tmp/diagnose-elementor-data-post57.php;
+
+             php -l /tmp/diagnose-elementor-data-post57.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-elementor-data-post57.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-elementor-data-post57.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-elementor-data-post57.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: read-only diagnostic completed successfully"'

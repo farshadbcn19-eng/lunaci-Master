@@ -1,0 +1,62 @@
+name: Diagnose - raw bytes around Hero markup in wp_posts ID=57 (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Extract raw bytes around ln-hero__tag / ln-hero__desc in post_content (read-only, no writes)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJHBvc3RfaWQgPSA1NzsKJGNvbnRlbnQgPSAkd3BkYi0+Z2V0X3ZhciggJHdwZGItPnByZXBhcmUoICJTRUxFQ1QgcG9zdF9jb250ZW50IEZST00geyR3cGRiLT5wb3N0c30gV0hFUkUgSUQgPSAlZCIsICRwb3N0X2lkICkgKTsKCmlmICggJGNvbnRlbnQgPT09IG51bGwgKSB7CgllY2hvICJFUlJPUjogbm8gcG9zdF9jb250ZW50IGZvdW5kIGZvciBJRD0kcG9zdF9pZFxuIjsKCWV4aXQoIDEgKTsKfQoKZWNobyAicG9zdF9jb250ZW50IHRvdGFsIGxlbmd0aD0iIC4gc3RybGVuKCAkY29udGVudCApIC4gIlxuIjsKCiRuZWVkbGVfdGFnICA9ICdsbi1oZXJvX190YWcnOwokbmVlZGxlX2Rlc2MgPSAnbG4taGVyb19fZGVzYyc7Cgokb2ZmX3RhZyAgPSBzdHJwb3MoICRjb250ZW50LCAkbmVlZGxlX3RhZyApOwokb2ZmX2Rlc2MgPSBzdHJwb3MoICRjb250ZW50LCAkbmVlZGxlX2Rlc2MgKTsKCmVjaG8gIlxuPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CmVjaG8gImxuLWhlcm9fX3RhZzogc3RycG9zKCk9IiAuICggJG9mZl90YWcgPT09IGZhbHNlID8gJ05PVCBGT1VORCcgOiAkb2ZmX3RhZyApIC4gIlxuIjsKZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgppZiAoICRvZmZfdGFnICE9PSBmYWxzZSApIHsKCSRzdGFydCA9IG1heCggMCwgJG9mZl90YWcgLSA2MCApOwoJJGxlbiAgID0gKCAkb2ZmX3RhZyArIDI1MCApIC0gJHN0YXJ0OwoJJHNsaWNlID0gc3Vic3RyKCAkY29udGVudCwgJHN0YXJ0LCAkbGVuICk7CgoJZWNobyAiLS0tLVJBVyBTVEFSVC0tLS1cbiI7CgllY2hvICRzbGljZSAuICJcbiI7CgllY2hvICItLS0tUkFXIEVORC0tLS1cbiI7CgoJZWNobyAiLS0tLUpTT04tRU5DT0RFRCBTVEFSVC0tLS1cbiI7CgllY2hvIGpzb25fZW5jb2RlKCAkc2xpY2UgKSAuICJcbiI7CgllY2hvICItLS0tSlNPTi1FTkNPREVEIEVORC0tLS1cbiI7Cn0KCmVjaG8gIlxuPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CmVjaG8gImxuLWhlcm9fX2Rlc2M6IHN0cnBvcygpPSIgLiAoICRvZmZfZGVzYyA9PT0gZmFsc2UgPyAnTk9UIEZPVU5EJyA6ICRvZmZfZGVzYyApIC4gIlxuIjsKZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgppZiAoICRvZmZfZGVzYyAhPT0gZmFsc2UgKSB7Cgkkc3RhcnQgPSBtYXgoIDAsICRvZmZfZGVzYyAtIDMwICk7CgkkbGVuICAgPSAoICRvZmZfZGVzYyArIDI1MCApIC0gJHN0YXJ0OwoJJHNsaWNlID0gc3Vic3RyKCAkY29udGVudCwgJHN0YXJ0LCAkbGVuICk7CgoJZWNobyAiLS0tLVJBVyBTVEFSVC0tLS1cbiI7CgllY2hvICRzbGljZSAuICJcbiI7CgllY2hvICItLS0tUkFXIEVORC0tLS1cbiI7CgoJZWNobyAiLS0tLUpTT04tRU5DT0RFRCBTVEFSVC0tLS1cbiI7CgllY2hvIGpzb25fZW5jb2RlKCAkc2xpY2UgKSAuICJcbiI7CgllY2hvICItLS0tSlNPTi1FTkNPREVEIEVORC0tLS1cbiI7Cn0KCmVjaG8gIlxuPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CmVjaG8gIlBBUlQ6IGVudGl0eSAvIHF1b3RlLXN0eWxlIGNoZWNrc1xuIjsKZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgokY2hlY2tfcmFkaXVzID0gNTAwOwoKaWYgKCAkb2ZmX3RhZyAhPT0gZmFsc2UgKSB7Cgkkd2luZG93X3RhZyA9IHN1YnN0ciggJGNvbnRlbnQsIG1heCggMCwgJG9mZl90YWcgLSAkY2hlY2tfcmFkaXVzICksICRjaGVja19yYWRpdXMgKiAyICk7CgllY2hvICJuZWFyIGxuLWhlcm9fX3RhZzogY29udGFpbnMgJyZxdW90Oyc9IiAuICggc3RycG9zKCAkd2luZG93X3RhZywgJyZxdW90OycgKSAhPT0gZmFsc2UgPyAndHJ1ZScgOiAnZmFsc2UnICkgLiAiXG4iOwoJZWNobyAibmVhciBsbi1oZXJvX190YWc6IGNvbnRhaW5zIFwiY2xhc3M9J2xuLWhlcm9fX3RhZydcIiAoc2luZ2xlIHF1b3Rlcyk9IiAuICggc3RycG9zKCAkY29udGVudCwgImNsYXNzPSdsbi1oZXJvX190YWcnIiApICE9PSBmYWxzZSA/ICd0cnVlJyA6ICdmYWxzZScgKSAuICJcbiI7Cn0gZWxzZSB7CgllY2hvICJsbi1oZXJvX190YWcgbm90IGZvdW5kIC0gc2tpcHBpbmcgZW50aXR5L3F1b3RlIGNoZWNrcyBmb3IgdGFnXG4iOwp9CgppZiAoICRvZmZfZGVzYyAhPT0gZmFsc2UgKSB7Cgkkd2luZG93X2Rlc2MgPSBzdWJzdHIoICRjb250ZW50LCBtYXgoIDAsICRvZmZfZGVzYyAtICRjaGVja19yYWRpdXMgKSwgJGNoZWNrX3JhZGl1cyAqIDIgKTsKCWVjaG8gIm5lYXIgbG4taGVyb19fZGVzYzogY29udGFpbnMgJyZxdW90Oyc9IiAuICggc3RycG9zKCAkd2luZG93X2Rlc2MsICcmcXVvdDsnICkgIT09IGZhbHNlID8gJ3RydWUnIDogJ2ZhbHNlJyApIC4gIlxuIjsKCWVjaG8gIm5lYXIgbG4taGVyb19fZGVzYzogY29udGFpbnMgXCJjbGFzcz0nbG4taGVyb19fZGVzYydcIiAoc2luZ2xlIHF1b3Rlcyk9IiAuICggc3RycG9zKCAkY29udGVudCwgImNsYXNzPSdsbi1oZXJvX19kZXNjJyIgKSAhPT0gZmFsc2UgPyAndHJ1ZScgOiAnZmFsc2UnICkgLiAiXG4iOwp9IGVsc2UgewoJZWNobyAibG4taGVyb19fZGVzYyBub3QgZm91bmQgLSBza2lwcGluZyBlbnRpdHkvcXVvdGUgY2hlY2tzIGZvciBkZXNjXG4iOwp9CgplY2hvICJcbj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwplY2hvICJPSzogcmF3LWJ5dGUgZGlhZ25vc3RpYyBjb21wbGV0ZSwgbm8gd3JpdGVzIHBlcmZvcm1lZFxuIjsKZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7Cg==" | base64 -d > /tmp/diagnose-raw-hero-bytes-id57.php;
+
+             php -l /tmp/diagnose-raw-hero-bytes-id57.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-raw-hero-bytes-id57.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-raw-hero-bytes-id57.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-raw-hero-bytes-id57.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: read-only diagnostic completed successfully"'

@@ -1,0 +1,62 @@
+name: Fix Home body background to match Hero black (_elementor_data, meta_id=179, post_id=57)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Guarded str_replace + update_post_meta on _elementor_data (COUNT-checked)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJG1ldGFfaWQgPSAxNzk7CiRyYXcgPSAkd3BkYi0+Z2V0X3ZhciggJHdwZGItPnByZXBhcmUoCgkiU0VMRUNUIG1ldGFfdmFsdWUgRlJPTSB7JHdwZGItPnBvc3RtZXRhfSBXSEVSRSBtZXRhX2lkID0gJWQiLCAkbWV0YV9pZAopICk7CmlmICgkcmF3ID09PSBudWxsKSB7IGVjaG8gIkFCT1JUOiBtZXRhX2lkIDE3OSBub3QgZm91bmRcbiI7IGV4aXQoMSk7IH0KCiRvbGRfY3NzID0gJyp7Ym94LXNpemluZzpib3JkZXItYm94O30nOwokbmV3X2NzcyA9ICcqe2JveC1zaXppbmc6Ym9yZGVyLWJveDt9aHRtbCxib2R5e2JhY2tncm91bmQ6IzBCMEIwQjt9JzsKCiRjMSA9IHN1YnN0cl9jb3VudCgkcmF3LCAkb2xkX2Nzcyk7CmVjaG8gInByZS1jaGVjazogQU5DSE9SIGNvdW50PSRjMVxuIjsKaWYgKCRjMSAhPT0gMSkgewoJZWNobyAiQUJPUlQ6IGV4cGVjdGVkIGV4YWN0bHkgMSBvY2N1cnJlbmNlIG9mIGFuY2hvciwgZm91bmQgJGMxXG4iOwoJZXhpdCgxKTsKfQoKJG5ld19yYXcgPSBzdHJfcmVwbGFjZSgkb2xkX2NzcywgJG5ld19jc3MsICRyYXcpOwoKJGRlY29kZWRfb2xkID0ganNvbl9kZWNvZGUoJHJhdywgdHJ1ZSk7CiRkZWNvZGVkX25ldyA9IGpzb25fZGVjb2RlKCRuZXdfcmF3LCB0cnVlKTsKaWYgKCRkZWNvZGVkX29sZCA9PT0gbnVsbCB8fCAkZGVjb2RlZF9uZXcgPT09IG51bGwpIHsKCWVjaG8gIkFCT1JUOiBqc29uX2RlY29kZSBmYWlsZWQgb24gb2xkIG9yIG5ldyBjb250ZW50XG4iOyBleGl0KDEpOwp9CmlmIChjb3VudCgkZGVjb2RlZF9vbGQpICE9PSBjb3VudCgkZGVjb2RlZF9uZXcpKSB7CgllY2hvICJBQk9SVDogZWxlbWVudCBjb3VudCBtaXNtYXRjaCAob2xkPSIgLiBjb3VudCgkZGVjb2RlZF9vbGQpIC4gIiBuZXc9IiAuIGNvdW50KCRkZWNvZGVkX25ldykgLiAiKVxuIjsKCWV4aXQoMSk7Cn0KCiRyZXN1bHQgPSB1cGRhdGVfcG9zdF9tZXRhKCA1NywgJ19lbGVtZW50b3JfZGF0YScsIHdwX3NsYXNoKCAkbmV3X3JhdyApICk7CmVjaG8gInVwZGF0ZV9wb3N0X21ldGEgcmVzdWx0OiAiIC4gdmFyX2V4cG9ydCgkcmVzdWx0LCB0cnVlKSAuICJcbiI7CgokdmVyaWZ5ID0gJHdwZGItPmdldF92YXIoICR3cGRiLT5wcmVwYXJlKAoJIlNFTEVDVCBtZXRhX3ZhbHVlIEZST00geyR3cGRiLT5wb3N0bWV0YX0gV0hFUkUgbWV0YV9pZCA9ICVkIiwgJG1ldGFfaWQKKSApOwplY2hvICJ2ZXJpZnk6IE5FV19DU1MgY291bnQ9IiAuIHN1YnN0cl9jb3VudCgkdmVyaWZ5LCAkbmV3X2NzcykgLiAiICh3YW50IDEpXG4iOwplY2hvICJ2ZXJpZnk6IEFOQ0hPUiAob2xkLCBzdGFuZGFsb25lKSBjb3VudD0iIC4gc3Vic3RyX2NvdW50KCR2ZXJpZnksICRvbGRfY3NzKSAuICIgKHdhbnQgMSwgc2luY2UgbmV3X2NzcyBjb250YWlucyBvbGRfY3NzIGFzIGEgcHJlZml4KVxuIjsKZWNobyAidmVyaWZ5OiBodG1sLGJvZHkgYmFja2dyb3VuZCBydWxlIHByZXNlbnQ9IiAuICggc3RycG9zKCR2ZXJpZnksICdodG1sLGJvZHl7YmFja2dyb3VuZDojMEIwQjBCO30nKSAhPT0gZmFsc2UgPyAndHJ1ZScgOiAnZmFsc2UnICkgLiAiXG4iOwoKaWYgKCBjbGFzc19leGlzdHMoJ1xFbGVtZW50b3JcUGx1Z2luJykgKSB7CglcRWxlbWVudG9yXFBsdWdpbjo6JGluc3RhbmNlLT5maWxlc19tYW5hZ2VyLT5jbGVhcl9jYWNoZSgpOwoJZWNobyAiRWxlbWVudG9yIENTUyBjYWNoZSBjbGVhcmVkXG4iOwp9Cg==" | base64 -d > /tmp/fix-home-body-background.php;
+
+             php -l /tmp/fix-home-body-background.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on fix script";
+               rm -f /tmp/fix-home-body-background.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/fix-home-body-background.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/fix-home-body-background.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - fix did NOT complete successfully";
+               exit 1;
+             fi;
+             echo "OK: fix workflow completed successfully"'

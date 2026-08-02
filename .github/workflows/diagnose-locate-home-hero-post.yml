@@ -1,0 +1,62 @@
+name: Diagnose - locate WPCode post containing Home Hero markup (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Search wp_posts for Home Hero markup (read-only, no writes)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CmVjaG8gIkxvY2F0ZSB3cF9wb3N0cyByb3cocykgY29udGFpbmluZyBIb21lIEhlcm8gbWFya3VwXG4iOwplY2hvICI9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKCiRuZWVkbGVfY2xhc3MgPSAnJWxuLWhlcm9fX3RhZyUnOwokbmVlZGxlX3RleHQgID0gJyVUaW1lbGVzcyBCZWF1dHkuIE1vZGVybiBMdXh1cnkuJSc7Cgokcm93cyA9ICR3cGRiLT5nZXRfcmVzdWx0cygKCSR3cGRiLT5wcmVwYXJlKAoJCSJTRUxFQ1QgSUQsIHBvc3RfdGl0bGUsIHBvc3RfdHlwZSwgcG9zdF9zdGF0dXMsIHBvc3RfbW9kaWZpZWQsIExFTkdUSChwb3N0X2NvbnRlbnQpIEFTIGxlbgoJCSBGUk9NIHskd3BkYi0+cG9zdHN9CgkJIFdIRVJFIHBvc3RfY29udGVudCBMSUtFICVzIE9SIHBvc3RfY29udGVudCBMSUtFICVzIiwKCQkkbmVlZGxlX2NsYXNzLAoJCSRuZWVkbGVfdGV4dAoJKSwKCUFSUkFZX0EKKTsKCmlmICggZW1wdHkoICRyb3dzICkgKSB7CgllY2hvICJOTyBNQVRDSEVTOiBubyB3cF9wb3N0cyByb3cgY29udGFpbnMgJ2xuLWhlcm9fX3RhZycgb3IgJ1RpbWVsZXNzIEJlYXV0eS4gTW9kZXJuIEx1eHVyeS4nXG4iOwoJZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgllY2hvICJPSzogbG9jYXRlIGRpYWdub3N0aWMgY29tcGxldGUsIG5vIHdyaXRlcyBwZXJmb3JtZWRcbiI7CgllY2hvICI9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKCWV4aXQoIDAgKTsKfQoKJG9sZF90YWcgID0gJzxwIGNsYXNzPSJsbi1oZXJvX190YWciPlRpbWVsZXNzIEJlYXV0eS4gTW9kZXJuIEx1eHVyeS48L3A+JzsKJG9sZF9kZXNjID0gJzxwIGNsYXNzPSJsbi1oZXJvX19kZXNjIj5MdXh1cnkgY29zbWV0aWNzIGluc3BpcmVkIGJ5IE1lZGl0ZXJyYW5lYW4gZWxlZ2FuY2UsPGJyPmNyYWZ0ZWQgZm9yIHdvbWVuIG9mIHRpbWVsZXNzIHNvcGhpc3RpY2F0aW9uLjwvcD4nOwoKZm9yZWFjaCAoICRyb3dzIGFzICRyb3cgKSB7CgllY2hvICItLS1cbiI7CgllY2hvICJJRD17JHJvd1snSUQnXX1cbiI7CgllY2hvICJwb3N0X3RpdGxlPXskcm93Wydwb3N0X3RpdGxlJ119XG4iOwoJZWNobyAicG9zdF90eXBlPXskcm93Wydwb3N0X3R5cGUnXX1cbiI7CgllY2hvICJwb3N0X3N0YXR1cz17JHJvd1sncG9zdF9zdGF0dXMnXX1cbiI7CgllY2hvICJwb3N0X21vZGlmaWVkPXskcm93Wydwb3N0X21vZGlmaWVkJ119XG4iOwoJZWNobyAicG9zdF9jb250ZW50IGxlbmd0aD17JHJvd1snbGVuJ119XG4iOwoKCSRmdWxsID0gJHdwZGItPmdldF92YXIoICR3cGRiLT5wcmVwYXJlKCAiU0VMRUNUIHBvc3RfY29udGVudCBGUk9NIHskd3BkYi0+cG9zdHN9IFdIRVJFIElEID0gJWQiLCAkcm93WydJRCddICkgKTsKCSRjMSA9IHN1YnN0cl9jb3VudCggJGZ1bGwsICRvbGRfdGFnICk7CgkkYzIgPSBzdWJzdHJfY291bnQoICRmdWxsLCAkb2xkX2Rlc2MgKTsKCWVjaG8gImV4YWN0IE9MRF9UQUcgY291bnQ9JGMxXG4iOwoJZWNobyAiZXhhY3QgT0xEX0RFU0MgY291bnQ9JGMyXG4iOwp9CgplY2hvICI9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKZWNobyAiT0s6IGxvY2F0ZSBkaWFnbm9zdGljIGNvbXBsZXRlLCBubyB3cml0ZXMgcGVyZm9ybWVkXG4iOwplY2hvICI9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsK" | base64 -d > /tmp/diagnose-locate-home-hero-post.php;
+
+             php -l /tmp/diagnose-locate-home-hero-post.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-locate-home-hero-post.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-locate-home-hero-post.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-locate-home-hero-post.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: read-only diagnostic completed successfully"'

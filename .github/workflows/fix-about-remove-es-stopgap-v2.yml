@@ -1,0 +1,62 @@
+name: Fix About Us v2 - remove hardcoded Spanish (--es) stopgap content (_elementor_data, meta_id=197, post_id=59)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Guarded regex removal + update_post_meta on _elementor_data (COUNT-checked)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJG1ldGFfaWQgPSAxOTc7CiRyYXcgPSAkd3BkYi0+Z2V0X3ZhciggJHdwZGItPnByZXBhcmUoCgkiU0VMRUNUIG1ldGFfdmFsdWUgRlJPTSB7JHdwZGItPnBvc3RtZXRhfSBXSEVSRSBtZXRhX2lkID0gJWQiLCAkbWV0YV9pZAopICk7CmlmICggJHJhdyA9PT0gbnVsbCApIHsgZWNobyAiQUJPUlQ6IG1ldGFfaWQgMTk3IG5vdCBmb3VuZFxuIjsgZXhpdCggMSApOyB9CgplY2hvICJtZXRhX3ZhbHVlIGxlbmd0aD0iIC4gc3RybGVuKCAkcmF3ICkgLiAiXG4iOwoKLy8gTGl0ZXJhbCAyLWJ5dGUgc2VxdWVuY2VzIGFzIHRoZXkgYXBwZWFyIGluIHRoZSBzdG9yZWQgKEpTT04tZXNjYXBlZCkgY29udGVudC4KJHEgID0gY2hyKCA5MiApIC4gJyInOyAvLyBiYWNrc2xhc2ggKyBkb3VibGVxdW90ZSAgKGVzY2FwZWQgSlNPTiBxdW90ZSkKJHNsID0gY2hyKCA5MiApIC4gJy8nOyAvLyBiYWNrc2xhc2ggKyBmb3J3YXJkc2xhc2ggKGVzY2FwZWQgSlNPTiBzbGFzaCkKCiRxX3BhdCAgPSBwcmVnX3F1b3RlKCAkcSwgJ34nICk7CiRzbF9wYXQgPSBwcmVnX3F1b3RlKCAkc2wsICd+JyApOwoKZnVuY3Rpb24gZWxlbWVudF9wYXR0ZXJuKCAkdGFnLCAkY2xhc3NfcHJlZml4LCAkcV9wYXQsICRzbF9wYXQsICRjbG9zaW5nX3RhZyA9IG51bGwgKSB7CglpZiAoICRjbG9zaW5nX3RhZyA9PT0gbnVsbCApIHsgJGNsb3NpbmdfdGFnID0gJHRhZzsgfQoJJG9wZW4gID0gJzwnIC4gJHRhZyAuICcgY2xhc3M9JyAuICRxX3BhdCAuIHByZWdfcXVvdGUoICRjbGFzc19wcmVmaXgsICd+JyApIC4gJ1teIl0qJyAuICRxX3BhdCAuICc+JzsKCSRjbG9zZSA9ICc8JyAuICRzbF9wYXQgLiAkY2xvc2luZ190YWcgLiAnPic7CglyZXR1cm4gJ34nIC4gJG9wZW4gLiAnLio/JyAuICRjbG9zZSAuICd+cyc7Cn0KCi8vIFRoZSA4IGd1YXJkZWQgcGF0dGVybnMsIGluIHRoZSBleGFjdCBvcmRlciBzcGVjaWZpZWQuCiRwYXR0ZXJucyA9IGFycmF5KAoJJ2xuYS1zdG9yeV9fcC0tZXMnICAgID0+IGFycmF5KAoJCSdyZWdleCcgICAgPT4gZWxlbWVudF9wYXR0ZXJuKCAncCcsICdsbmEtc3RvcnlfX3AtLWVzJywgJHFfcGF0LCAkc2xfcGF0LCAncCcgKSwKCQknZXhwZWN0ZWQnID0+IDMsCgkJJ2xhYmVsJyAgICA9PiAnY2xhc3M9ImxuYS1zdG9yeV9fcC0tZXMgLi4uIj4uLi48L3A+JywKCSksCgknbG5hLXBoaWxfX2ludHJvLXAtLWVzJyA9PiBhcnJheSgKCQkncmVnZXgnICAgID0+IGVsZW1lbnRfcGF0dGVybiggJ3AnLCAnbG5hLXBoaWxfX2ludHJvLXAtLWVzJywgJHFfcGF0LCAkc2xfcGF0LCAncCcgKSwKCQknZXhwZWN0ZWQnID0+IDEsCgkJJ2xhYmVsJyAgICA9PiAnY2xhc3M9ImxuYS1waGlsX19pbnRyby1wLS1lcyI+Li4uPC9wPicsCgkpLAoJJ2xuYS1waGlsX19uYW1lLS1lcycgID0+IGFycmF5KAoJCSdyZWdleCcgICAgPT4gZWxlbWVudF9wYXR0ZXJuKCAnc3BhbicsICdsbmEtcGhpbF9fbmFtZS0tZXMnLCAkcV9wYXQsICRzbF9wYXQsICdzcGFuJyApLAoJCSdleHBlY3RlZCcgPT4gMywKCQknbGFiZWwnICAgID0+ICdjbGFzcz0ibG5hLXBoaWxfX25hbWUtLWVzIj4uLi48L3NwYW4+JywKCSksCgknbG5hLXBoaWxfX3AtLWVzJyAgICAgPT4gYXJyYXkoCgkJJ3JlZ2V4JyAgICA9PiBlbGVtZW50X3BhdHRlcm4oICdwJywgJ2xuYS1waGlsX19wLS1lcycsICRxX3BhdCwgJHNsX3BhdCwgJ3AnICksCgkJJ2V4cGVjdGVkJyA9PiAzLAoJCSdsYWJlbCcgICAgPT4gJ2NsYXNzPSJsbmEtcGhpbF9fcC0tZXMiPi4uLjwvcD4nLAoJKSwKCSdsbmEtdmFsX19uYW1lLS1lcycgICA9PiBhcnJheSgKCQkncmVnZXgnICAgID0+IGVsZW1lbnRfcGF0dGVybiggJ3NwYW4nLCAnbG5hLXZhbF9fbmFtZS0tZXMnLCAkcV9wYXQsICRzbF9wYXQsICdzcGFuJyApLAoJCSdleHBlY3RlZCcgPT4gNSwKCQknbGFiZWwnICAgID0+ICdjbGFzcz0ibG5hLXZhbF9fbmFtZS0tZXMiPi4uLjwvc3Bhbj4nLAoJKSwKCSdsbmEtcHJvbWlzZV9fcS0tZXMnICA9PiBhcnJheSgKCQkncmVnZXgnICAgID0+IGVsZW1lbnRfcGF0dGVybiggJ2Jsb2NrcXVvdGUnLCAnbG5hLXByb21pc2VfX3EtLWVzJywgJHFfcGF0LCAkc2xfcGF0LCAnYmxvY2txdW90ZScgKSwKCQknZXhwZWN0ZWQnID0+IDEsCgkJJ2xhYmVsJyAgICA9PiAnY2xhc3M9ImxuYS1wcm9taXNlX19xLS1lcyAuLi4iPi4uLmJsb2NrcXVvdGUuLi48L2Jsb2NrcXVvdGU+JywKCSksCgknbG5hLXN0b3J5X19zdWInICAgICAgPT4gYXJyYXkoCgkJJ3JlZ2V4JyAgICA9PiAnfjxzcGFuIGNsYXNzPScgLiAkcV9wYXQgLiBwcmVnX3F1b3RlKCAnbG5hLXN0b3J5X19zdWInLCAnficgKSAuICdbXiJdKicgLiAkcV9wYXQgLiAnPkVsIENvbWllbnpvPCcgLiAkc2xfcGF0IC4gJ3NwYW4+fnMnLAoJCSdleHBlY3RlZCcgPT4gMSwKCQknbGFiZWwnICAgID0+ICdjbGFzcz0ibG5hLXN0b3J5X19zdWIgLi4uIj5FbCBDb21pZW56bzwvc3Bhbj4nLAoJKSwKKTsKCi8vIExpdGVyYWwgNi1jaGFyYWN0ZXIgZXNjYXBlIHNlcXVlbmNlIMK3IGFzIGl0IGlzIEFDVFVBTExZIHN0b3JlZCBpbiB0aGUgSlNPTgovLyAoY29uZmlybWVkIHZpYSBkaWFnbm9zdGljIC0gTk9UIGEgcmF3IFVURi04IG1pZGRsZS1kb3QgYnl0ZSkuIFNpbmdsZS1xdW90ZWQgUEhQCi8vIHN0cmluZyBsZWF2ZXMgXHUgdW50b3VjaGVkLCBzbyB0aGlzIGlzIGV4YWN0bHkgdGhlIDYgQVNDSUkgYnl0ZXM6IFwgdSAwIDAgYiA3LgokYmlsaW5ndWFsX2xhYmVsX29sZCA9ICdPdXIgU3RvcnkgJyAuIGNocig5MikgLiAndTAwYjcgTnVlc3RyYSBIaXN0b3JpYSc7CiRiaWxpbmd1YWxfbGFiZWxfbmV3ID0gJ091ciBTdG9yeSc7CgovLyBTVEVQIGI6IHByZS1jaGVjayBleGFjdCBleHBlY3RlZCBjb3VudHMsIGFib3J0IG9uIGFueSBtaXNtYXRjaC4KZWNobyAiXG49PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKZWNobyAiUFJFLUNIRUNLOiBleHBlY3RlZCB2cyBhY3R1YWwgY291bnRzIChiZWZvcmUgcmVwbGFjZW1lbnQpXG4iOwplY2hvICI9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKCiRhbnlfbWlzbWF0Y2ggPSBmYWxzZTsKZm9yZWFjaCAoICRwYXR0ZXJucyBhcyAka2V5ID0+ICRwICkgewoJJGFjdHVhbCA9IHByZWdfbWF0Y2hfYWxsKCAkcFsncmVnZXgnXSwgJHJhdyApOwoJaWYgKCAkYWN0dWFsID09PSBmYWxzZSApIHsKCQllY2hvICJFUlJPUjogcHJlZ19tYXRjaF9hbGwgZmFpbGVkIGZvciAka2V5IChwY3JlIGVycm9yOiAiIC4gcHJlZ19sYXN0X2Vycm9yKCkgLiAiKVxuIjsKCQkkYW55X21pc21hdGNoID0gdHJ1ZTsKCQljb250aW51ZTsKCX0KCSRvayA9ICggJGFjdHVhbCA9PT0gJHBbJ2V4cGVjdGVkJ10gKTsKCWVjaG8gIiRrZXk6IGV4cGVjdGVkPXskcFsnZXhwZWN0ZWQnXX0gYWN0dWFsPSRhY3R1YWwgIiAuICggJG9rID8gJ09LJyA6ICdNSVNNQVRDSCcgKSAuICJcbiI7CglpZiAoICEgJG9rICkgeyAkYW55X21pc21hdGNoID0gdHJ1ZTsgfQp9CgokYmlsaW5ndWFsX2NvdW50ID0gc3Vic3RyX2NvdW50KCAkcmF3LCAkYmlsaW5ndWFsX2xhYmVsX29sZCApOwokb2sgPSAoICRiaWxpbmd1YWxfY291bnQgPT09IDEgKTsKZWNobyAiYmlsaW5ndWFsIGxhYmVsICgnT3VyIFN0b3J5IFxcdTAwYjcgTnVlc3RyYSBIaXN0b3JpYScpOiBleHBlY3RlZD0xIGFjdHVhbD0kYmlsaW5ndWFsX2NvdW50ICIgLiAoICRvayA/ICdPSycgOiAnTUlTTUFUQ0gnICkgLiAiXG4iOwppZiAoICEgJG9rICkgeyAkYW55X21pc21hdGNoID0gdHJ1ZTsgfQoKaWYgKCAkYW55X21pc21hdGNoICkgewoJZWNobyAiXG5BQk9SVDogb25lIG9yIG1vcmUgcHJlLWNoZWNrIGNvdW50cyBkaWQgbm90IG1hdGNoIGV4cGVjdGF0aW9ucyAtIG5vIHdyaXRlIHBlcmZvcm1lZFxuIjsKCWV4aXQoIDEgKTsKfQplY2hvICJcbk9LOiBhbGwgcHJlLWNoZWNrIGNvdW50cyBtYXRjaGVkIGV4cGVjdGF0aW9uc1xuIjsKCi8vIFNURVAgYzogcGVyZm9ybSB0aGUgcmVwbGFjZW1lbnRzLgokbmV3X3JhdyA9ICRyYXc7CmZvcmVhY2ggKCAkcGF0dGVybnMgYXMgJGtleSA9PiAkcCApIHsKCSRuZXdfcmF3ID0gcHJlZ19yZXBsYWNlKCAkcFsncmVnZXgnXSwgJycsICRuZXdfcmF3ICk7Cn0KCiRuZXdfcmF3ID0gc3RyX3JlcGxhY2UoICRiaWxpbmd1YWxfbGFiZWxfb2xkLCAkYmlsaW5ndWFsX2xhYmVsX25ldywgJG5ld19yYXcgKTsKCi8vIFNURVAgZDogcmUtcnVuIHRoZSBzYW1lIGNvdW50cyBvbiB0aGUgcmVzdWx0IC0gYWxsIG11c3Qgbm93IGJlIDAuCmVjaG8gIlxuPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CmVjaG8gIlBPU1QtQ0hFQ0s6IGNvdW50cyBhZnRlciByZXBsYWNlbWVudCAoYWxsIG11c3QgYmUgMClcbiI7CmVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwoKJGFueV9sZWZ0b3ZlciA9IGZhbHNlOwpmb3JlYWNoICggJHBhdHRlcm5zIGFzICRrZXkgPT4gJHAgKSB7CgkkYWN0dWFsID0gcHJlZ19tYXRjaF9hbGwoICRwWydyZWdleCddLCAkbmV3X3JhdyApOwoJJG9rID0gKCAkYWN0dWFsID09PSAwICk7CgllY2hvICIka2V5OiBhY3R1YWw9JGFjdHVhbCAiIC4gKCAkb2sgPyAnT0snIDogJ0xFRlRPVkVSIE1BVENIJyApIC4gIlxuIjsKCWlmICggISAkb2sgKSB7ICRhbnlfbGVmdG92ZXIgPSB0cnVlOyB9Cn0KJGJpbGluZ3VhbF9jb3VudF9hZnRlciA9IHN1YnN0cl9jb3VudCggJG5ld19yYXcsICRiaWxpbmd1YWxfbGFiZWxfb2xkICk7CiRvayA9ICggJGJpbGluZ3VhbF9jb3VudF9hZnRlciA9PT0gMCApOwplY2hvICJiaWxpbmd1YWwgbGFiZWw6IGFjdHVhbD0kYmlsaW5ndWFsX2NvdW50X2FmdGVyICIgLiAoICRvayA/ICdPSycgOiAnTEVGVE9WRVIgTUFUQ0gnICkgLiAiXG4iOwppZiAoICEgJG9rICkgeyAkYW55X2xlZnRvdmVyID0gdHJ1ZTsgfQoKaWYgKCAkYW55X2xlZnRvdmVyICkgewoJZWNobyAiXG5BQk9SVDogb25lIG9yIG1vcmUgcGF0dGVybnMgc3RpbGwgbWF0Y2ggYWZ0ZXIgcmVwbGFjZW1lbnQgLSBubyB3cml0ZSBwZXJmb3JtZWRcbiI7CglleGl0KCAxICk7Cn0KZWNobyAiXG5PSzogYWxsIHBhdHRlcm5zIGZ1bGx5IHJlbW92ZWQsIG5vIGxlZnRvdmVyc1xuIjsKCi8vIFNURVAgZToganNvbl9kZWNvZGUgYm90aCwgY29tcGFyZSBlbGVtZW50IGNvdW50cy4KJGRlY29kZWRfb2xkID0ganNvbl9kZWNvZGUoICRyYXcsIHRydWUgKTsKJGRlY29kZWRfbmV3ID0ganNvbl9kZWNvZGUoICRuZXdfcmF3LCB0cnVlICk7CmlmICggJGRlY29kZWRfb2xkID09PSBudWxsIHx8ICRkZWNvZGVkX25ldyA9PT0gbnVsbCApIHsKCWVjaG8gIlxuQUJPUlQ6IGpzb25fZGVjb2RlIGZhaWxlZCBvbiBvbGQgb3IgbmV3IGNvbnRlbnRcbiI7CglleGl0KCAxICk7Cn0KaWYgKCBjb3VudCggJGRlY29kZWRfb2xkICkgIT09IGNvdW50KCAkZGVjb2RlZF9uZXcgKSApIHsKCWVjaG8gIlxuQUJPUlQ6IGVsZW1lbnQgY291bnQgbWlzbWF0Y2ggKG9sZD0iIC4gY291bnQoICRkZWNvZGVkX29sZCApIC4gIiBuZXc9IiAuIGNvdW50KCAkZGVjb2RlZF9uZXcgKSAuICIpXG4iOwoJZXhpdCggMSApOwp9CmVjaG8gIlxuT0s6IGpzb25fZGVjb2RlIHN1Y2NlZWRlZCBvbiBib3RoLCBlbGVtZW50IGNvdW50IHVuY2hhbmdlZCAoIiAuIGNvdW50KCAkZGVjb2RlZF9vbGQgKSAuICIpXG4iOwoKLy8gU1RFUCBmOiB3cml0ZS4KJHJlc3VsdCA9IHVwZGF0ZV9wb3N0X21ldGEoIDU5LCAnX2VsZW1lbnRvcl9kYXRhJywgd3Bfc2xhc2goICRuZXdfcmF3ICkgKTsKZWNobyAiXG51cGRhdGVfcG9zdF9tZXRhIHJlc3VsdDogIiAuIHZhcl9leHBvcnQoICRyZXN1bHQsIHRydWUgKSAuICJcbiI7CgokdmVyaWZ5ID0gJHdwZGItPmdldF92YXIoICR3cGRiLT5wcmVwYXJlKAoJIlNFTEVDVCBtZXRhX3ZhbHVlIEZST00geyR3cGRiLT5wb3N0bWV0YX0gV0hFUkUgbWV0YV9pZCA9ICVkIiwgJG1ldGFfaWQKKSApOwplY2hvICJ2ZXJpZnk6ICctLWVzJyBjb3VudD0iIC4gc3Vic3RyX2NvdW50KCAkdmVyaWZ5LCAnLS1lcycgKSAuICIgKHdhbnQgMClcbiI7CmVjaG8gInZlcmlmeTogJ2xuYS1zdG9yeV9fc3ViJyBjb3VudD0iIC4gc3Vic3RyX2NvdW50KCAkdmVyaWZ5LCAnbG5hLXN0b3J5X19zdWInICkgLiAiICh3YW50IDApXG4iOwplY2hvICJ2ZXJpZnk6ICdOdWVzdHJhIEhpc3RvcmlhJyBjb3VudD0iIC4gc3Vic3RyX2NvdW50KCAkdmVyaWZ5LCAnTnVlc3RyYSBIaXN0b3JpYScgKSAuICIgKHdhbnQgMClcbiI7CgovLyBTVEVQIGc6IGNsZWFyIGNhY2hlLgppZiAoIGNsYXNzX2V4aXN0cyggJ1xFbGVtZW50b3JcUGx1Z2luJyApICkgewoJXEVsZW1lbnRvclxQbHVnaW46OiRpbnN0YW5jZS0+ZmlsZXNfbWFuYWdlci0+Y2xlYXJfY2FjaGUoKTsKCWVjaG8gIkVsZW1lbnRvciBDU1MgY2FjaGUgY2xlYXJlZFxuIjsKfQo=" | base64 -d > /tmp/fix-about-remove-es-stopgap-v2.php;
+
+             php -l /tmp/fix-about-remove-es-stopgap-v2.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on fix script";
+               rm -f /tmp/fix-about-remove-es-stopgap-v2.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/fix-about-remove-es-stopgap-v2.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/fix-about-remove-es-stopgap-v2.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - fix did NOT complete successfully";
+               exit 1;
+             fi;
+             echo "OK: fix workflow completed successfully"'

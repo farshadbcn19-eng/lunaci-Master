@@ -1,0 +1,62 @@
+name: Diagnose - byte representation around 'Nuestra Historia' in meta_id=197 (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Locate 'Nuestra Historia' and dump surrounding bytes (read-only, no writes)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJG1ldGFfaWQgPSAxOTc7CiRyYXcgPSAkd3BkYi0+Z2V0X3ZhciggJHdwZGItPnByZXBhcmUoCgkiU0VMRUNUIG1ldGFfdmFsdWUgRlJPTSB7JHdwZGItPnBvc3RtZXRhfSBXSEVSRSBtZXRhX2lkID0gJWQiLCAkbWV0YV9pZAopICk7CmlmICggJHJhdyA9PT0gbnVsbCApIHsgZWNobyAiQUJPUlQ6IG1ldGFfaWQgMTk3IG5vdCBmb3VuZFxuIjsgZXhpdCggMSApOyB9CgokbmVlZGxlID0gJ051ZXN0cmEgSGlzdG9yaWEnOwokcG9zID0gc3RycG9zKCAkcmF3LCAkbmVlZGxlICk7CmlmICggJHBvcyA9PT0gZmFsc2UgKSB7CgllY2hvICJOT1QgRk9VTkQ6ICdOdWVzdHJhIEhpc3RvcmlhJyBkb2VzIG5vdCBhcHBlYXIgYW55d2hlcmUgaW4gbWV0YV9pZD0xOTdcbiI7Cn0gZWxzZSB7Cgkkc3RhcnQgPSBtYXgoIDAsICRwb3MgLSA2MCApOwoJJHNsaWNlID0gc3Vic3RyKCAkcmF3LCAkc3RhcnQsICggJHBvcyArIHN0cmxlbiggJG5lZWRsZSApICsgMjAgKSAtICRzdGFydCApOwoJZWNobyAiLS0tLVJBVyBTVEFSVC0tLS1cbiIgLiAkc2xpY2UgLiAiXG4tLS0tUkFXIEVORC0tLS1cbiI7CgllY2hvICItLS0tSlNPTi1FTkNPREVEIFNUQVJULS0tLVxuIiAuIGpzb25fZW5jb2RlKCAkc2xpY2UgKSAuICJcbi0tLS1KU09OLUVOQ09ERUQgRU5ELS0tLVxuIjsKfQo=" | base64 -d > /tmp/diagnose-bilingual-label-bytes.php;
+
+             php -l /tmp/diagnose-bilingual-label-bytes.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-bilingual-label-bytes.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-bilingual-label-bytes.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-bilingual-label-bytes.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: read-only diagnostic completed successfully"'

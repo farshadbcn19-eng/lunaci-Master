@@ -1,0 +1,134 @@
+name: Diagnose Home page horizontal overflow (read-only browser check)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: npm install playwright
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Write overflow-check script
+        run: |
+          cat > check.mjs << 'JSEOF'
+          import { chromium } from 'playwright';
+
+          const URL = 'https://lunacibarcelona.com/';
+          const VIEWPORTS = [
+            { name: 'mobile (390x844)', width: 390, height: 844 },
+            { name: 'desktop (1440x900)', width: 1440, height: 900 },
+          ];
+
+          function describeEl(handleData) {
+            const { tag, className, id, rect, width, marginLeft, marginRight, transform } = handleData;
+            const classStr = className ? `.${String(className).trim().split(/\s+/).join('.')}` : '';
+            const idStr = id ? `#${id}` : '';
+            return `<${tag}${idStr}${classStr}> ` +
+              `rect(left=${rect.left.toFixed(1)}, right=${rect.right.toFixed(1)}) ` +
+              `computed(width=${width}, margin-left=${marginLeft}, margin-right=${marginRight}, transform=${transform})`;
+          }
+
+          async function checkViewport(browser, viewport) {
+            const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height } });
+            await page.goto(URL, { waitUntil: 'networkidle', timeout: 60000 });
+
+            const summary = await page.evaluate(() => {
+              return {
+                scrollWidth: document.documentElement.scrollWidth,
+                innerWidth: window.innerWidth,
+                clientWidth: document.documentElement.clientWidth,
+              };
+            });
+
+            console.log(`\n=====================================================`);
+            console.log(`VIEWPORT: ${viewport.name}`);
+            console.log(`=====================================================`);
+            console.log(`document.documentElement.scrollWidth = ${summary.scrollWidth}`);
+            console.log(`window.innerWidth                    = ${summary.innerWidth}`);
+            console.log(`document.documentElement.clientWidth = ${summary.clientWidth}`);
+
+            const hasOverflow = summary.scrollWidth > summary.innerWidth;
+            console.log(`overflow detected: ${hasOverflow ? 'YES' : 'no'} (scrollWidth ${hasOverflow ? '>' : '<='} innerWidth)`);
+
+            let offenders = [];
+            if (hasOverflow) {
+              offenders = await page.evaluate((innerWidth) => {
+                const results = [];
+                const all = document.querySelectorAll('body *');
+                for (const el of all) {
+                  const rect = el.getBoundingClientRect();
+                  if (rect.width === 0 && rect.height === 0) continue;
+                  if (rect.right > innerWidth + 0.5 || rect.left < -0.5) {
+                    const cs = window.getComputedStyle(el);
+                    results.push({
+                      tag: el.tagName.toLowerCase(),
+                      className: el.className && typeof el.className === 'string' ? el.className : '',
+                      id: el.id || '',
+                      rect: { left: rect.left, right: rect.right },
+                      width: cs.width,
+                      marginLeft: cs.marginLeft,
+                      marginRight: cs.marginRight,
+                      transform: cs.transform,
+                    });
+                  }
+                }
+                return results;
+              }, summary.innerWidth);
+
+              console.log(`\n----OFFENDING ELEMENTS START---- (${offenders.length} found)`);
+              for (const o of offenders) {
+                console.log(describeEl(o));
+              }
+              console.log(`----OFFENDING ELEMENTS END----`);
+            }
+
+            await page.close();
+            return { viewport: viewport.name, hasOverflow, offenderCount: offenders.length };
+          }
+
+          (async () => {
+            const browser = await chromium.launch();
+            const results = [];
+            try {
+              for (const vp of VIEWPORTS) {
+                const r = await checkViewport(browser, vp);
+                results.push(r);
+              }
+            } finally {
+              await browser.close();
+            }
+
+            console.log(`\n=====================================================`);
+            console.log(`SUMMARY`);
+            console.log(`=====================================================`);
+            let anyFail = false;
+            for (const r of results) {
+              const status = r.hasOverflow ? 'FAIL' : 'PASS';
+              if (r.hasOverflow) anyFail = true;
+              console.log(`${status}: ${r.viewport} - overflow=${r.hasOverflow}, offenders=${r.offenderCount}`);
+            }
+            console.log(`=====================================================`);
+            console.log(anyFail ? 'OVERALL: FAIL - horizontal overflow detected on at least one viewport' : 'OVERALL: PASS - no horizontal overflow detected');
+            console.log(`=====================================================`);
+
+            process.exit(anyFail ? 1 : 0);
+          })().catch((err) => {
+            console.error('ERROR: diagnostic script threw an exception:', err);
+            process.exit(2);
+          });
+          JSEOF
+          node --check check.mjs
+
+      - name: Run overflow diagnostic
+        run: node check.mjs

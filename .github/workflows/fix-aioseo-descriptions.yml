@@ -1,0 +1,62 @@
+name: Fix - set AIOSEO meta descriptions in wp_aioseo_posts (guarded write)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Set description column for wp_aioseo_posts id=19 (post 57) and id=21 (post 59) - guarded write
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwokdGFibGUgPSAkd3BkYi0+cHJlZml4IC4gJ2Fpb3Nlb19wb3N0cyc7Cgokcm93cyA9IGFycmF5KAoJMTkgPT4gJ0xVTkFDSSBCYXJjZWxvbmEg4oCUIE1lZGl0ZXJyYW5lYW4gbHV4dXJ5IGJlYXV0eS4gRXZlcnkgd29tYW4gaXMgc2Vlbi4gQnV0IHlvdXIgcHJlc2VuY2UgaXMgcmVtZW1iZXJlZC4nLAoJMjEgPT4gJ1RoZSBzdG9yeSBhbmQgcGhpbG9zb3BoeSBiZWhpbmQgTFVOQUNJIEJhcmNlbG9uYSDigJQgYSBNZWRpdGVycmFuZWFuIGx1eHVyeSBiZWF1dHkgaG91c2UgYnVpbHQgb24gZ3JhY2UsIGNvbmZpZGVuY2UgYW5kIGxhc3RpbmcgcHJlc2VuY2UuJywKKTsKCi8vIFBSRS1DSEVDSzogY29uZmlybSBib3RoIHJvd3MgZXhpc3QgYW5kIGRlc2NyaXB0aW9uIGlzIGN1cnJlbnRseSBOVUxMCi8vIChtYXRjaGVzIHdoYXQgd2UganVzdCBjb25maXJtZWQpIOKAlCBhYm9ydCBpZiBzdGF0ZSBoYXMgY2hhbmdlZApmb3JlYWNoICggJHJvd3MgYXMgJGlkID0+ICRuZXdfZGVzYyApIHsKCSRjdXJyZW50ID0gJHdwZGItPmdldF92YXIoICR3cGRiLT5wcmVwYXJlKAoJCSJTRUxFQ1QgZGVzY3JpcHRpb24gRlJPTSB7JHRhYmxlfSBXSEVSRSBpZCA9ICVkIiwgJGlkCgkpICk7CgllY2hvICJpZD0kaWQgY3VycmVudCBkZXNjcmlwdGlvbjogIiAuICggJGN1cnJlbnQgPT09IG51bGwgPyAnTlVMTCAoZXhwZWN0ZWQpJyA6ICJOT1QgTlVMTDogJyRjdXJyZW50JyIgKSAuICJcbiI7CglpZiAoICRjdXJyZW50ICE9PSBudWxsICkgewoJCWVjaG8gIkFCT1JUOiBpZD0kaWQgYWxyZWFkeSBoYXMgYSBub24tTlVMTCBkZXNjcmlwdGlvbiAtIHJlZnVzaW5nIHRvIG92ZXJ3cml0ZSB3aXRob3V0IGV4cGxpY2l0IGNvbmZpcm1hdGlvblxuIjsKCQlleGl0KDEpOwoJfQp9CgovLyBXUklURQpmb3JlYWNoICggJHJvd3MgYXMgJGlkID0+ICRuZXdfZGVzYyApIHsKCSRyZXN1bHQgPSAkd3BkYi0+dXBkYXRlKCAkdGFibGUsIGFycmF5KCAnZGVzY3JpcHRpb24nID0+ICRuZXdfZGVzYyApLCBhcnJheSggJ2lkJyA9PiAkaWQgKSApOwoJZWNobyAidXBkYXRlIGlkPSRpZCByZXN1bHQgKHJvd3MgYWZmZWN0ZWQpOiAiIC4gdmFyX2V4cG9ydCggJHJlc3VsdCwgdHJ1ZSApIC4gIlxuIjsKfQoKLy8gVkVSSUZZCmZvcmVhY2ggKCAkcm93cyBhcyAkaWQgPT4gJG5ld19kZXNjICkgewoJJHZlcmlmeSA9ICR3cGRiLT5nZXRfdmFyKCAkd3BkYi0+cHJlcGFyZSgKCQkiU0VMRUNUIGRlc2NyaXB0aW9uIEZST00geyR0YWJsZX0gV0hFUkUgaWQgPSAlZCIsICRpZAoJKSApOwoJZWNobyAiaWQ9JGlkIHZlcmlmeSBkZXNjcmlwdGlvbjogJHZlcmlmeVxuIjsKCWVjaG8gImlkPSRpZCBtYXRjaGVzIGV4cGVjdGVkOiAiIC4gKCAkdmVyaWZ5ID09PSAkbmV3X2Rlc2MgPyAnWUVTJyA6ICdOTycgKSAuICJcbiI7Cn0K" | base64 -d > /tmp/fix-aioseo-descriptions.php;
+
+             php -l /tmp/fix-aioseo-descriptions.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on fix script";
+               rm -f /tmp/fix-aioseo-descriptions.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/fix-aioseo-descriptions.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/fix-aioseo-descriptions.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: guarded write completed successfully"'

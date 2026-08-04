@@ -1,0 +1,62 @@
+name: Diagnose - exact tag/class wrapping for Confidence and full paragraph text (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Dump every 'Confidence' occurrence and full paragraph contexts (read-only, no writes)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwokcmF3ID0gJHdwZGItPmdldF92YXIoCgkiU0VMRUNUIG1ldGFfdmFsdWUgRlJPTSB7JHdwZGItPnBvc3RtZXRhfQoJIFdIRVJFIHBvc3RfaWQgPSA1OSBBTkQgbWV0YV9rZXkgPSAnX2VsZW1lbnRvcl9kYXRhJyIKKTsKCi8vIEV2ZXJ5IG9jY3VycmVuY2Ugb2YgIkNvbmZpZGVuY2UiIHdpdGggd2lkZSBjb250ZXh0LCB0byBzZWUgdGhlCi8vIGFjdHVhbCBjdXJyZW50IHRhZy9jbGFzcwokb2Zmc2V0ID0gMDsKJGkgPSAwOwp3aGlsZSAoKCRwb3MgPSBzdHJwb3MoJHJhdywgJ0NvbmZpZGVuY2UnLCAkb2Zmc2V0KSkgIT09IGZhbHNlKSB7CgkkaSsrOwoJJHN0YXJ0ID0gbWF4KDAsICRwb3MgLSAxMjApOwoJZWNobyAiXG4tLS0gJ0NvbmZpZGVuY2UnIG9jY3VycmVuY2UgIyRpIGF0IG9mZnNldCAkcG9zIC0tLVxuIjsKCWVjaG8gc3Vic3RyKCRyYXcsICRzdGFydCwgMjUwKSAuICJcbiI7Cgkkb2Zmc2V0ID0gJHBvcyArIDE7Cn0KCi8vIEZ1bGwgIlJhdGhlciB0aGFuIHB1cnN1aW5nIiBwYXJhZ3JhcGgsIHdpZGUgd2luZG93CiRwb3MyID0gc3RycG9zKCRyYXcsICdSYXRoZXIgdGhhbiBwdXJzdWluZycpOwppZiAoJHBvczIgIT09IGZhbHNlKSB7CgllY2hvICJcbi0tLSBGdWxsICdSYXRoZXIgdGhhbiBwdXJzdWluZy4uLicgcGFyYWdyYXBoIGNvbnRleHQgLS0tXG4iOwoJZWNobyBzdWJzdHIoJHJhdywgbWF4KDAsICRwb3MyIC0gNjApLCA3MDApIC4gIlxuIjsKfSBlbHNlIHsKCWVjaG8gIlxuJ1JhdGhlciB0aGFuIHB1cnN1aW5nJyBub3QgZm91bmQgYXQgYWxsXG4iOwp9CgovLyBUaGUgQmVnaW5uaW5nIC8gRWwgQ29taWVuem8gYXJlYSwgd2lkZSB3aW5kb3cKJHBvczMgPSBzdHJwb3MoJHJhdywgJ0JlZ2lubmluZycpOwppZiAoJHBvczMgIT09IGZhbHNlKSB7CgllY2hvICJcbi0tLSAnQmVnaW5uaW5nJyBhcmVhIGNvbnRleHQgLS0tXG4iOwoJZWNobyBzdWJzdHIoJHJhdywgbWF4KDAsICRwb3MzIC0gMTUwKSwgMzUwKSAuICJcbiI7Cn0K" | base64 -d > /tmp/diagnose-about-name-tags.php;
+
+             php -l /tmp/diagnose-about-name-tags.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-about-name-tags.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-about-name-tags.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-about-name-tags.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: read-only diagnostic completed successfully"'

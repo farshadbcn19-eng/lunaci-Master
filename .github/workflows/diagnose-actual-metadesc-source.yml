@@ -1,0 +1,62 @@
+name: Diagnose - confirm actual rendered meta description source (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Compare hostinger_ai/_aioseo postmeta against live rendered meta description (read-only, no writes)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJHBhZ2VzID0gYXJyYXkoCgk1NyA9PiAnaHR0cHM6Ly9sdW5hY2liYXJjZWxvbmEuY29tLycsCgk1OSA9PiAnaHR0cHM6Ly9sdW5hY2liYXJjZWxvbmEuY29tL2Fib3V0LXVzLycsCik7CgpmdW5jdGlvbiBnZXRfbWV0YV9yb3coICR3cGRiLCAkcG9zdF9pZCwgJG1ldGFfa2V5ICkgewoJcmV0dXJuICR3cGRiLT5nZXRfdmFyKCAkd3BkYi0+cHJlcGFyZSgKCQkiU0VMRUNUIG1ldGFfdmFsdWUgRlJPTSB7JHdwZGItPnBvc3RtZXRhfSBXSEVSRSBwb3N0X2lkID0gJWQgQU5EIG1ldGFfa2V5ID0gJXMiLAoJCSRwb3N0X2lkLCAkbWV0YV9rZXkKCSkgKTsKfQoKZnVuY3Rpb24gZXh0cmFjdF9tZXRhX2Rlc2NyaXB0aW9uKCAkaHRtbCApIHsKCS8vIE1hdGNoIDxtZXRhIG5hbWU9ImRlc2NyaXB0aW9uIiBjb250ZW50PSIuLi4iPiBpbiBlaXRoZXIgYXR0cmlidXRlIG9yZGVyLAoJLy8gc2luZ2xlIG9yIGRvdWJsZSBxdW90ZXMuCglpZiAoIHByZWdfbWF0Y2goICcvPG1ldGFccytbXj5dKm5hbWU9WyJcJ11kZXNjcmlwdGlvblsiXCddW14+XSpjb250ZW50PVsiXCddKFteIlwnXSopWyJcJ11bXj5dKj4vaScsICRodG1sLCAkbSApICkgewoJCXJldHVybiBodG1sX2VudGl0eV9kZWNvZGUoICRtWzFdLCBFTlRfUVVPVEVTLCAnVVRGLTgnICk7Cgl9CglpZiAoIHByZWdfbWF0Y2goICcvPG1ldGFccytbXj5dKmNvbnRlbnQ9WyJcJ10oW14iXCddKilbIlwnXVtePl0qbmFtZT1bIlwnXWRlc2NyaXB0aW9uWyJcJ11bXj5dKj4vaScsICRodG1sLCAkbSApICkgewoJCXJldHVybiBodG1sX2VudGl0eV9kZWNvZGUoICRtWzFdLCBFTlRfUVVPVEVTLCAnVVRGLTgnICk7Cgl9CglyZXR1cm4gbnVsbDsKfQoKJHJlc3VsdHMgPSBhcnJheSgpOwoKZm9yZWFjaCAoICRwYWdlcyBhcyAkcG9zdF9pZCA9PiAkdXJsICkgewoJZWNobyAiXG49PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKCWVjaG8gIlBPU1RfSUQ9JHBvc3RfaWQgKCR1cmwpXG4iOwoJZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgoJJGhvc3Rpbmdlcl92YWwgPSBnZXRfbWV0YV9yb3coICR3cGRiLCAkcG9zdF9pZCwgJ2hvc3Rpbmdlcl9haV9wb3N0X21ldGFfZGVzY3JpcHRpb24nICk7CgllY2hvICJob3N0aW5nZXJfYWlfcG9zdF9tZXRhX2Rlc2NyaXB0aW9uOlxuIjsKCWVjaG8gJGhvc3Rpbmdlcl92YWwgPT09IG51bGwgPyAiTk9UIEZPVU5EXG4iIDogJGhvc3Rpbmdlcl92YWwgLiAiXG4iOwoKCSRhaW9zZW9fdmFsID0gZ2V0X21ldGFfcm93KCAkd3BkYiwgJHBvc3RfaWQsICdfYWlvc2VvX2Rlc2NyaXB0aW9uJyApOwoJZWNobyAiXG5fYWlvc2VvX2Rlc2NyaXB0aW9uOlxuIjsKCWVjaG8gJGFpb3Nlb192YWwgPT09IG51bGwgPyAiTk9UIEZPVU5EXG4iIDogJGFpb3Nlb192YWwgLiAiXG4iOwoKCWVjaG8gIlxuRmV0Y2hpbmcgbGl2ZSBwYWdlIHZpYSB3cF9yZW1vdGVfZ2V0Li4uXG4iOwoJJHJlc3BvbnNlID0gd3BfcmVtb3RlX2dldCggJHVybCwgYXJyYXkoCgkJJ3RpbWVvdXQnICAgPT4gMjAsCgkJJ3NzbHZlcmlmeScgPT4gdHJ1ZSwKCQknaGVhZGVycycgICA9PiBhcnJheSggJ0NhY2hlLUNvbnRyb2wnID0+ICduby1jYWNoZScgKSwKCSkgKTsKCglpZiAoIGlzX3dwX2Vycm9yKCAkcmVzcG9uc2UgKSApIHsKCQllY2hvICJFUlJPUjogd3BfcmVtb3RlX2dldCBmYWlsZWQ6ICIgLiAkcmVzcG9uc2UtPmdldF9lcnJvcl9tZXNzYWdlKCkgLiAiXG4iOwoJCSRsaXZlX2Rlc2MgPSBudWxsOwoJfSBlbHNlIHsKCQkkY29kZSA9IHdwX3JlbW90ZV9yZXRyaWV2ZV9yZXNwb25zZV9jb2RlKCAkcmVzcG9uc2UgKTsKCQkkYm9keSA9IHdwX3JlbW90ZV9yZXRyaWV2ZV9ib2R5KCAkcmVzcG9uc2UgKTsKCQllY2hvICJIVFRQIHN0YXR1czogJGNvZGUsIGJvZHkgbGVuZ3RoOiAiIC4gc3RybGVuKCAkYm9keSApIC4gIlxuIjsKCQkkbGl2ZV9kZXNjID0gZXh0cmFjdF9tZXRhX2Rlc2NyaXB0aW9uKCAkYm9keSApOwoJCWVjaG8gIlxuTGl2ZSA8bWV0YSBuYW1lPVwiZGVzY3JpcHRpb25cIj4gY29udGVudDpcbiI7CgkJZWNobyAkbGl2ZV9kZXNjID09PSBudWxsID8gIk5PVCBGT1VORCBpbiByZW5kZXJlZCBIVE1MXG4iIDogJGxpdmVfZGVzYyAuICJcbiI7Cgl9CgoJJHJlc3VsdHNbICRwb3N0X2lkIF0gPSBhcnJheSgKCQknaG9zdGluZ2VyJyA9PiAkaG9zdGluZ2VyX3ZhbCwKCQknYWlvc2VvJyAgICA9PiAkYWlvc2VvX3ZhbCwKCQknbGl2ZScgICAgICA9PiAkbGl2ZV9kZXNjLAoJKTsKfQoKZWNobyAiXG49PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKZWNobyAiU0lERS1CWS1TSURFIENPTVBBUklTT05cbiI7CmVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwpmb3JlYWNoICggJHJlc3VsdHMgYXMgJHBvc3RfaWQgPT4gJHIgKSB7CgkkdXJsID0gJHBhZ2VzWyAkcG9zdF9pZCBdOwoJZWNobyAiXG4tLS0gcG9zdF9pZD0kcG9zdF9pZCAoJHVybCkgLS0tXG4iOwoJZWNobyAiaG9zdGluZ2VyX2FpX3Bvc3RfbWV0YV9kZXNjcmlwdGlvbjogIiAuICggJHJbJ2hvc3RpbmdlciddID09PSBudWxsID8gJyhOT1QgRk9VTkQpJyA6ICRyWydob3N0aW5nZXInXSApIC4gIlxuIjsKCWVjaG8gIl9haW9zZW9fZGVzY3JpcHRpb246ICAgICAgICAgICAgICAgICIgLiAoICRyWydhaW9zZW8nXSA9PT0gbnVsbCA/ICcoTk9UIEZPVU5EKScgOiAkclsnYWlvc2VvJ10gKSAuICJcbiI7CgllY2hvICJsaXZlIHJlbmRlcmVkIDxtZXRhIGRlc2NyaXB0aW9uPjogICAiIC4gKCAkclsnbGl2ZSddID09PSBudWxsID8gJyhOT1QgRk9VTkQpJyA6ICRyWydsaXZlJ10gKSAuICJcbiI7CgoJJG1hdGNoID0gKCAkclsnaG9zdGluZ2VyJ10gIT09IG51bGwgJiYgJHJbJ2xpdmUnXSAhPT0gbnVsbCAmJiAkclsnaG9zdGluZ2VyJ10gPT09ICRyWydsaXZlJ10gKTsKCWVjaG8gImhvc3RpbmdlciBmaWVsZCBtYXRjaGVzIGxpdmUgcmVuZGVyZWQgbWV0YSBkZXNjcmlwdGlvbiBleGFjdGx5OiAiIC4gKCAkbWF0Y2ggPyAnWUVTJyA6ICdubycgKSAuICJcbiI7Cn0KCmVjaG8gIlxuPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CmVjaG8gIk9LOiByZWFkLW9ubHkgZGlhZ25vc3RpYyBjb21wbGV0ZSwgbm8gd3JpdGVzIHBlcmZvcm1lZFxuIjsKZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7Cg==" | base64 -d > /tmp/diagnose-actual-metadesc-source.php;
+
+             php -l /tmp/diagnose-actual-metadesc-source.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-actual-metadesc-source.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-actual-metadesc-source.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-actual-metadesc-source.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: read-only diagnostic completed successfully"'

@@ -1,0 +1,62 @@
+name: Diagnose - confirm WPML API hook availability and translation-status table (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Check WPML API hooks and icl_translation_status structure (read-only, no writes)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKLy8gQ2hlY2sgaWYgdGhlIG9mZmljaWFsIFdQTUwgYWN0aW9uIGhvb2sgaXMgcmVnaXN0ZXJlZAokaGFzX2FjdGlvbiA9IGhhc19hY3Rpb24oJ3dwbWxfc2V0X2VsZW1lbnRfbGFuZ3VhZ2VfZGV0YWlscycpOwplY2hvICJ3cG1sX3NldF9lbGVtZW50X2xhbmd1YWdlX2RldGFpbHMgaG9vayByZWdpc3RlcmVkOiAiIC4KCSgkaGFzX2FjdGlvbiA/ICJZRVMgKHByaW9yaXR5L2NvdW50OiAkaGFzX2FjdGlvbikiIDogIk5PIikgLiAiXG4iOwoKLy8gQ2hlY2sgdGhlIHNpc3RlciBmaWx0ZXIgdXNlZCB0byByZWFkIGxhbmd1YWdlIGluZm8KZWNobyAid3BtbF9lbGVtZW50X2xhbmd1YWdlX2RldGFpbHMgZmlsdGVyIHJlZ2lzdGVyZWQ6ICIgLgoJKGhhc19maWx0ZXIoJ3dwbWxfZWxlbWVudF9sYW5ndWFnZV9kZXRhaWxzJykgPyAiWUVTIiA6ICJOTyIpIC4gIlxuIjsKCi8vIEluc3BlY3QgaWNsX3RyYW5zbGF0aW9uX3N0YXR1cyB0YWJsZSBpZiBpdCBleGlzdHMKJHN0YXR1c190YWJsZSA9ICR3cGRiLT5wcmVmaXggLiAnaWNsX3RyYW5zbGF0aW9uX3N0YXR1cyc7CiRleGlzdHMgPSAkd3BkYi0+Z2V0X3Zhcigkd3BkYi0+cHJlcGFyZSgiU0hPVyBUQUJMRVMgTElLRSAlcyIsICRzdGF0dXNfdGFibGUpKTsKaWYgKCRleGlzdHMpIHsKCWVjaG8gIlxuVGFibGUgY29uZmlybWVkOiAkc3RhdHVzX3RhYmxlXG4iOwoJJGNvbHMgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoIlNIT1cgQ09MVU1OUyBGUk9NIHskc3RhdHVzX3RhYmxlfSIsIEFSUkFZX0EpOwoJZWNobyAiQ29sdW1uczogIiAuIGltcGxvZGUoJywgJywgYXJyYXlfY29sdW1uKCRjb2xzLCAnRmllbGQnKSkgLiAiXG4iOwoKCS8vIFNob3cgdGhlIHJvdyBmb3IgU2hvcCdzIHRyYW5zbGF0aW9uX2lkPTQ3NCAodGhlIEVTIFRpZW5kYSByb3cpIGFzCgkvLyBhIHJlYWwgd29ya2luZyByZWZlcmVuY2UKCSRyZWZfcm93ID0gJHdwZGItPmdldF9yb3coJHdwZGItPnByZXBhcmUoCgkJIlNFTEVDVCAqIEZST00geyRzdGF0dXNfdGFibGV9IFdIRVJFIHRyYW5zbGF0aW9uX2lkID0gJWQiLCA0NzQKCSksIEFSUkFZX0EpOwoJZWNobyAiXG5SZWZlcmVuY2Ugcm93IGZvciB0cmFuc2xhdGlvbl9pZD00NzQgKFRpZW5kYSk6XG4iOwoJZWNobyAkcmVmX3JvdyA/IHByaW50X3IoJHJlZl9yb3csIHRydWUpIDogIk5PIFJPVyBGT1VORFxuIjsKfSBlbHNlIHsKCWVjaG8gIlRBQkxFIE5PVCBGT1VORDogJHN0YXR1c190YWJsZVxuIjsKfQo=" | base64 -d > /tmp/diagnose-wpml-api-availability.php;
+
+             php -l /tmp/diagnose-wpml-api-availability.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-wpml-api-availability.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-wpml-api-availability.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-wpml-api-availability.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: read-only diagnostic completed successfully"'

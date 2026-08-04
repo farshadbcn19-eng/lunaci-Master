@@ -1,0 +1,62 @@
+name: Diagnose - fresh raw-byte state of About Us _elementor_data (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Dump raw byte context around the 5 failing/zero-match patterns (read-only, no writes)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwokcmF3ID0gJHdwZGItPmdldF92YXIoJHdwZGItPnByZXBhcmUoCgkiU0VMRUNUIG1ldGFfdmFsdWUgRlJPTSB7JHdwZGItPnBvc3RtZXRhfQoJIFdIRVJFIHBvc3RfaWQgPSA1OSBBTkQgbWV0YV9rZXkgPSAnX2VsZW1lbnRvcl9kYXRhJyIKKSk7CmVjaG8gIm1ldGFfdmFsdWUgbGVuZ3RoPSIgLiBzdHJsZW4oJHJhdykgLiAiXG4iOwoKJG5lZWRsZXMgPSBhcnJheSgKCSdCZWdpbm5pbmcnLAoJJ3dhcyBib3JuIGZyb20gYSBwaGlsb3NvcGh5JywKCSdSYXRoZXIgdGhhbiBwdXJzdWluZycsCgknbG5hLXBoaWxfX25hbWUnLAoJJ2xuYS12YWxfX25hbWUnLAopOwoKZm9yZWFjaCAoJG5lZWRsZXMgYXMgJG5lZWRsZSkgewoJJHBvcyA9IHN0cnBvcygkcmF3LCAkbmVlZGxlKTsKCWVjaG8gIlxuPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgllY2hvICInJG5lZWRsZSc6IHN0cnBvcygpPSIgLiAoJHBvcyA9PT0gZmFsc2UgPyAnTk9UIEZPVU5EJyA6ICRwb3MpIC4gIlxuIjsKCWVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwoJaWYgKCRwb3MgIT09IGZhbHNlKSB7CgkJJHN0YXJ0ID0gbWF4KDAsICRwb3MgLSAxMDApOwoJCSRzbGljZSA9IHN1YnN0cigkcmF3LCAkc3RhcnQsIDQwMCk7CgkJZWNobyAiLS0tLVJBVyBTVEFSVC0tLS1cbiIgLiAkc2xpY2UgLiAiXG4tLS0tUkFXIEVORC0tLS1cbiI7Cgl9Cn0KCi8vIEFsc28gcHJpbnQgdG90YWwgY291bnQgb2YgJ2xuYS1waGlsJyBhbmQgJ2xuYS12YWwnIG9jY3VycmVuY2VzLAovLyB3aGF0ZXZlciBmb3JtIHRoZXkgdGFrZSwgdG8gc2VlIGlmIHRoZSBjbGFzcy1uYW1lIGNvbnZlbnRpb24KLy8gaXRzZWxmIGNoYW5nZWQKZWNobyAiXG5cbnRvdGFsICdsbmEtcGhpbCcgb2NjdXJyZW5jZXM6ICIgLiBzdWJzdHJfY291bnQoJHJhdywgJ2xuYS1waGlsJykgLiAiXG4iOwplY2hvICJ0b3RhbCAnbG5hLXZhbCcgb2NjdXJyZW5jZXM6ICIgLiBzdWJzdHJfY291bnQoJHJhdywgJ2xuYS12YWwnKSAuICJcbiI7Cg==" | base64 -d > /tmp/diagnose-about-current-state.php;
+
+             php -l /tmp/diagnose-about-current-state.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-about-current-state.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-about-current-state.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-about-current-state.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: read-only diagnostic completed successfully"'

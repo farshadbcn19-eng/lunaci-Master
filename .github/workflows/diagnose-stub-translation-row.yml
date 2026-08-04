@@ -1,0 +1,62 @@
+name: Diagnose - investigate stub icl_translations row for trid=59 (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Inspect stub translation_id=477 and re-check trid=59 group and orphan pages (read-only, no writes)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKLy8gRnVsbCBkdW1wIG9mIHRoZSBzdHViIHJvdwokcm93ID0gJHdwZGItPmdldF9yb3coJHdwZGItPnByZXBhcmUoCgkiU0VMRUNUICogRlJPTSB7JHdwZGItPnByZWZpeH1pY2xfdHJhbnNsYXRpb25zIFdIRVJFIHRyYW5zbGF0aW9uX2lkID0gJWQiLCA0NzcKKSwgQVJSQVlfQSk7CmVjaG8gIlJvdyA0Nzc6XG4iOyBwcmludF9yKCRyb3cpOwoKLy8gQ2hlY2sgaWNsX3RyYW5zbGF0aW9uX3N0YXR1cyBmb3IgdGhpcyB0cmFuc2xhdGlvbl9pZAokc3RhdHVzID0gJHdwZGItPmdldF9yb3coJHdwZGItPnByZXBhcmUoCgkiU0VMRUNUICogRlJPTSB7JHdwZGItPnByZWZpeH1pY2xfdHJhbnNsYXRpb25fc3RhdHVzIFdIRVJFIHRyYW5zbGF0aW9uX2lkID0gJWQiLCA0NzcKKSwgQVJSQVlfQSk7CmVjaG8gIlxuU3RhdHVzIHJvdzpcbiI7CmVjaG8gJHN0YXR1cyA/IHByaW50X3IoJHN0YXR1cywgdHJ1ZSkgOiAiTk8gU1RBVFVTIFJPV1xuIjsKCi8vIFJlLWNoZWNrIGZ1bGwgdHJpZD01OSBncm91cCBmcmVzaCAoc3RhdGUgbWF5IGhhdmUgY2hhbmdlZCBhZ2FpbikKJGdyb3VwID0gJHdwZGItPmdldF9yZXN1bHRzKCR3cGRiLT5wcmVwYXJlKAoJIlNFTEVDVCAqIEZST00geyR3cGRiLT5wcmVmaXh9aWNsX3RyYW5zbGF0aW9ucyBXSEVSRSB0cmlkID0gJWQiLCA1OQopLCBBUlJBWV9BKTsKZWNobyAiXG5GdWxsIHRyaWQ9NTkgZ3JvdXAgbm93OlxuIjsgcHJpbnRfcigkZ3JvdXApOwoKLy8gQW55IGRyYWZ0L29ycGhhbiBwYWdlIGFscmVhZHkgbmFtZWQgYWJvdXQtdXMtZXMgb3IgU29icmUgTm9zb3Ryb3M/CiRvcnBoYW5zID0gJHdwZGItPmdldF9yZXN1bHRzKAoJIlNFTEVDVCBJRCwgcG9zdF90aXRsZSwgcG9zdF9uYW1lLCBwb3N0X3N0YXR1cywgcG9zdF9kYXRlCgkgRlJPTSB7JHdwZGItPnBvc3RzfQoJIFdIRVJFIHBvc3RfbmFtZSA9ICdhYm91dC11cy1lcycgT1IgcG9zdF90aXRsZSA9ICdTb2JyZSBOb3NvdHJvcyciCiwgQVJSQVlfQSk7CmVjaG8gIlxuUG9zc2libGUgb3JwaGFuIHBhZ2VzOlxuIjsKZWNobyAkb3JwaGFucyA/IHByaW50X3IoJG9ycGhhbnMsIHRydWUpIDogIk5PTkUgRk9VTkRcbiI7Cg==" | base64 -d > /tmp/diagnose-stub-translation-row.php;
+
+             php -l /tmp/diagnose-stub-translation-row.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-stub-translation-row.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-stub-translation-row.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-stub-translation-row.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: read-only diagnostic completed successfully"'

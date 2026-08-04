@@ -1,0 +1,62 @@
+name: Diagnose - check AIOSEO dedicated posts table (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Check wp_aioseo_posts table for post_id 57 and 59 (read-only, no writes)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwokdGFibGUgPSAkd3BkYi0+cHJlZml4IC4gJ2Fpb3Nlb19wb3N0cyc7CgovLyBDb25maXJtIHRoZSB0YWJsZSBleGlzdHMgZmlyc3QKJGV4aXN0cyA9ICR3cGRiLT5nZXRfdmFyKCAkd3BkYi0+cHJlcGFyZSgKCSJTSE9XIFRBQkxFUyBMSUtFICVzIiwgJHRhYmxlCikgKTsKaWYgKCAhICRleGlzdHMgKSB7CgllY2hvICJUQUJMRSBOT1QgRk9VTkQ6ICR0YWJsZSBkb2VzIG5vdCBleGlzdFxuIjsKCWV4aXQoMCk7Cn0KZWNobyAiVGFibGUgY29uZmlybWVkOiAkdGFibGVcbiI7Cgpmb3JlYWNoICggYXJyYXkoNTcsIDU5KSBhcyAkcG9zdF9pZCApIHsKCSRyb3cgPSAkd3BkYi0+Z2V0X3JvdyggJHdwZGItPnByZXBhcmUoCgkJIlNFTEVDVCAqIEZST00geyR0YWJsZX0gV0hFUkUgcG9zdF9pZCA9ICVkIiwgJHBvc3RfaWQKCSksIEFSUkFZX0EgKTsKCWVjaG8gIlxuLS0tIHBvc3RfaWQ9JHBvc3RfaWQgLS0tXG4iOwoJaWYgKCAhICRyb3cgKSB7CgkJZWNobyAiTk8gUk9XIGluICR0YWJsZSBmb3IgdGhpcyBwb3N0X2lkXG4iOwoJfSBlbHNlIHsKCQlmb3JlYWNoICggJHJvdyBhcyAkY29sID0+ICR2YWwgKSB7CgkJCS8vIE9ubHkgcHJpbnQgZGVzY3JpcHRpb24vdGl0bGUvb2ctcmVsYXRlZCBjb2x1bW5zLCBza2lwIGh1Z2UvaXJyZWxldmFudCBvbmVzCgkJCWlmICggc3RyaXBvcygkY29sLCAnZGVzY3JpcHRpb24nKSAhPT0gZmFsc2UKCQkJCXx8IHN0cmlwb3MoJGNvbCwgJ3RpdGxlJykgIT09IGZhbHNlCgkJCQl8fCBzdHJpcG9zKCRjb2wsICdvZ18nKSAhPT0gZmFsc2UKCQkJCXx8ICRjb2wgPT09ICdpZCcgfHwgJGNvbCA9PT0gJ3Bvc3RfaWQnICkgewoJCQkJZWNobyAiJGNvbDogIiAuIChpc19udWxsKCR2YWwpID8gJ05VTEwnIDogJHZhbCkgLiAiXG4iOwoJCQl9CgkJfQoJfQp9Cg==" | base64 -d > /tmp/diagnose-aioseo-posts-table.php;
+
+             php -l /tmp/diagnose-aioseo-posts-table.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-aioseo-posts-table.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-aioseo-posts-table.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-aioseo-posts-table.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: read-only diagnostic completed successfully"'

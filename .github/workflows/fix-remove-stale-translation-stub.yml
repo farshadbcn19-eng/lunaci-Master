@@ -1,0 +1,62 @@
+name: Fix - remove stale WPML translation stub for About Us ES (guarded write)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Delete stale icl_translations/icl_translation_status rows for translation_id=477 - guarded write
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKLy8gUFJFLUNIRUNLOiByZS1jb25maXJtIHRoaXMgaXMgZXhhY3RseSB0aGUgc3R1YiB3ZSBpbnZlc3RpZ2F0ZWQgLQovLyBlbXB0eSBlbGVtZW50X2lkLCB0cmlkPTU5LCBsYW5ndWFnZV9jb2RlPWVzIC0gYmVmb3JlIGRlbGV0aW5nIGFueXRoaW5nCiRyb3cgPSAkd3BkYi0+Z2V0X3Jvdygkd3BkYi0+cHJlcGFyZSgKCSJTRUxFQ1QgKiBGUk9NIHskd3BkYi0+cHJlZml4fWljbF90cmFuc2xhdGlvbnMgV0hFUkUgdHJhbnNsYXRpb25faWQgPSAlZCIsIDQ3NwopLCBBUlJBWV9BKTsKCmlmICggISAkcm93ICkgewoJZWNobyAiQUJPUlQ6IHRyYW5zbGF0aW9uX2lkPTQ3NyBub3QgZm91bmQgKGFscmVhZHkgZ29uZT8pIC0gbm90aGluZyB0byBkb1xuIjsKCWV4aXQoMSk7Cn0KaWYgKCAkcm93Wyd0cmlkJ10gIT0gNTkgfHwgJHJvd1snbGFuZ3VhZ2VfY29kZSddICE9PSAnZXMnIHx8ICEgZW1wdHkoICRyb3dbJ2VsZW1lbnRfaWQnXSApICkgewoJZWNobyAiQUJPUlQ6IHJvdyA0Nzcgbm8gbG9uZ2VyIG1hdGNoZXMgdGhlIGV4cGVjdGVkIHN0dWIgc2lnbmF0dXJlIC0gcmVmdXNpbmcgdG8gZGVsZXRlXG4iOwoJZWNobyBwcmludF9yKCRyb3csIHRydWUpOwoJZXhpdCgxKTsKfQplY2hvICJDb25maXJtZWQ6IHJvdyA0NzcgbWF0Y2hlcyBleHBlY3RlZCBzdHViIHNpZ25hdHVyZSAodHJpZD01OSwgZXMsIGVtcHR5IGVsZW1lbnRfaWQpXG4iOwoKLy8gREVMRVRFIGJvdGggdGhlIHRyYW5zbGF0aW9uIHJvdyBhbmQgaXRzIHN0YXR1cyByb3cKJGRlbGV0ZWRfdHJhbnNsYXRpb24gPSAkd3BkYi0+ZGVsZXRlKCAieyR3cGRiLT5wcmVmaXh9aWNsX3RyYW5zbGF0aW9ucyIsIGFycmF5KCd0cmFuc2xhdGlvbl9pZCcgPT4gNDc3KSApOwokZGVsZXRlZF9zdGF0dXMgPSAkd3BkYi0+ZGVsZXRlKCAieyR3cGRiLT5wcmVmaXh9aWNsX3RyYW5zbGF0aW9uX3N0YXR1cyIsIGFycmF5KCd0cmFuc2xhdGlvbl9pZCcgPT4gNDc3KSApOwplY2hvICJEZWxldGVkIGljbF90cmFuc2xhdGlvbnMgcm93czogJGRlbGV0ZWRfdHJhbnNsYXRpb25cbiI7CmVjaG8gIkRlbGV0ZWQgaWNsX3RyYW5zbGF0aW9uX3N0YXR1cyByb3dzOiAkZGVsZXRlZF9zdGF0dXNcbiI7CgovLyBWRVJJRlkKJHZlcmlmeV90cmFucyA9ICR3cGRiLT5nZXRfcm93KCR3cGRiLT5wcmVwYXJlKAoJIlNFTEVDVCAqIEZST00geyR3cGRiLT5wcmVmaXh9aWNsX3RyYW5zbGF0aW9ucyBXSEVSRSB0cmFuc2xhdGlvbl9pZCA9ICVkIiwgNDc3CikpOwokdmVyaWZ5X3N0YXR1cyA9ICR3cGRiLT5nZXRfcm93KCR3cGRiLT5wcmVwYXJlKAoJIlNFTEVDVCAqIEZST00geyR3cGRiLT5wcmVmaXh9aWNsX3RyYW5zbGF0aW9uX3N0YXR1cyBXSEVSRSB0cmFuc2xhdGlvbl9pZCA9ICVkIiwgNDc3CikpOwplY2hvICJ2ZXJpZnk6IGljbF90cmFuc2xhdGlvbnMgcm93IHN0aWxsIGV4aXN0czogIiAuICgkdmVyaWZ5X3RyYW5zID8gJ1lFUyAoUFJPQkxFTSknIDogJ25vLCBnb25lIC0gT0snKSAuICJcbiI7CmVjaG8gInZlcmlmeTogaWNsX3RyYW5zbGF0aW9uX3N0YXR1cyByb3cgc3RpbGwgZXhpc3RzOiAiIC4gKCR2ZXJpZnlfc3RhdHVzID8gJ1lFUyAoUFJPQkxFTSknIDogJ25vLCBnb25lIC0gT0snKSAuICJcbiI7CgovLyBBbHNvIGNvbmZpcm0gbm8gb3RoZXIgdHJpZD01OSByb3dzIHdlcmUgdG91Y2hlZAokZ3JvdXAgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoJHdwZGItPnByZXBhcmUoCgkiU0VMRUNUICogRlJPTSB7JHdwZGItPnByZWZpeH1pY2xfdHJhbnNsYXRpb25zIFdIRVJFIHRyaWQgPSAlZCIsIDU5CiksIEFSUkFZX0EpOwplY2hvICJcbnJlbWFpbmluZyB0cmlkPTU5IGdyb3VwIChzaG91bGQgYmUganVzdCB0aGUgRU4gcm93IG5vdyk6XG4iOwpwcmludF9yKCRncm91cCk7Cg==" | base64 -d > /tmp/fix-remove-stale-translation-stub.php;
+
+             php -l /tmp/fix-remove-stale-translation-stub.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on fix script";
+               rm -f /tmp/fix-remove-stale-translation-stub.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/fix-remove-stale-translation-stub.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/fix-remove-stale-translation-stub.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: guarded write completed successfully"'

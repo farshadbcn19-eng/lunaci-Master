@@ -1,0 +1,62 @@
+name: Diagnose - locate WPML language switcher configuration and placement (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Inspect WPML language switcher settings, widget, and footer snippets (read-only, no writes)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKLy8gV1BNTCdzIGxhbmd1YWdlIHN3aXRjaGVyIHNldHRpbmdzIGFyZSBzdG9yZWQgaW4gdGhlIGljbF9zaXRlcHJlc3Nfc2V0dGluZ3Mgb3B0aW9uCiRzZXR0aW5ncyA9IGdldF9vcHRpb24oJ2ljbF9zaXRlcHJlc3Nfc2V0dGluZ3MnKTsKZWNobyAibGFuZ3VhZ2VfbmVnb3RpYXRpb25fdHlwZTogIiAuICgkc2V0dGluZ3NbJ2xhbmd1YWdlX25lZ290aWF0aW9uX3R5cGUnXSA/PyAnbm90IHNldCcpIC4gIlxuIjsKaWYgKGlzc2V0KCRzZXR0aW5nc1snbGFuZ3VhZ2Vfc3dpdGNoZXInXSkpIHsKCWVjaG8gIlxubGFuZ3VhZ2Vfc3dpdGNoZXIgc2V0dGluZ3M6XG4iOwoJcHJpbnRfcigkc2V0dGluZ3NbJ2xhbmd1YWdlX3N3aXRjaGVyJ10pOwp9IGVsc2UgewoJZWNobyAiXG5ObyAnbGFuZ3VhZ2Vfc3dpdGNoZXInIGtleSBpbiBpY2xfc2l0ZXByZXNzX3NldHRpbmdzXG4iOwp9CgovLyBDaGVjayBpZiBpdCdzIGEgd2lkZ2V0CiR3aWRnZXRzID0gZ2V0X29wdGlvbignd2lkZ2V0X2ljbF9sYW5nX3NlbF93aWRnZXQnKTsKZWNobyAiXG5pY2xfbGFuZ19zZWxfd2lkZ2V0ICh3aWRnZXQgaW5zdGFuY2VzKTpcbiI7CmVjaG8gJHdpZGdldHMgPyBwcmludF9yKCR3aWRnZXRzLCB0cnVlKSA6ICJOT05FIEZPVU5EXG4iOwoKLy8gQ2hlY2sgc2lkZWJhcnNfd2lkZ2V0cyB0byBzZWUgd2hpY2ggd2lkZ2V0IGFyZWEocykgY29udGFpbiBpdAokc2lkZWJhcnMgPSBnZXRfb3B0aW9uKCdzaWRlYmFyc193aWRnZXRzJyk7CmVjaG8gIlxuV2lkZ2V0IGFyZWFzIGNvbnRhaW5pbmcgYSB3cG1sL2xhbmcgc3dpdGNoZXIgd2lkZ2V0OlxuIjsKZm9yZWFjaCAoJHNpZGViYXJzIGFzICRhcmVhID0+ICRpdGVtcykgewoJaWYgKCFpc19hcnJheSgkaXRlbXMpKSBjb250aW51ZTsKCWZvcmVhY2ggKCRpdGVtcyBhcyAkaXRlbSkgewoJCWlmIChzdHJpcG9zKCRpdGVtLCAnaWNsX2xhbmdfc2VsJykgIT09IGZhbHNlIHx8IHN0cmlwb3MoJGl0ZW0sICdsYW5nJykgIT09IGZhbHNlKSB7CgkJCWVjaG8gIiAgYXJlYT0nJGFyZWEnIHdpZGdldD0nJGl0ZW0nXG4iOwoJCX0KCX0KfQoKLy8gQ2hlY2sgaWYgZm9vdGVyIEhUTUwvc2hvcnRjb2RlIGhhcmRjb2RlcyBpdCAoZS5nLiBpbiBhIENvZGUgU25pcHBldAovLyBvciB0aGUgdGhlbWUgZm9vdGVyIHRlbXBsYXRlIHZpYSBXUENvZGUvRWxlbWVudG9yKQokZm9vdGVyX3NuaXBwZXQgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoCgkiU0VMRUNUIElELCBwb3N0X3RpdGxlIEZST00geyR3cGRiLT5wb3N0c30KCSBXSEVSRSBwb3N0X3R5cGUgPSAnd3Bjb2RlJyBBTkQgcG9zdF9zdGF0dXMgPSAncHVibGlzaCcKCSAgIEFORCAocG9zdF90aXRsZSBMSUtFICclZm9vdGVyJScgT1IgcG9zdF90aXRsZSBMSUtFICclRm9vdGVyJScpIgosIEFSUkFZX0EpOwplY2hvICJcbldQQ29kZSBzbmlwcGV0cyB3aXRoICdmb290ZXInIGluIHRoZSB0aXRsZTpcbiI7CmVjaG8gJGZvb3Rlcl9zbmlwcGV0ID8gcHJpbnRfcigkZm9vdGVyX3NuaXBwZXQsIHRydWUpIDogIk5PTkUgRk9VTkRcbiI7Cg==" | base64 -d > /tmp/diagnose-wpml-language-switcher.php;
+
+             php -l /tmp/diagnose-wpml-language-switcher.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-wpml-language-switcher.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-wpml-language-switcher.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-wpml-language-switcher.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: read-only diagnostic completed successfully"'

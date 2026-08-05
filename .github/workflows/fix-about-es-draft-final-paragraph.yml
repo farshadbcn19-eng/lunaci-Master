@@ -1,0 +1,62 @@
+name: Fix - translate remaining English paragraph on About Us ES draft (guarded write)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Translate the final English story paragraph on the ES draft (post_id=680 only) - guarded write
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJHBvc3RfaWQgPSA2ODA7ICAvLyB0aGUgU3BhbmlzaCBEUkFGVCBwYWdlIG9ubHkKaWYgKCAkcG9zdF9pZCAhPT0gNjgwICkgewoJZWNobyAiQUJPUlQ6IHNhZmV0eSBndWFyZCB0cmlnZ2VyZWQgLSB0aGlzIHNjcmlwdCBtdXN0IG9ubHkgZXZlciB0YXJnZXQgcG9zdF9pZD02ODBcbiI7CglleGl0KDEpOwp9CgokbWV0YV9rZXkgPSAnX2VsZW1lbnRvcl9kYXRhJzsKCiRyYXcgPSAkd3BkYi0+Z2V0X3ZhciggJHdwZGItPnByZXBhcmUoCgkiU0VMRUNUIG1ldGFfdmFsdWUgRlJPTSB7JHdwZGItPnBvc3RtZXRhfQoJIFdIRVJFIHBvc3RfaWQgPSAlZCBBTkQgbWV0YV9rZXkgPSAlcyIsICRwb3N0X2lkLCAkbWV0YV9rZXkKKSApOwppZiAoICRyYXcgPT09IG51bGwgKSB7IGVjaG8gIkFCT1JUOiBubyBfZWxlbWVudG9yX2RhdGEgZm9yIHBvc3QgJHBvc3RfaWRcbiI7IGV4aXQoMSk7IH0KCiRlbSA9IGNocig5MikgLiAndTIwMTQnOyAvLyBsaXRlcmFsIEpTT04tZXNjYXBlZCBlbS1kYXNoLCBhcyBzdG9yZWQKCiRvbGQgPSAnUmF0aGVyIHRoYW4gcHVyc3VpbmcgdmlzaWJpbGl0eSBmb3IgaXRzIG93biBzYWtlLCB3ZSBmb2N1c2VkIG9uIGNyZWF0aW5nIG1lYW5pbmdmdWwgZXhwZXJpZW5jZXMuIFJhdGhlciB0aGFuIGRlZmluaW5nIGJlYXV0eSB0aHJvdWdoIGV4dGVybmFsIHN0YW5kYXJkcywgd2UgY2hvc2UgdG8gY2VsZWJyYXRlIGluZGl2aWR1YWxpdHkuIFJhdGhlciB0aGFuIGZvbGxvd2luZyBldmVyeSBwYXNzaW5nIHRyZW5kLCB3ZSBidWlsdCBhbiBpZGVudGl0eSByb290ZWQgaW4gZW5kdXJpbmcgdmFsdWVzICcgLiAkZW0gLiAnIGNvbmZpZGVuY2UsIGF1dGhlbnRpY2l0eSwgZWxlZ2FuY2UsIHF1YWxpdHkgYW5kIG1lbW9yYWJsZSBwcmVzZW5jZS4nOwoKJG5ldyA9ICdFbiBsdWdhciBkZSBwZXJzZWd1aXIgbGEgdmlzaWJpbGlkYWQgcG9yIHMnIC4gY2hyKDB4QzMpIC4gY2hyKDB4QUQpIC4gJyBtaXNtYSwgbm9zIGNlbnRyYW1vcyBlbiBjcmVhciBleHBlcmllbmNpYXMgc2lnbmlmaWNhdGl2YXMuIEVuIGx1Z2FyIGRlIGRlZmluaXIgbGEgYmVsbGV6YSBhIHRyYXYnIC4gY2hyKDB4QzMpIC4gY2hyKDB4QTkpIC4gJ3MgZGUgZXN0JyAuIGNocigweEMzKSAuIGNocigweEExKSAuICduZGFyZXMgZXh0ZXJub3MsIGVsZWdpbW9zIGNlbGVicmFyIGxhIGluZGl2aWR1YWxpZGFkLiBFbiBsdWdhciBkZSBzZWd1aXIgY2FkYSB0ZW5kZW5jaWEgcGFzYWplcmEsIGNvbnN0cnVpbW9zIHVuYSBpZGVudGlkYWQgYXJyYWlnYWRhIGVuIHZhbG9yZXMgZHVyYWRlcm9zICcgLiAkZW0gLiAnIGNvbmZpYW56YSwgYXV0ZW50aWNpZGFkLCBlbGVnYW5jaWEsIGNhbGlkYWQgeSBwcmVzZW5jaWEgbWVtb3JhYmxlLic7CgokYyA9IHN1YnN0cl9jb3VudCggJHJhdywgJG9sZCApOwplY2hvICJwcmUtY2hlY2s6IE9MRCBwYXJhZ3JhcGggY291bnQ9JGNcbiI7CmlmICggJGMgIT09IDEgKSB7IGVjaG8gIkFCT1JUOiBleHBlY3RlZCBleGFjdGx5IDEgb2NjdXJyZW5jZSwgZm91bmQgJGNcbiI7IGV4aXQoMSk7IH0KCiRuZXdfcmF3ID0gc3RyX3JlcGxhY2UoICRvbGQsICRuZXcsICRyYXcgKTsKCiRkZWNvZGVkX29sZCA9IGpzb25fZGVjb2RlKCAkcmF3LCB0cnVlICk7CiRkZWNvZGVkX25ldyA9IGpzb25fZGVjb2RlKCAkbmV3X3JhdywgdHJ1ZSApOwppZiAoICRkZWNvZGVkX29sZCA9PT0gbnVsbCB8fCAkZGVjb2RlZF9uZXcgPT09IG51bGwgKSB7IGVjaG8gIkFCT1JUOiBqc29uX2RlY29kZSBmYWlsZWRcbiI7IGV4aXQoMSk7IH0KaWYgKCBjb3VudCggJGRlY29kZWRfb2xkICkgIT09IGNvdW50KCAkZGVjb2RlZF9uZXcgKSApIHsgZWNobyAiQUJPUlQ6IGVsZW1lbnQgY291bnQgbWlzbWF0Y2hcbiI7IGV4aXQoMSk7IH0KCiRyZXN1bHQgPSB1cGRhdGVfcG9zdF9tZXRhKCAkcG9zdF9pZCwgJG1ldGFfa2V5LCB3cF9zbGFzaCggJG5ld19yYXcgKSApOwplY2hvICJ1cGRhdGVfcG9zdF9tZXRhIHJlc3VsdDogIiAuIHZhcl9leHBvcnQoICRyZXN1bHQsIHRydWUgKSAuICJcbiI7CgokdmVyaWZ5ID0gJHdwZGItPmdldF92YXIoICR3cGRiLT5wcmVwYXJlKAoJIlNFTEVDVCBtZXRhX3ZhbHVlIEZST00geyR3cGRiLT5wb3N0bWV0YX0KCSBXSEVSRSBwb3N0X2lkID0gJWQgQU5EIG1ldGFfa2V5ID0gJXMiLCAkcG9zdF9pZCwgJG1ldGFfa2V5CikgKTsKZWNobyAidmVyaWZ5OiBORVcgcGFyYWdyYXBoIHByZXNlbnQ9IiAuICggc3RycG9zKCAkdmVyaWZ5LCAncGVyc2VndWlyIGxhIHZpc2liaWxpZGFkJyApICE9PSBmYWxzZSA/ICdZRVMnIDogJ05PJyApIC4gIlxuIjsKZWNobyAidmVyaWZ5OiBPTEQgRW5nbGlzaCBwYXJhZ3JhcGggZ29uZT0iIC4gKCBzdHJwb3MoICR2ZXJpZnksICdSYXRoZXIgdGhhbiBwdXJzdWluZycgKSA9PT0gZmFsc2UgPyAnWUVTJyA6ICdOTycgKSAuICJcbiI7CgppZiAoIGNsYXNzX2V4aXN0cyggJ1xFbGVtZW50b3JcUGx1Z2luJyApICkgewoJXEVsZW1lbnRvclxQbHVnaW46OiRpbnN0YW5jZS0+ZmlsZXNfbWFuYWdlci0+Y2xlYXJfY2FjaGUoKTsKCWVjaG8gIkVsZW1lbnRvciBDU1MgY2FjaGUgY2xlYXJlZFxuIjsKfQo=" | base64 -d > /tmp/fix-about-es-draft-final-paragraph.php;
+
+             php -l /tmp/fix-about-es-draft-final-paragraph.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on fix script";
+               rm -f /tmp/fix-about-es-draft-final-paragraph.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/fix-about-es-draft-final-paragraph.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/fix-about-es-draft-final-paragraph.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: guarded write completed successfully"'

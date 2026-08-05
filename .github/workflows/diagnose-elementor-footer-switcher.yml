@@ -1,0 +1,62 @@
+name: Diagnose - locate Elementor footer template language switcher (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Inspect Elementor library templates and theme footer.php for language switcher (read-only, no writes)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKLy8gRmluZCBFbGVtZW50b3IgdGVtcGxhdGUtdHlwZSBwb3N0cyAoaGVhZGVycy9mb290ZXJzKSwgZXNwLiBmb290ZXIKJHRlbXBsYXRlcyA9ICR3cGRiLT5nZXRfcmVzdWx0cygKICAiU0VMRUNUIElELCBwb3N0X3RpdGxlLCBwb3N0X3N0YXR1cyBGUk9NIHskd3BkYi0+cG9zdHN9CiAgIFdIRVJFIHBvc3RfdHlwZSA9ICdlbGVtZW50b3JfbGlicmFyeScKICAgICBBTkQgcG9zdF9zdGF0dXMgPSAncHVibGlzaCciCiwgQVJSQVlfQSk7CmVjaG8gIkVsZW1lbnRvciBsaWJyYXJ5IHRlbXBsYXRlczpcbiI7CnByaW50X3IoJHRlbXBsYXRlcyk7CgovLyBGb3IgZWFjaCwgY2hlY2sgaXRzIF9lbGVtZW50b3JfZGF0YSBmb3IgbGFuZ3VhZ2Utc3dpdGNoZXIgc2lnbmF0dXJlcwokbmVlZGxlcyA9IFsnd3BtbF9sYW5ndWFnZV9zd2l0Y2hlcicsICdpY2xfbGFuZ19zZWwnLCAnbGFuZ3VhZ2Utc3dpdGNoZXInLCAnbGFuZy1zd2l0Y2hlcicsICd3cG1sLWxzJ107CmZvcmVhY2ggKCR0ZW1wbGF0ZXMgYXMgJHQpIHsKICAkZGF0YSA9IGdldF9wb3N0X21ldGEoJHRbJ0lEJ10sICdfZWxlbWVudG9yX2RhdGEnLCB0cnVlKTsKICBpZiAoISRkYXRhKSBjb250aW51ZTsKICBmb3JlYWNoICgkbmVlZGxlcyBhcyAkbmVlZGxlKSB7CiAgICBpZiAoc3RyaXBvcygkZGF0YSwgJG5lZWRsZSkgIT09IGZhbHNlKSB7CiAgICAgICRwb3MgPSBzdHJpcG9zKCRkYXRhLCAkbmVlZGxlKTsKICAgICAgZWNobyAiXG5NQVRDSCBpbiB0ZW1wbGF0ZSBJRD17JHRbJ0lEJ119ICh7JHRbJ3Bvc3RfdGl0bGUnXX0pOiAnJG5lZWRsZScgYXQgb2Zmc2V0ICRwb3NcbiI7CiAgICAgIGVjaG8gImNvbnRleHQ6ICIgLiBzdWJzdHIoJGRhdGEsIG1heCgwLCRwb3MtMTAwKSwgMzAwKSAuICJcbiI7CiAgICB9CiAgfQp9CgovLyBBbHNvIGNoZWNrIHRoZSB0aGVtZSdzIGFjdHVhbCBmb290ZXIucGhwIC8gZm9vdGVyIHRlbXBsYXRlIHBhcnQgaWYKLy8gRWxlbWVudG9yIGlzbid0IGNvbnRyb2xsaW5nIGl0IChIZWxsbyBFbGVtZW50b3IgdGhlbWUpCiRmb290ZXJfZmlsZSA9IGdldF90ZW1wbGF0ZV9kaXJlY3RvcnkoKSAuICcvZm9vdGVyLnBocCc7CmVjaG8gIlxudGhlbWUgZm9vdGVyLnBocCBleGlzdHM6ICIgLiAoZmlsZV9leGlzdHMoJGZvb3Rlcl9maWxlKSA/ICd5ZXMnIDogJ25vJykgLiAiXG4iOwppZiAoZmlsZV9leGlzdHMoJGZvb3Rlcl9maWxlKSkgewogICRjb250ZW50cyA9IGZpbGVfZ2V0X2NvbnRlbnRzKCRmb290ZXJfZmlsZSk7CiAgZm9yZWFjaCAoJG5lZWRsZXMgYXMgJG5lZWRsZSkgewogICAgaWYgKHN0cmlwb3MoJGNvbnRlbnRzLCAkbmVlZGxlKSAhPT0gZmFsc2UpIHsKICAgICAgZWNobyAiTUFUQ0ggaW4gZm9vdGVyLnBocDogJyRuZWVkbGUnXG4iOwogICAgfQogIH0KfQo=" | base64 -d > /tmp/diagnose-elementor-footer-switcher.php;
+
+             php -l /tmp/diagnose-elementor-footer-switcher.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/diagnose-elementor-footer-switcher.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-elementor-footer-switcher.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-elementor-footer-switcher.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: read-only diagnostic completed successfully"'

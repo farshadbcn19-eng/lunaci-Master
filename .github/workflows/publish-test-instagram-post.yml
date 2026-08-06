@@ -11,7 +11,7 @@ on:
       image_url:
         description: 'Publicly accessible image URL'
         required: false
-        default: "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-lipstick.jpg"
+        default: "https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-lipstick.png"
         type: string
 
 jobs:

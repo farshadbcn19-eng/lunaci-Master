@@ -1,0 +1,93 @@
+name: Diagnose Product Image URLs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose-product-image-urls:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compare hardcoded product image URLs against live server response
+        run: |
+          set -o pipefail
+
+          echo "## Product Image URL Diagnostic" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "For every SKU with a hardcoded image URL in \`pages/products.html\`, this checks the live server response via \`curl -I\` and flags any URL that does not return HTTP 200 (e.g. a wrong file extension like \`.jpg\` vs \`.png\`)." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          IMAGE_BASE=$(grep -oP "(?<=var IMAGE_BASE = ')[^']+" pages/products.html | head -1)
+          if [ -z "$IMAGE_BASE" ]; then
+            echo "**ERROR:** could not extract IMAGE_BASE from pages/products.html" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "IMAGE_BASE (extracted from \`pages/products.html\`): \`$IMAGE_BASE\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          declare -a ROWS=()
+          declare -a MISMATCHES=()
+          TOTAL=0
+
+          check_url() {
+            local source_label="$1"
+            local sku_id="$2"
+            local url="$3"
+            local status
+            status=$(curl -sg -o /dev/null -w "%{http_code}" -I "$url")
+            TOTAL=$((TOTAL + 1))
+            if [ "$status" = "200" ]; then
+              ROWS+=("| $sku_id | $source_label | \`$url\` | $status | OK |")
+            else
+              ROWS+=("| $sku_id | $source_label | \`$url\` | $status | **MISMATCH** |")
+              MISMATCHES+=("- \`$sku_id\` ($source_label): \`$url\` returned HTTP **$status** (expected 200)")
+            fi
+          }
+
+          # 1. Product catalog in pages/products.html (source of truth)
+          while IFS= read -r line; do
+            sku_id=$(echo "$line" | grep -oP "(?<=id: ')[^']+")
+            filename=$(echo "$line" | grep -oP "(?<=IMAGE_BASE \+ ')[^']+")
+            [ -z "$sku_id" ] && continue
+            [ -z "$filename" ] && continue
+            check_url "pages/products.html" "$sku_id" "${IMAGE_BASE}${filename}"
+          done < <(awk '/var PRODUCTS = \[/,/^  \];/' pages/products.html | grep "IMAGE_BASE + '")
+
+          # 2. Cross-check pages/products-demo.html for drift against products.html (same SKU, different filename)
+          while IFS= read -r line; do
+            sku_id=$(echo "$line" | grep -oP "(?<=id: ')[^']+")
+            filename=$(echo "$line" | grep -oP "(?<=IMAGE_BASE \+ ')[^']+")
+            [ -z "$sku_id" ] && continue
+            [ -z "$filename" ] && continue
+            main_filename=$(awk '/var PRODUCTS = \[/,/^  \];/' pages/products.html | grep "id: '${sku_id}'," | grep -oP "(?<=IMAGE_BASE \+ ')[^']+")
+            if [ -n "$main_filename" ] && [ "$main_filename" != "$filename" ]; then
+              MISMATCHES+=("- \`$sku_id\`: pages/products-demo.html uses \`$filename\` but pages/products.html uses \`$main_filename\` (filename drift between the two files)")
+            fi
+          done < <(awk '/var PRODUCTS = \[/,/^  \];/' pages/products-demo.html | grep "IMAGE_BASE + '")
+
+          # 3. Any other hardcoded lunacibarcelona.com image URL under .github/workflows (e.g. workflow input defaults)
+          while IFS='|' read -r file url; do
+            [ -z "$url" ] && continue
+            check_url "$file" "(non-catalog reference)" "$url"
+          done < <(grep -rnoP "https://lunacibarcelona\.com/wp-content/uploads/[^\"'\s)]+\.(jpg|jpeg|png)" .github/workflows --include='*.yml' | awk -F: '{file=$1; sub(/^[^:]+:[0-9]+:/, "", $0); print file"|"$0}')
+
+          echo "| SKU / Reference | Source | Filename | HTTP Status | Result |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          for row in "${ROWS[@]}"; do
+            echo "$row" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Result" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${#MISMATCHES[@]}" -eq 0 ]; then
+            echo "**No mismatches found.** All $TOTAL checked URLs returned HTTP 200." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "**${#MISMATCHES[@]} mismatch(es) found out of $TOTAL checked:**" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            for m in "${MISMATCHES[@]}"; do
+              echo "$m" >> "$GITHUB_STEP_SUMMARY"
+            done
+          fi

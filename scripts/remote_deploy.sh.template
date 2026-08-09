@@ -1,0 +1,61 @@
+WP_PATH=""
+for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+  if [ -f "$candidate/wp-config.php" ]; then
+    WP_PATH="$candidate"
+    break
+  fi
+done
+if [ -z "$WP_PATH" ]; then
+  FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1)
+  if [ -n "$FOUND" ]; then
+    WP_PATH=$(dirname "$FOUND")
+  fi
+fi
+if [ -z "$WP_PATH" ]; then
+  echo "ERROR: could not locate wp-config.php under $HOME"
+  exit 1
+fi
+echo "WordPress found at: $WP_PATH"
+
+FONTS_DIR="$WP_PATH/wp-content/themes/hello-elementor-child/fonts"
+mkdir -p "$FONTS_DIR"
+echo "Fonts directory: $FONTS_DIR"
+
+echo "__HELV_B64__" | base64 -d > "$FONTS_DIR/Helvetica.woff2"
+echo "__TRADE_B64__" | base64 -d > "$FONTS_DIR/TradeGothicLTStd-Extended.woff2"
+
+REMOTE_HELV_SIZE=$(stat -c%s "$FONTS_DIR/Helvetica.woff2" 2>/dev/null || stat -f%z "$FONTS_DIR/Helvetica.woff2" 2>/dev/null)
+REMOTE_TRADE_SIZE=$(stat -c%s "$FONTS_DIR/TradeGothicLTStd-Extended.woff2" 2>/dev/null || stat -f%z "$FONTS_DIR/TradeGothicLTStd-Extended.woff2" 2>/dev/null)
+
+echo "STEP C VERIFY: Helvetica.woff2 local_size=__HELV_SIZE__ remote_size=$REMOTE_HELV_SIZE"
+if [ "$REMOTE_HELV_SIZE" != "__HELV_SIZE__" ]; then
+  echo "ABORT: Helvetica.woff2 byte-size mismatch after upload"
+  exit 1
+fi
+
+echo "STEP C VERIFY: TradeGothicLTStd-Extended.woff2 local_size=__TRADE_SIZE__ remote_size=$REMOTE_TRADE_SIZE"
+if [ "$REMOTE_TRADE_SIZE" != "__TRADE_SIZE__" ]; then
+  echo "ABORT: TradeGothicLTStd-Extended.woff2 byte-size mismatch after upload"
+  exit 1
+fi
+
+echo "OK: both WOFF2 files deployed and byte-size verified"
+
+echo "__SNIPPET_B64__" | base64 -d > /tmp/create-brand-fonts-snippet.php
+php -l /tmp/create-brand-fonts-snippet.php
+LINT_STATUS=$?
+if [ "$LINT_STATUS" -ne 0 ]; then
+  echo "ABORT: php -l failed on snippet insert script"
+  rm -f /tmp/create-brand-fonts-snippet.php
+  exit 1
+fi
+
+wp eval-file /tmp/create-brand-fonts-snippet.php --path="$WP_PATH"
+EVAL_STATUS=$?
+rm -f /tmp/create-brand-fonts-snippet.php
+if [ "$EVAL_STATUS" -ne 0 ]; then
+  echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)"
+  exit 1
+fi
+
+echo "OK: font deployment + snippet creation workflow completed successfully"

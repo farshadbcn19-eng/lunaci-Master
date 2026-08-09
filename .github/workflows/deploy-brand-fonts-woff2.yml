@@ -1,0 +1,39 @@
+name: Deploy LUNACI brand fonts as WOFF2 (inactive snippet - Step 1 for review)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repo (for Helvetica.otf, TradeGothicLTStd-Extended.otf, scripts/)
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install fonttools + brotli
+        run: pip install fonttools brotli
+
+      - name: Convert OTF to WOFF2, verify name tables, assemble deploy script
+        run: python3 scripts/convert_brand_fonts_to_woff2.py
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Deploy WOFF2 files + create inactive WPCode snippet (guarded write)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'bash -s' < remote_deploy.sh

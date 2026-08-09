@@ -1,0 +1,90 @@
+name: Activate LUNACI Brand Fonts snippet (guarded write)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: STEP A/B/C activate snippet id=9, verify live output, purge cache
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJHNuaXBwZXRfaWQgICAgICA9IDk7CiRzbmlwcGV0c190YWJsZSAgPSAkd3BkYi0+cHJlZml4IC4gJ3NuaXBwZXRzJzsKJGV4cGVjdGVkX25hbWUgICA9ICdMVU5BQ0kgQnJhbmQgRm9udHMgKEBmb250LWZhY2UpJzsKJGV4cGVjdGVkX3Njb3BlICA9ICdnbG9iYWwnOwokZXhwZWN0ZWRfYWN0aXZlID0gMDsKCmVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwplY2hvICJTVEVQIEE6IFBSRVBBUkUgLSBmcmVzaCBTRUxFQ1QgKyB2YWxpZGF0ZSBjdXJyZW50IHN0YXRlXG4iOwplY2hvICI9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKCiRyb3cgPSAkd3BkYi0+Z2V0X3JvdygKCSR3cGRiLT5wcmVwYXJlKCAiU0VMRUNUIGlkLCBuYW1lLCBhY3RpdmUsIHNjb3BlLCBjb2RlIEZST00gJHNuaXBwZXRzX3RhYmxlIFdIRVJFIGlkID0gJWQiLCAkc25pcHBldF9pZCApLAoJQVJSQVlfQQopOwoKaWYgKCAhICRyb3cgKSB7CgllY2hvICJBQk9SVDogbm8gc25pcHBldCBmb3VuZCB3aXRoIGlkPSRzbmlwcGV0X2lkXG4iOwoJZXhpdCggMSApOwp9CgplY2hvICJQUkUtQ0hFQ0s6IGlkPXskcm93WydpZCddfSAgbmFtZT1cInskcm93WyduYW1lJ119XCIgIGFjdGl2ZT17JHJvd1snYWN0aXZlJ119ICBzY29wZT17JHJvd1snc2NvcGUnXX1cbiI7CmVjaG8gIlBSRS1DSEVDSzogY29kZSBsZW5ndGg9IiAuIHN0cmxlbiggJHJvd1snY29kZSddICkgLiAiIGJ5dGVzXG4iOwoKJG5hbWVfb2sgICA9ICggJHJvd1snbmFtZSddID09PSAkZXhwZWN0ZWRfbmFtZSApOwokc2NvcGVfb2sgID0gKCAkcm93WydzY29wZSddID09PSAkZXhwZWN0ZWRfc2NvcGUgKTsKJGFjdGl2ZV9vayA9ICggKGludCkgJHJvd1snYWN0aXZlJ10gPT09ICRleHBlY3RlZF9hY3RpdmUgKTsKCmVjaG8gIlBSRS1DSEVDSzogbmFtZSBtYXRjaGVzIGV4cGVjdGVkIFwiJGV4cGVjdGVkX25hbWVcIjogIiAuICggJG5hbWVfb2sgPyAnWUVTJyA6ICdOTycgKSAuICJcbiI7CmVjaG8gIlBSRS1DSEVDSzogc2NvcGUgbWF0Y2hlcyBleHBlY3RlZCBcIiRleHBlY3RlZF9zY29wZVwiOiAiIC4gKCAkc2NvcGVfb2sgPyAnWUVTJyA6ICdOTycgKSAuICJcbiI7CmVjaG8gIlBSRS1DSEVDSzogYWN0aXZlIG1hdGNoZXMgZXhwZWN0ZWQgJGV4cGVjdGVkX2FjdGl2ZSAoaW5hY3RpdmUpOiAiIC4gKCAkYWN0aXZlX29rID8gJ1lFUycgOiAnTk8nICkgLiAiXG4iOwoKaWYgKCAhICRuYW1lX29rIHx8ICEgJHNjb3BlX29rIHx8ICEgJGFjdGl2ZV9vayApIHsKCWVjaG8gIkFCT1JUOiBwcmUtY2hlY2sgZmFpbGVkIC0gcm93IGRvZXMgbm90IG1hdGNoIHRoZSBleHBlY3RlZCBwcmUtYWN0aXZhdGlvbiBzdGF0ZSAobmFtZS9zY29wZS9hY3RpdmUpLiBTb21lb25lIG1heSBoYXZlIGNoYW5nZWQgaXQgc2luY2UgaXQgd2FzIGxhc3QgdmVyaWZpZWQuIE5vIHdyaXRlIHBlcmZvcm1lZC5cbiI7CglleGl0KCAxICk7Cn0KZWNobyAiT0s6IHByZS1jaGVjayBwYXNzZWQgLSBwcm9jZWVkaW5nIHRvIGFjdGl2YXRpb25cbiI7CgplY2hvICJcbj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwplY2hvICJTVEVQIEI6IENPTU1JVCAtIFVQREFURSAkc25pcHBldHNfdGFibGUgU0VUIGFjdGl2ZSA9IDEgV0hFUkUgaWQgPSAkc25pcHBldF9pZFxuIjsKZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgokdXBkYXRlX3Jlc3VsdCA9ICR3cGRiLT51cGRhdGUoCgkkc25pcHBldHNfdGFibGUsCglhcnJheSggJ2FjdGl2ZScgPT4gMSApLAoJYXJyYXkoICdpZCcgPT4gJHNuaXBwZXRfaWQgKSwKCWFycmF5KCAnJWQnICksCglhcnJheSggJyVkJyApCik7CgppZiAoIGZhbHNlID09PSAkdXBkYXRlX3Jlc3VsdCApIHsKCWVjaG8gIkVSUk9SOiBcJHdwZGItPnVwZGF0ZSgpIGZhaWxlZDogeyR3cGRiLT5sYXN0X2Vycm9yfVxuIjsKCWVjaG8gIkFCT1JUXG4iOwoJZXhpdCggMSApOwp9CmVjaG8gIk9LOiB1cGRhdGUgZXhlY3V0ZWQsIHJvd3MgYWZmZWN0ZWQ9JHVwZGF0ZV9yZXN1bHRcbiI7CgplY2hvICJcbj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwplY2hvICJTVEVQIEM6IFZFUklGWSAtIHJlLXJlYWQgdGhlIHJvdyBmcmVzaFxuIjsKZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgokdmVyaWZ5X3JvdyA9ICR3cGRiLT5nZXRfcm93KAoJJHdwZGItPnByZXBhcmUoICJTRUxFQ1QgaWQsIG5hbWUsIGFjdGl2ZSwgc2NvcGUgRlJPTSAkc25pcHBldHNfdGFibGUgV0hFUkUgaWQgPSAlZCIsICRzbmlwcGV0X2lkICksCglBUlJBWV9BCik7CgppZiAoICEgJHZlcmlmeV9yb3cgKSB7CgllY2hvICJBQk9SVDogY291bGQgbm90IHJlLXJlYWQgcm93IGlkPSRzbmlwcGV0X2lkIGFmdGVyIHVwZGF0ZVxuIjsKCWV4aXQoIDEgKTsKfQoKZWNobyAiVkVSSUZZOiBpZD17JHZlcmlmeV9yb3dbJ2lkJ119ICBuYW1lPVwieyR2ZXJpZnlfcm93WyduYW1lJ119XCIgIGFjdGl2ZT17JHZlcmlmeV9yb3dbJ2FjdGl2ZSddfSAgc2NvcGU9eyR2ZXJpZnlfcm93WydzY29wZSddfVxuIjsKCmlmICggKGludCkgJHZlcmlmeV9yb3dbJ2FjdGl2ZSddICE9PSAxICkgewoJZWNobyAiQUJPUlQ6IHZlcmlmaWNhdGlvbiBGQUlMRUQgLSBhY3RpdmUgaXMgbm90IDEgYWZ0ZXIgdXBkYXRlIChnb3QgJ3skdmVyaWZ5X3Jvd1snYWN0aXZlJ119JylcbiI7CglleGl0KCAxICk7Cn0KZWNobyAiT0s6IHZlcmlmaWNhdGlvbiBwYXNzZWQgLSBzbmlwcGV0IGlkPSRzbmlwcGV0X2lkIChcInskdmVyaWZ5X3Jvd1snbmFtZSddfVwiKSBpcyBub3cgYWN0aXZlPTFcbiI7Cg==" | base64 -d > /tmp/activate-brand-fonts-snippet.php;
+
+             php -l /tmp/activate-brand-fonts-snippet.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on script";
+               rm -f /tmp/activate-brand-fonts-snippet.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/activate-brand-fonts-snippet.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/activate-brand-fonts-snippet.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - activation did NOT complete successfully, see log above";
+               exit 1;
+             fi;
+
+             echo "";
+             echo "====================================================================";
+             echo "STEP C EXTRA: fetch live homepage HTML and check for lunaci-brand-fonts-css";
+             echo "====================================================================";
+             HOMEPAGE_HTML=$(curl -s --connect-timeout 10 --max-time 20 -H "Cache-Control: no-cache" "https://lunacibarcelona.com/?nocache=$(date +%s)");
+             MATCH_LINES=$(echo "$HOMEPAGE_HTML" | grep -i "lunaci-brand-fonts-css");
+             if [ -n "$MATCH_LINES" ]; then
+               echo "FOUND: lunaci-brand-fonts-css is present in the live homepage HTML:";
+               echo "$MATCH_LINES";
+             else
+               echo "NOT FOUND: lunaci-brand-fonts-css was not found in the live homepage HTML.";
+               echo "This is NOT treated as a hard failure - the DB update above already verified active=1.";
+               echo "A caching layer (LiteSpeed page cache, CDN, browser cache) may be serving a stale pre-activation page.";
+               echo "The cache purge below should resolve this; re-check the live page manually afterward if this note persists.";
+             fi;
+
+             echo "";
+             echo "====================================================================";
+             echo "Purge cache";
+             echo "====================================================================";
+             wp litespeed-purge all --path="$WP_PATH";
+             PURGE_STATUS=$?;
+             if [ "$PURGE_STATUS" -ne 0 ]; then
+               echo "litespeed-purge failed (status=$PURGE_STATUS), falling back to wp cache flush";
+               wp cache flush --path="$WP_PATH";
+             fi;
+
+             echo "OK: activation workflow completed"'

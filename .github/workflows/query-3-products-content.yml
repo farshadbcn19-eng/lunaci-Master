@@ -1,0 +1,62 @@
+name: Diagnose - read English content + WPML info for 3 products (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: SELECT-only read of post_title/post_excerpt/post_content + wp_icl_translations for IDs 329/324/326
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJHByb2R1Y3RfaWRzID0gYXJyYXkoIDMyOSwgMzI0LCAzMjYgKTsKCmZvcmVhY2ggKCAkcHJvZHVjdF9pZHMgYXMgJGlkICkgewoJZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgllY2hvICJQUk9EVUNUIElEPSRpZFxuIjsKCWVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwoKCSRwb3N0ID0gJHdwZGItPmdldF9yb3coCgkJJHdwZGItPnByZXBhcmUoCgkJCSJTRUxFQ1QgSUQsIHBvc3RfdGl0bGUsIHBvc3RfZXhjZXJwdCwgcG9zdF9jb250ZW50LCBwb3N0X3N0YXR1cywgcG9zdF90eXBlIEZST00geyR3cGRiLT5wb3N0c30gV0hFUkUgSUQgPSAlZCIsCgkJCSRpZAoJCSksCgkJQVJSQVlfQQoJKTsKCglpZiAoICEgJHBvc3QgKSB7CgkJZWNobyAiTk9UIEZPVU5EOiBubyBwb3N0IHdpdGggSUQ9JGlkXG5cbiI7CgkJY29udGludWU7Cgl9CgoJZWNobyAicG9zdF90eXBlOiB7JHBvc3RbJ3Bvc3RfdHlwZSddfVxuIjsKCWVjaG8gInBvc3Rfc3RhdHVzOiB7JHBvc3RbJ3Bvc3Rfc3RhdHVzJ119XG4iOwoJZWNobyAiXG4tLS0gcG9zdF90aXRsZSAtLS1cbnskcG9zdFsncG9zdF90aXRsZSddfVxuIjsKCWVjaG8gIlxuLS0tIHBvc3RfZXhjZXJwdCAoc2hvcnQgZGVzY3JpcHRpb24pIC0tLVxuIiAuICggJHBvc3RbJ3Bvc3RfZXhjZXJwdCddICE9PSAnJyA/ICRwb3N0Wydwb3N0X2V4Y2VycHQnXSA6ICcoZW1wdHkpJyApIC4gIlxuIjsKCWVjaG8gIlxuLS0tIHBvc3RfY29udGVudCAoZnVsbCBkZXNjcmlwdGlvbikgLS0tXG4iIC4gKCAkcG9zdFsncG9zdF9jb250ZW50J10gIT09ICcnID8gJHBvc3RbJ3Bvc3RfY29udGVudCddIDogJyhlbXB0eSknICkgLiAiXG4iOwoKCWVjaG8gIlxuLS0tIFdQTUwgdHJhbnNsYXRpb24gaW5mbyAod3BfaWNsX3RyYW5zbGF0aW9ucykgLS0tXG4iOwoJJHRyYW5zX3Jvd3MgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoCgkJJHdwZGItPnByZXBhcmUoCgkJCSJTRUxFQ1QgdHJhbnNsYXRpb25faWQsIGVsZW1lbnRfdHlwZSwgZWxlbWVudF9pZCwgdHJpZCwgbGFuZ3VhZ2VfY29kZSwgc291cmNlX2xhbmd1YWdlX2NvZGUKCQkJIEZST00geyR3cGRiLT5wcmVmaXh9aWNsX3RyYW5zbGF0aW9ucyBXSEVSRSBlbGVtZW50X2lkID0gJWQiLAoJCQkkaWQKCQkpLAoJCUFSUkFZX0EKCSk7CgoJaWYgKCBlbXB0eSggJHRyYW5zX3Jvd3MgKSApIHsKCQllY2hvICJObyB3cF9pY2xfdHJhbnNsYXRpb25zIHJvdyBmb3VuZCBmb3IgZWxlbWVudF9pZD0kaWRcbiI7Cgl9IGVsc2UgewoJCWZvcmVhY2ggKCAkdHJhbnNfcm93cyBhcyAkdCApIHsKCQkJJHNyYyA9ICR0Wydzb3VyY2VfbGFuZ3VhZ2VfY29kZSddICE9PSBudWxsID8gJHRbJ3NvdXJjZV9sYW5ndWFnZV9jb2RlJ10gOiAnTlVMTCc7CgkJCWVjaG8gInRyYW5zbGF0aW9uX2lkPXskdFsndHJhbnNsYXRpb25faWQnXX0gIGVsZW1lbnRfdHlwZT17JHRbJ2VsZW1lbnRfdHlwZSddfSAgZWxlbWVudF9pZD17JHRbJ2VsZW1lbnRfaWQnXX0gIHRyaWQ9eyR0Wyd0cmlkJ119ICBsYW5ndWFnZV9jb2RlPXskdFsnbGFuZ3VhZ2VfY29kZSddfSAgc291cmNlX2xhbmd1YWdlX2NvZGU9JHNyY1xuIjsKCgkJCSRzaWJsaW5ncyA9ICR3cGRiLT5nZXRfcmVzdWx0cygKCQkJCSR3cGRiLT5wcmVwYXJlKAoJCQkJCSJTRUxFQ1QgdHJhbnNsYXRpb25faWQsIGVsZW1lbnRfdHlwZSwgZWxlbWVudF9pZCwgdHJpZCwgbGFuZ3VhZ2VfY29kZQoJCQkJCSBGUk9NIHskd3BkYi0+cHJlZml4fWljbF90cmFuc2xhdGlvbnMgV0hFUkUgdHJpZCA9ICVkIE9SREVSIEJZIGxhbmd1YWdlX2NvZGUiLAoJCQkJCSR0Wyd0cmlkJ10KCQkJCSksCgkJCQlBUlJBWV9BCgkJCSk7CgkJCWVjaG8gIiAgRnVsbCB0cmlkPXskdFsndHJpZCddfSBncm91cCAoIiAuIGNvdW50KCAkc2libGluZ3MgKSAuICIgcm93KHMpKTpcbiI7CgkJCWZvcmVhY2ggKCAkc2libGluZ3MgYXMgJHMgKSB7CgkJCQllY2hvICIgICAgZWxlbWVudF9pZD17JHNbJ2VsZW1lbnRfaWQnXX0gIGxhbmd1YWdlX2NvZGU9eyRzWydsYW5ndWFnZV9jb2RlJ119ICB0cmFuc2xhdGlvbl9pZD17JHNbJ3RyYW5zbGF0aW9uX2lkJ119ICBlbGVtZW50X3R5cGU9eyRzWydlbGVtZW50X3R5cGUnXX1cbiI7CgkJCX0KCQl9Cgl9CgllY2hvICJcbiI7Cn0KCmVjaG8gIk9LOiByZWFkLW9ubHkgcXVlcnkgY29tcGxldGVkXG4iOwo=" | base64 -d > /tmp/query-3-products-content.php;
+
+             php -l /tmp/query-3-products-content.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/query-3-products-content.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/query-3-products-content.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/query-3-products-content.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: read-only diagnostic completed successfully"'

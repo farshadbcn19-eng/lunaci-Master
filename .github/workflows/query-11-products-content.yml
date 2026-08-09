@@ -1,0 +1,62 @@
+name: Diagnose - read English content + WPML info for 11 products (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: SELECT-only read of post_title/post_excerpt/post_content + wp_icl_translations for 11 product IDs
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJHByb2R1Y3RfaWRzID0gYXJyYXkoIDMyNSwgMzI3LCAzMjgsIDMzMCwgMzMxLCAzMzIsIDQ5MSwgNDk3LCA1MDEsIDUwMiwgNTE1ICk7CiRsYWJlbHMgICAgICA9IGFycmF5KAoJMzI1ID0+ICdDb21wYWN0IFBvd2RlcicsCgkzMjcgPT4gJ0xpcGdsb3NzIFZlbHZldCcsCgkzMjggPT4gJ0xpcCBGaXgnLAoJMzMwID0+ICdNYXNjYXJhIExlbmd0aCcsCgkzMzEgPT4gJ01hc2NhcmEgVm9sdW1lJywKCTMzMiA9PiAnRXllIExpbmVyJywKCTQ5MSA9PiAnTGlwIFBlbmNpbCcsCgk0OTcgPT4gJ0V5ZWJyb3cgUGVuY2lsJywKCTUwMSA9PiAnRXllIFBlbmNpbCcsCgk1MDIgPT4gJ05haWwgUG9saXNoIExvbmcgTGFzdGluZycsCgk1MTUgPT4gJ1NoYWRvdycsCik7Cgpmb3JlYWNoICggJHByb2R1Y3RfaWRzIGFzICRpZCApIHsKCWVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwoJZWNobyAiUFJPRFVDVCBJRD0kaWQgKHskbGFiZWxzWyAkaWQgXX0pXG4iOwoJZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgoJJHBvc3QgPSAkd3BkYi0+Z2V0X3JvdygKCQkkd3BkYi0+cHJlcGFyZSgKCQkJIlNFTEVDVCBJRCwgcG9zdF90aXRsZSwgcG9zdF9leGNlcnB0LCBwb3N0X2NvbnRlbnQsIHBvc3Rfc3RhdHVzLCBwb3N0X3R5cGUgRlJPTSB7JHdwZGItPnBvc3RzfSBXSEVSRSBJRCA9ICVkIiwKCQkJJGlkCgkJKSwKCQlBUlJBWV9BCgkpOwoKCWlmICggISAkcG9zdCApIHsKCQllY2hvICJOT1QgRk9VTkQ6IG5vIHBvc3Qgd2l0aCBJRD0kaWRcblxuIjsKCQljb250aW51ZTsKCX0KCgllY2hvICJwb3N0X3R5cGU6IHskcG9zdFsncG9zdF90eXBlJ119XG4iOwoJZWNobyAicG9zdF9zdGF0dXM6IHskcG9zdFsncG9zdF9zdGF0dXMnXX1cbiI7CgllY2hvICJcbi0tLSBwb3N0X3RpdGxlIC0tLVxueyRwb3N0Wydwb3N0X3RpdGxlJ119XG4iOwoJZWNobyAiXG4tLS0gcG9zdF9leGNlcnB0IChzaG9ydCBkZXNjcmlwdGlvbikgLS0tXG4iIC4gKCAkcG9zdFsncG9zdF9leGNlcnB0J10gIT09ICcnID8gJHBvc3RbJ3Bvc3RfZXhjZXJwdCddIDogJyhlbXB0eSknICkgLiAiXG4iOwoJZWNobyAiXG4tLS0gcG9zdF9jb250ZW50IChmdWxsIGRlc2NyaXB0aW9uKSAtLS1cbiIgLiAoICRwb3N0Wydwb3N0X2NvbnRlbnQnXSAhPT0gJycgPyAkcG9zdFsncG9zdF9jb250ZW50J10gOiAnKGVtcHR5KScgKSAuICJcbiI7CgoJZWNobyAiXG4tLS0gV1BNTCB0cmFuc2xhdGlvbiBpbmZvICh3cF9pY2xfdHJhbnNsYXRpb25zKSAtLS1cbiI7CgkkdHJhbnNfcm93cyA9ICR3cGRiLT5nZXRfcmVzdWx0cygKCQkkd3BkYi0+cHJlcGFyZSgKCQkJIlNFTEVDVCB0cmFuc2xhdGlvbl9pZCwgZWxlbWVudF90eXBlLCBlbGVtZW50X2lkLCB0cmlkLCBsYW5ndWFnZV9jb2RlLCBzb3VyY2VfbGFuZ3VhZ2VfY29kZQoJCQkgRlJPTSB7JHdwZGItPnByZWZpeH1pY2xfdHJhbnNsYXRpb25zIFdIRVJFIGVsZW1lbnRfaWQgPSAlZCIsCgkJCSRpZAoJCSksCgkJQVJSQVlfQQoJKTsKCglpZiAoIGVtcHR5KCAkdHJhbnNfcm93cyApICkgewoJCWVjaG8gIk5vIHdwX2ljbF90cmFuc2xhdGlvbnMgcm93IGZvdW5kIGZvciBlbGVtZW50X2lkPSRpZFxuIjsKCX0gZWxzZSB7CgkJZm9yZWFjaCAoICR0cmFuc19yb3dzIGFzICR0ICkgewoJCQkkc3JjID0gJHRbJ3NvdXJjZV9sYW5ndWFnZV9jb2RlJ10gIT09IG51bGwgPyAkdFsnc291cmNlX2xhbmd1YWdlX2NvZGUnXSA6ICdOVUxMJzsKCQkJZWNobyAidHJhbnNsYXRpb25faWQ9eyR0Wyd0cmFuc2xhdGlvbl9pZCddfSAgZWxlbWVudF90eXBlPXskdFsnZWxlbWVudF90eXBlJ119ICBlbGVtZW50X2lkPXskdFsnZWxlbWVudF9pZCddfSAgdHJpZD17JHRbJ3RyaWQnXX0gIGxhbmd1YWdlX2NvZGU9eyR0WydsYW5ndWFnZV9jb2RlJ119ICBzb3VyY2VfbGFuZ3VhZ2VfY29kZT0kc3JjXG4iOwoKCQkJJHNpYmxpbmdzID0gJHdwZGItPmdldF9yZXN1bHRzKAoJCQkJJHdwZGItPnByZXBhcmUoCgkJCQkJIlNFTEVDVCB0cmFuc2xhdGlvbl9pZCwgZWxlbWVudF90eXBlLCBlbGVtZW50X2lkLCB0cmlkLCBsYW5ndWFnZV9jb2RlCgkJCQkJIEZST00geyR3cGRiLT5wcmVmaXh9aWNsX3RyYW5zbGF0aW9ucyBXSEVSRSB0cmlkID0gJWQgT1JERVIgQlkgbGFuZ3VhZ2VfY29kZSIsCgkJCQkJJHRbJ3RyaWQnXQoJCQkJKSwKCQkJCUFSUkFZX0EKCQkJKTsKCQkJZWNobyAiICBGdWxsIHRyaWQ9eyR0Wyd0cmlkJ119IGdyb3VwICgiIC4gY291bnQoICRzaWJsaW5ncyApIC4gIiByb3cocykpOlxuIjsKCQkJJGhhc19lcyA9IGZhbHNlOwoJCQlmb3JlYWNoICggJHNpYmxpbmdzIGFzICRzICkgewoJCQkJZWNobyAiICAgIGVsZW1lbnRfaWQ9eyRzWydlbGVtZW50X2lkJ119ICBsYW5ndWFnZV9jb2RlPXskc1snbGFuZ3VhZ2VfY29kZSddfSAgdHJhbnNsYXRpb25faWQ9eyRzWyd0cmFuc2xhdGlvbl9pZCddfSAgZWxlbWVudF90eXBlPXskc1snZWxlbWVudF90eXBlJ119XG4iOwoJCQkJaWYgKCAnZXMnID09PSAkc1snbGFuZ3VhZ2VfY29kZSddICkgewoJCQkJCSRoYXNfZXMgPSB0cnVlOwoJCQkJfQoJCQl9CgkJCWVjaG8gJyAgRVMgU0lCTElORyBBTFJFQURZIEVYSVNUUyBJTiBUSElTIFRSSUQgR1JPVVA6ICcgLiAoICRoYXNfZXMgPyAnWUVTIC0gRE8gTk9UIERVUExJQ0FURScgOiAnTk8nICkgLiAiXG4iOwoJCX0KCX0KCWVjaG8gIlxuIjsKfQoKZWNobyAiT0s6IHJlYWQtb25seSBxdWVyeSBjb21wbGV0ZWRcbiI7Cg==" | base64 -d > /tmp/query-11-products-content.php;
+
+             php -l /tmp/query-11-products-content.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on diagnostic script";
+               rm -f /tmp/query-11-products-content.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/query-11-products-content.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/query-11-products-content.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: read-only diagnostic completed successfully"'

@@ -5,6 +5,9 @@ $snippet_name = 'LUNACI Brand Fonts (@font-face)';
 $site_url     = get_site_url();
 
 $snippet_code = <<<LUNACI_FONT_CSS
+add_action( 'wp_head', function () {
+	?>
+<style id="lunaci-brand-fonts-css">
 @font-face {
 	font-family: 'Trade Gothic LT Std Extended';
 	src: url('{$site_url}/wp-content/themes/hello-elementor-child/fonts/TradeGothicLTStd-Extended.woff2') format('woff2');
@@ -25,6 +28,9 @@ body {
 h1, h2, h3, h4, h5, h6 {
 	font-family: 'Trade Gothic LT Std Extended', 'Helvetica LUNACI', sans-serif;
 }
+</style>
+	<?php
+} );
 LUNACI_FONT_CSS;
 
 $snippets_table = $wpdb->prefix . 'snippets';
@@ -46,17 +52,17 @@ if ( $existing ) {
 echo "OK: no existing snippet with this name found - proceeding to insert\n";
 
 echo "\n====================================================================\n";
-echo "STEP B: COMMIT - insert new snippet row (active=0, scope=site-css)\n";
+echo "STEP B: COMMIT - insert new snippet row (active=0, scope=global)\n";
 echo "====================================================================\n";
 
 $insert_ok = $wpdb->insert(
 	$snippets_table,
 	array(
 		'name'        => $snippet_name,
-		'description' => 'Registers @font-face for Helvetica and Trade Gothic LT Std Extended (WOFF2), plus safe global body/heading font-family fallbacks. Created inactive for review before activation.',
+		'description' => 'Registers @font-face for Helvetica and Trade Gothic LT Std Extended (WOFF2), plus safe global body/heading font-family fallbacks, via a wp_head-hooked <style> block. Created inactive for review before activation.',
 		'code'        => $snippet_code,
 		'tags'        => '',
-		'scope'       => 'site-css',
+		'scope'       => 'global',
 		'active'      => 0,
 		'priority'    => 10,
 	),
@@ -93,7 +99,7 @@ if ( ! $row ) {
 	echo "stored code length=" . strlen( $row['code'] ) . " (expected " . strlen( $snippet_code ) . ")\n";
 	echo "stored code matches intended code byte-for-byte: " . ( $stored_code_matches ? 'YES' : 'NO' ) . "\n";
 
-	if ( ! $stored_code_matches || (int) $row['active'] !== 0 || $row['scope'] !== 'site-css' ) {
+	if ( ! $stored_code_matches || (int) $row['active'] !== 0 || $row['scope'] !== 'global' ) {
 		echo "ERROR: verification FAILED - stored row does not match intended insert\n";
 		$any_error = true;
 	} else {

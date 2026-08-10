@@ -1,0 +1,63 @@
+name: Diagnose - page 58 (Collections) nav/menu linkage (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Query page 58 slug + nav menu + hardcoded-link references (read-only)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKZWNobyAiIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyNcbiI7CmVjaG8gIlNURVAgMTogcGFnZSA1OCBiYXNpYyBpbmZvIChJRCwgcG9zdF9uYW1lL3NsdWcsIHBvc3Rfc3RhdHVzLCBwb3N0X3R5cGUpXG4iOwplY2hvICIjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjI1xuIjsKCiRwYWdlNTggPSAkd3BkYi0+Z2V0X3JvdygKCSR3cGRiLT5wcmVwYXJlKCAiU0VMRUNUIElELCBwb3N0X25hbWUsIHBvc3Rfc3RhdHVzLCBwb3N0X3R5cGUsIHBvc3RfdGl0bGUgRlJPTSB7JHdwZGItPnBvc3RzfSBXSEVSRSBJRCA9ICVkIiwgNTggKSwKCUFSUkFZX0EKKTsKCmlmICggISAkcGFnZTU4ICkgewoJZWNobyAiQUJPUlQ6IHBhZ2UgNTggbm90IGZvdW5kLlxuIjsKCXJldHVybjsKfQoKZWNobyAiSUQ6IHskcGFnZTU4WydJRCddfVxuIjsKZWNobyAicG9zdF90aXRsZTogeyRwYWdlNThbJ3Bvc3RfdGl0bGUnXX1cbiI7CmVjaG8gInBvc3RfbmFtZSAoc2x1Zyk6IHskcGFnZTU4Wydwb3N0X25hbWUnXX1cbiI7CmVjaG8gInBvc3Rfc3RhdHVzOiB7JHBhZ2U1OFsncG9zdF9zdGF0dXMnXX1cbiI7CmVjaG8gInBvc3RfdHlwZTogeyRwYWdlNThbJ3Bvc3RfdHlwZSddfVxuIjsKCiRzbHVnID0gJHBhZ2U1OFsncG9zdF9uYW1lJ107CgplY2hvICJcbiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjXG4iOwplY2hvICJTVEVQIDI6IFdvcmRQcmVzcyBuYXYgbWVudSBpdGVtcyByZWZlcmVuY2luZyBvYmplY3RfaWQ9NTggKHdwX3Bvc3RtZXRhIF9tZW51X2l0ZW1fb2JqZWN0X2lkKVxuIjsKZWNobyAiIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyNcbiI7CgokbWVudV9pdGVtX2lkcyA9ICR3cGRiLT5nZXRfY29sKAoJJHdwZGItPnByZXBhcmUoCgkJIlNFTEVDVCBwb3N0X2lkIEZST00geyR3cGRiLT5wb3N0bWV0YX0gV0hFUkUgbWV0YV9rZXkgPSAnX21lbnVfaXRlbV9vYmplY3RfaWQnIEFORCBtZXRhX3ZhbHVlID0gJXMiLAoJCSc1OCcKCSkKKTsKCmlmICggZW1wdHkoICRtZW51X2l0ZW1faWRzICkgKSB7CgllY2hvICJObyBuYXZfbWVudV9pdGVtIHBvc3RtZXRhIHJvd3MgcmVmZXJlbmNlIG9iamVjdF9pZD01OC5cbiI7Cn0gZWxzZSB7CgllY2hvICJGb3VuZCAiIC4gY291bnQoICRtZW51X2l0ZW1faWRzICkgLiAiIG5hdl9tZW51X2l0ZW0gcG9zdChzKSByZWZlcmVuY2luZyBvYmplY3RfaWQ9NTg6XG4iOwoJZm9yZWFjaCAoICRtZW51X2l0ZW1faWRzIGFzICRtaWQgKSB7CgkJJG1pX3Bvc3QgPSBnZXRfcG9zdCggJG1pZCApOwoJCWVjaG8gIiAgbWVudSBpdGVtIHBvc3QgSUQ9JG1pZCAgcG9zdF9zdGF0dXM9IiAuICggJG1pX3Bvc3QgPyAkbWlfcG9zdC0+cG9zdF9zdGF0dXMgOiAnKG5vdCBmb3VuZCknICkgLiAiXG4iOwoJCSR0ZXJtcyA9IHdwX2dldF9vYmplY3RfdGVybXMoICRtaWQsICduYXZfbWVudScsIGFycmF5KCAnZmllbGRzJyA9PiAnbmFtZXMnICkgKTsKCQlpZiAoICEgaXNfd3BfZXJyb3IoICR0ZXJtcyApICYmICEgZW1wdHkoICR0ZXJtcyApICkgewoJCQllY2hvICIgICAgYmVsb25ncyB0byBuYXZfbWVudShzKTogIiAuIGltcGxvZGUoICcsICcsICR0ZXJtcyApIC4gIlxuIjsKCQl9Cgl9Cn0KCmVjaG8gIlxuIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyNcbiI7CmVjaG8gIlNURVAgMzogc2VhcmNoIGZvciB0aGUgbGl0ZXJhbCBzbHVnICckc2x1ZycgYXMgYSBzdWJzdHJpbmcgaW5zaWRlIGhyZWY9XCIuLi5cIiBhY3Jvc3MgYWxsIHB1Ymxpc2hlZCBwYWdlcy9wb3N0cy9wcm9kdWN0cyBwb3N0X2NvbnRlbnQsIGFuZCBpbnNpZGUgYWxsIHdwX3NuaXBwZXRzLmNvZGUgKGhhcmRjb2RlZCBuYXYgbGlua3MsIHNpbmNlIHRoaXMgc2l0ZSdzIHJlYWwgbmF2IGFwcGVhcnMgdG8gYmUgaGFyZGNvZGVkIEhUTUwgaW4gQ29kZSBTbmlwcGV0cywgbm90IHN0YW5kYXJkIFdQIG1lbnVzKVxuIjsKZWNobyAiIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyNcbiI7CgppZiAoICcnID09PSAkc2x1ZyApIHsKCWVjaG8gIlNsdWcgaXMgZW1wdHkgLSBjYW5ub3Qgc2VhcmNoIGZvciBpdC5cbiI7Cn0gZWxzZSB7CgkkY29udGVudF9tYXRjaGVzID0gJHdwZGItPmdldF9yZXN1bHRzKAoJCSR3cGRiLT5wcmVwYXJlKAoJCQkiU0VMRUNUIElELCBwb3N0X3R5cGUsIHBvc3RfdGl0bGUsIHBvc3Rfc3RhdHVzIEZST00geyR3cGRiLT5wb3N0c30KCQkJIFdIRVJFIHBvc3Rfc3RhdHVzID0gJ3B1Ymxpc2gnIEFORCBwb3N0X2NvbnRlbnQgTElLRSAlcyIsCgkJCSclJyAuICR3cGRiLT5lc2NfbGlrZSggJHNsdWcgKSAuICclJwoJCSksCgkJQVJSQVlfQQoJKTsKCglpZiAoIGVtcHR5KCAkY29udGVudF9tYXRjaGVzICkgKSB7CgkJZWNobyAiTm8gcHVibGlzaGVkIHBvc3QvcGFnZS9wcm9kdWN0IHBvc3RfY29udGVudCBjb250YWlucyB0aGUgc3Vic3RyaW5nICckc2x1ZycuXG4iOwoJfSBlbHNlIHsKCQllY2hvICJGb3VuZCAiIC4gY291bnQoICRjb250ZW50X21hdGNoZXMgKSAuICIgcHVibGlzaGVkIHBvc3Qocykgd2hvc2UgcG9zdF9jb250ZW50IGNvbnRhaW5zICckc2x1Zyc6XG4iOwoJCWZvcmVhY2ggKCAkY29udGVudF9tYXRjaGVzIGFzICRtICkgewoJCQllY2hvICIgIElEPXskbVsnSUQnXX0gIHBvc3RfdHlwZT17JG1bJ3Bvc3RfdHlwZSddfSAgcG9zdF90aXRsZT1cInskbVsncG9zdF90aXRsZSddfVwiXG4iOwoJCX0KCX0KCgkkc25pcHBldHNfdGFibGUgPSAkd3BkYi0+cHJlZml4IC4gJ3NuaXBwZXRzJzsKCSRzbmlwcGV0X21hdGNoZXMgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoCgkJJHdwZGItPnByZXBhcmUoCgkJCSJTRUxFQ1QgaWQsIG5hbWUsIGFjdGl2ZSBGUk9NIHskc25pcHBldHNfdGFibGV9IFdIRVJFIGNvZGUgTElLRSAlcyIsCgkJCSclJyAuICR3cGRiLT5lc2NfbGlrZSggJHNsdWcgKSAuICclJwoJCSksCgkJQVJSQVlfQQoJKTsKCglpZiAoIGVtcHR5KCAkc25pcHBldF9tYXRjaGVzICkgKSB7CgkJZWNobyAiTm8gd3Bfc25pcHBldHMuY29kZSBjb250YWlucyB0aGUgc3Vic3RyaW5nICckc2x1ZycuXG4iOwoJfSBlbHNlIHsKCQllY2hvICJGb3VuZCAiIC4gY291bnQoICRzbmlwcGV0X21hdGNoZXMgKSAuICIgc25pcHBldChzKSB3aG9zZSBjb2RlIGNvbnRhaW5zICckc2x1Zyc6XG4iOwoJCWZvcmVhY2ggKCAkc25pcHBldF9tYXRjaGVzIGFzICRzICkgewoJCQllY2hvICIgIGlkPXskc1snaWQnXX0gIG5hbWU9XCJ7JHNbJ25hbWUnXX1cIiAgYWN0aXZlPXskc1snYWN0aXZlJ119XG4iOwoJCX0KCX0KfQoKZWNobyAiXG5PSzogcmVhZC1vbmx5IHF1ZXJ5IGNvbXBsZXRlZFxuIjsK" | base64 -d > /tmp/query-page58-nav-linkage.php;
+
+             php -l /tmp/query-page58-nav-linkage.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on query script";
+               rm -f /tmp/query-page58-nav-linkage.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/query-page58-nav-linkage.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/query-page58-nav-linkage.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - see log above for details";
+               exit 1;
+             fi;
+
+             echo "OK: workflow completed successfully"'

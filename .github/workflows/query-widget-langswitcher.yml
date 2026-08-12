@@ -1,0 +1,96 @@
+name: Query - widget areas, snippets, WPML settings, homepage footer HTML (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  query:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: TASKS 1-3 - wp-cli read-only queries (widgets, snippets, WPML settings)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiLCAkd3BfcmVnaXN0ZXJlZF9zaWRlYmFycywgJHdwX3JlZ2lzdGVyZWRfd2lkZ2V0czsKCmVjaG8gIiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjXG4iOwplY2hvICJUQVNLIDE6IHNpZGViYXJzX3dpZGdldHMgb3B0aW9uICsgcmVnaXN0ZXJlZCBzaWRlYmFycyArIHdpZGdldCBzY2FuIGZvciBsYW5ndWFnZSBzd2l0Y2hlclxuIjsKZWNobyAiIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyNcbiI7Cgokc2lkZWJhcnNfd2lkZ2V0c19yYXcgPSAkd3BkYi0+Z2V0X3ZhcigKCSR3cGRiLT5wcmVwYXJlKCAiU0VMRUNUIG9wdGlvbl92YWx1ZSBGUk9NIHskd3BkYi0+b3B0aW9uc30gV0hFUkUgb3B0aW9uX25hbWUgPSAlcyIsICdzaWRlYmFyc193aWRnZXRzJyApCik7CgppZiAoIG51bGwgPT09ICRzaWRlYmFyc193aWRnZXRzX3JhdyApIHsKCWVjaG8gIk5vICdzaWRlYmFyc193aWRnZXRzJyBvcHRpb24gZm91bmQuXG4iOwp9IGVsc2UgewoJZWNobyAiUkFXIHNpZGViYXJzX3dpZGdldHMgb3B0aW9uX3ZhbHVlIChzZXJpYWxpemVkKTpcbiI7CgllY2hvICRzaWRlYmFyc193aWRnZXRzX3JhdyAuICJcblxuIjsKCgkkc2lkZWJhcnNfd2lkZ2V0cyA9IG1heWJlX3Vuc2VyaWFsaXplKCAkc2lkZWJhcnNfd2lkZ2V0c19yYXcgKTsKCWlmICggaXNfYXJyYXkoICRzaWRlYmFyc193aWRnZXRzICkgKSB7CgkJZWNobyAiVW5zZXJpYWxpemVkIHNpZGViYXJzX3dpZGdldHMgKHdpZGdldCBhcmVhID0+IHdpZGdldCBJRHMpOlxuIjsKCQlmb3JlYWNoICggJHNpZGViYXJzX3dpZGdldHMgYXMgJGFyZWEgPT4gJHdpZGdldF9pZHMgKSB7CgkJCWlmICggJ2FycmF5X3ZlcnNpb24nID09PSAkYXJlYSApIHsKCQkJCWNvbnRpbnVlOwoJCQl9CgkJCSRpZHNfZGlzcGxheSA9IGlzX2FycmF5KCAkd2lkZ2V0X2lkcyApID8gaW1wbG9kZSggJywgJywgJHdpZGdldF9pZHMgKSA6IHZhcl9leHBvcnQoICR3aWRnZXRfaWRzLCB0cnVlICk7CgkJCWVjaG8gIiAgeyRhcmVhfTogW3skaWRzX2Rpc3BsYXl9XVxuIjsKCQl9Cgl9Cn0KCmVjaG8gIlxuLS0tIFJlZ2lzdGVyZWQgc2lkZWJhcnMgKGdsb2JhbCBcJHdwX3JlZ2lzdGVyZWRfc2lkZWJhcnMpIC0tLVxuIjsKaWYgKCBlbXB0eSggJHdwX3JlZ2lzdGVyZWRfc2lkZWJhcnMgKSApIHsKCWVjaG8gIk5vIHJlZ2lzdGVyZWQgc2lkZWJhcnMgZm91bmQgKGdsb2JhbCBlbXB0eSBhdCBldmFsLWZpbGUgZXhlY3V0aW9uIHRpbWUpLlxuIjsKfSBlbHNlIHsKCWZvcmVhY2ggKCAkd3BfcmVnaXN0ZXJlZF9zaWRlYmFycyBhcyAkc2lkZWJhcl9pZCA9PiAkc2lkZWJhciApIHsKCQllY2hvICIgIGlkPXskc2lkZWJhcl9pZH0gIG5hbWU9XCJ7JHNpZGViYXJbJ25hbWUnXX1cIlxuIjsKCX0KfQoKZWNobyAiXG4tLS0gU2Nhbm5pbmcgd2lkZ2V0IElEcyBmb3IgbGFuZ3VhZ2Utc3dpdGNoZXItdHlwZSB3aWRnZXRzIC0tLVxuIjsKJGZvdW5kX2xhbmdfd2lkZ2V0ID0gZmFsc2U7CmlmICggaXNfYXJyYXkoICRzaWRlYmFyc193aWRnZXRzID8/IG51bGwgKSApIHsKCWZvcmVhY2ggKCAkc2lkZWJhcnNfd2lkZ2V0cyBhcyAkYXJlYSA9PiAkd2lkZ2V0X2lkcyApIHsKCQlpZiAoICdhcnJheV92ZXJzaW9uJyA9PT0gJGFyZWEgfHwgISBpc19hcnJheSggJHdpZGdldF9pZHMgKSApIHsKCQkJY29udGludWU7CgkJfQoJCWZvcmVhY2ggKCAkd2lkZ2V0X2lkcyBhcyAkd2lkZ2V0X2lkICkgewoJCQkkaXNfbGFuZ19yZWxhdGVkID0gKCBmYWxzZSAhPT0gc3RyaXBvcyggJHdpZGdldF9pZCwgJ2xhbmcnICkgfHwgZmFsc2UgIT09IHN0cmlwb3MoICR3aWRnZXRfaWQsICd3cG1sJyApIHx8IGZhbHNlICE9PSBzdHJpcG9zKCAkd2lkZ2V0X2lkLCAnaWNsJyApICk7CgkJCWlmICggJGlzX2xhbmdfcmVsYXRlZCApIHsKCQkJCSRmb3VuZF9sYW5nX3dpZGdldCA9IHRydWU7CgkJCQllY2hvICIgIE1BVENIOiB3aWRnZXRfaWQ9XCJ7JHdpZGdldF9pZH1cIiBmb3VuZCBpbiBhcmVhIFwieyRhcmVhfVwiXG4iOwoJCQl9CgkJfQoJfQp9CmlmICggISAkZm91bmRfbGFuZ193aWRnZXQgKSB7CgllY2hvICIgIE5vIHdpZGdldCBJRCBjb250YWluaW5nICdsYW5nJywgJ3dwbWwnLCBvciAnaWNsJyBmb3VuZCBpbiBhbnkgc2lkZWJhcnNfd2lkZ2V0cyBhcmVhLlxuIjsKfQoKZWNobyAiXG4tLS0gQWxsIHJlZ2lzdGVyZWQgd2lkZ2V0IHR5cGVzIChnbG9iYWwgXCR3cF9yZWdpc3RlcmVkX3dpZGdldHMpLCBmbGFnZ2VkIGZvciBsYW5ndWFnZS93cG1sL2ljbCBpbiBpZCBvciBjbGFzc25hbWUgLS0tXG4iOwppZiAoIGVtcHR5KCAkd3BfcmVnaXN0ZXJlZF93aWRnZXRzICkgKSB7CgllY2hvICJObyByZWdpc3RlcmVkIHdpZGdldHMgZm91bmQuXG4iOwp9IGVsc2UgewoJJGFueV9mbGFnZ2VkID0gZmFsc2U7Cglmb3JlYWNoICggJHdwX3JlZ2lzdGVyZWRfd2lkZ2V0cyBhcyAkaWQgPT4gJHdpZGdldCApIHsKCQkkY2xhc3NuYW1lID0gaXNfYXJyYXkoICR3aWRnZXRbJ2NhbGxiYWNrJ10gPz8gbnVsbCApICYmIGlzX29iamVjdCggJHdpZGdldFsnY2FsbGJhY2snXVswXSA/PyBudWxsICkKCQkJPyBnZXRfY2xhc3MoICR3aWRnZXRbJ2NhbGxiYWNrJ11bMF0gKQoJCQk6ICcnOwoJCWlmICggZmFsc2UgIT09IHN0cmlwb3MoICRpZCwgJ2xhbmcnICkgfHwgZmFsc2UgIT09IHN0cmlwb3MoICRpZCwgJ3dwbWwnICkgfHwgZmFsc2UgIT09IHN0cmlwb3MoICRpZCwgJ2ljbCcgKQoJCQl8fCBmYWxzZSAhPT0gc3RyaXBvcyggJGNsYXNzbmFtZSwgJ2xhbmcnICkgfHwgZmFsc2UgIT09IHN0cmlwb3MoICRjbGFzc25hbWUsICd3cG1sJyApIHx8IGZhbHNlICE9PSBzdHJpcG9zKCAkY2xhc3NuYW1lLCAnaWNsJyApICkgewoJCQkkYW55X2ZsYWdnZWQgPSB0cnVlOwoJCQllY2hvICIgIGlkPXskaWR9ICBjbGFzc25hbWU9eyRjbGFzc25hbWV9XG4iOwoJCX0KCX0KCWlmICggISAkYW55X2ZsYWdnZWQgKSB7CgkJZWNobyAiICBObyByZWdpc3RlcmVkIHdpZGdldCB0eXBlIG1hdGNoZXMgJ2xhbmcnLyd3cG1sJy8naWNsJy5cbiI7Cgl9Cn0KCmVjaG8gIlxuIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyNcbiI7CmVjaG8gIlRBU0sgMjogc2VhcmNoIHdwX3NuaXBwZXRzLmNvZGUgZm9yIGxhbmd1YWdlLXN3aXRjaGVyLXJlbGF0ZWQgc3RyaW5nc1xuIjsKZWNobyAiIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyNcbiI7Cgokc25pcHBldHNfdGFibGUgPSAkd3BkYi0+cHJlZml4IC4gJ3NuaXBwZXRzJzsKJG5lZWRsZXMgPSBhcnJheSggJ2ljbF9sYW5ndWFnZV9zZWxlY3RvcicsICd3cG1sX2FkZF9sYW5ndWFnZV9zZWxlY3RvcicsICd3cG1sLWxzJywgJ1tsYW5ndWFnZS1zd2l0Y2hlcicgKTsKCmZvcmVhY2ggKCAkbmVlZGxlcyBhcyAkbmVlZGxlICkgewoJZWNobyAiLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbiI7CgllY2hvICJOZWVkbGU6IFwieyRuZWVkbGV9XCJcbiI7CgkkbWF0Y2hlcyA9ICR3cGRiLT5nZXRfcmVzdWx0cygKCQkkd3BkYi0+cHJlcGFyZSggIlNFTEVDVCBpZCwgbmFtZSwgYWN0aXZlIEZST00geyRzbmlwcGV0c190YWJsZX0gV0hFUkUgY29kZSBMSUtFICVzIiwgJyUnIC4gJHdwZGItPmVzY19saWtlKCAkbmVlZGxlICkgLiAnJScgKSwKCQlBUlJBWV9BCgkpOwoJaWYgKCBlbXB0eSggJG1hdGNoZXMgKSApIHsKCQllY2hvICIgIE5vIHNuaXBwZXQgY29udGFpbnMgdGhpcyBzdHJpbmcuXG4iOwoJfSBlbHNlIHsKCQlmb3JlYWNoICggJG1hdGNoZXMgYXMgJG0gKSB7CgkJCWVjaG8gIiAgTUFUQ0g6IGlkPXskbVsnaWQnXX0gIG5hbWU9XCJ7JG1bJ25hbWUnXX1cIiAgYWN0aXZlPXskbVsnYWN0aXZlJ119XG4iOwoJCX0KCX0KfQoKZWNobyAiXG4jIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjI1xuIjsKZWNobyAiVEFTSyAzOiBpY2xfc2l0ZXByZXNzX3NldHRpbmdzIG9wdGlvbiAocmF3IHNlcmlhbGl6ZWQgdmFsdWUpXG4iOwplY2hvICIjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjI1xuIjsKCiRzaXRlcHJlc3Nfc2V0dGluZ3NfcmF3ID0gJHdwZGItPmdldF92YXIoCgkkd3BkYi0+cHJlcGFyZSggIlNFTEVDVCBvcHRpb25fdmFsdWUgRlJPTSB7JHdwZGItPm9wdGlvbnN9IFdIRVJFIG9wdGlvbl9uYW1lID0gJXMiLCAnaWNsX3NpdGVwcmVzc19zZXR0aW5ncycgKQopOwoKaWYgKCBudWxsID09PSAkc2l0ZXByZXNzX3NldHRpbmdzX3JhdyApIHsKCWVjaG8gIk5vICdpY2xfc2l0ZXByZXNzX3NldHRpbmdzJyBvcHRpb24gZm91bmQuXG4iOwp9IGVsc2UgewoJZWNobyAiUkFXIGljbF9zaXRlcHJlc3Nfc2V0dGluZ3Mgb3B0aW9uX3ZhbHVlIChzZXJpYWxpemVkKSwgbGVuZ3RoPSIgLiBzdHJsZW4oICRzaXRlcHJlc3Nfc2V0dGluZ3NfcmF3ICkgLiAiIGJ5dGVzOlxuIjsKCWVjaG8gJHNpdGVwcmVzc19zZXR0aW5nc19yYXcgLiAiXG4iOwp9CgplY2hvICJcbk9LOiByZWFkLW9ubHkgcXVlcnkgY29tcGxldGVkIChUQVNLIDQgLSBob21lcGFnZSBIVE1MIGZldGNoIC0gcnVucyBhcyBhIHNlcGFyYXRlIHNoZWxsIHN0ZXApXG4iOwo=" | base64 -d > /tmp/query-widget-langswitcher.php;
+
+             php -l /tmp/query-widget-langswitcher.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on query script";
+               rm -f /tmp/query-widget-langswitcher.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/query-widget-langswitcher.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/query-widget-langswitcher.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - see log above for details";
+               exit 1;
+             fi;
+
+             echo "OK: TASKS 1-3 completed successfully"'
+
+      - name: TASK 4 - curl homepage from the server and extract footer markup around "All rights reserved" and any language/flag switcher
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'curl -s -A "Mozilla/5.0 (compatible; diagnostic-fetch)" https://lunacibarcelona.com/ -o /tmp/lunaci-homepage.html;
+             CURL_STATUS=$?;
+             if [ "$CURL_STATUS" -ne 0 ] || [ ! -s /tmp/lunaci-homepage.html ]; then
+               echo "ERROR: curl fetch of homepage failed (status=$CURL_STATUS) or empty response";
+               exit 1;
+             fi;
+             echo "Fetched homepage, size: $(wc -c < /tmp/lunaci-homepage.html) bytes";
+
+             echo "";
+             echo "==================== Context around \"All rights reserved\" ====================";
+             grep -n -i -B 15 -A 15 "all rights reserved" /tmp/lunaci-homepage.html || echo "(no match for \"all rights reserved\")";
+
+             echo "";
+             echo "==================== Context around language/flag-switcher markers ====================";
+             for marker in "wpml-ls" "language-switcher" "icl-lang" "icl_lang" "lang-switch" "flag-icon" "iti-flag" "wpml_language_switcher"; do
+               echo "--- marker: $marker ---";
+               grep -n -i -B 10 -A 10 "$marker" /tmp/lunaci-homepage.html || echo "  (no match)";
+             done;
+
+             rm -f /tmp/lunaci-homepage.html;
+             echo "OK: TASK 4 completed successfully"'

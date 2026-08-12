@@ -1,0 +1,63 @@
+name: Query - live Global Header snippet (lunaciGlobalNav), read-only
+
+on:
+  workflow_dispatch:
+
+jobs:
+  query:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Query wp_snippets for the lunaciGlobalNav header snippet (read-only)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJHRhYmxlID0gJHdwZGItPnByZWZpeCAuICdzbmlwcGV0cyc7CgplY2hvICIjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjI1xuIjsKZWNobyAiUVVFUlk6IHdwX3NuaXBwZXRzIFdIRVJFIGNvZGUgTElLRSAnJWx1bmFjaUdsb2JhbE5hdiUnXG4iOwplY2hvICIjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjI1xuIjsKCiRyb3dzID0gJHdwZGItPmdldF9yZXN1bHRzKAoJJHdwZGItPnByZXBhcmUoICJTRUxFQ1QgaWQsIG5hbWUsIGRlc2NyaXB0aW9uLCBzY29wZSwgYWN0aXZlLCBwcmlvcml0eSwgY29kZSBGUk9NIHskdGFibGV9IFdIRVJFIGNvZGUgTElLRSAlcyIsICclJyAuICR3cGRiLT5lc2NfbGlrZSggJ2x1bmFjaUdsb2JhbE5hdicgKSAuICclJyApLAoJQVJSQVlfQQopOwoKaWYgKCBlbXB0eSggJHJvd3MgKSApIHsKCWVjaG8gIk5vIHdwX3NuaXBwZXRzIHJvdyBmb3VuZCBjb250YWluaW5nICdsdW5hY2lHbG9iYWxOYXYnLlxuIjsKfSBlbHNlIHsKCWVjaG8gIkZvdW5kICIgLiBjb3VudCggJHJvd3MgKSAuICIgbWF0Y2hpbmcgcm93KHMpOlxuXG4iOwoJZm9yZWFjaCAoICRyb3dzIGFzICRyb3cgKSB7CgkJZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgkJZWNobyAiaWQ9eyRyb3dbJ2lkJ119XG4iOwoJCWVjaG8gIm5hbWU9XCJ7JHJvd1snbmFtZSddfVwiXG4iOwoJCWVjaG8gImRlc2NyaXB0aW9uPVwieyRyb3dbJ2Rlc2NyaXB0aW9uJ119XCJcbiI7CgkJZWNobyAic2NvcGU9eyRyb3dbJ3Njb3BlJ119XG4iOwoJCWVjaG8gImFjdGl2ZT17JHJvd1snYWN0aXZlJ119XG4iOwoJCWVjaG8gInByaW9yaXR5PXskcm93Wydwcmlvcml0eSddfVxuIjsKCQllY2hvICJjb2RlIGxlbmd0aD0iIC4gc3RybGVuKCAkcm93Wydjb2RlJ10gKSAuICIgYnl0ZXNcbiI7CgkJZWNobyAiXG4tLS0gRlVMTCBDT0RFICh2ZXJiYXRpbSkgLS0tXG4iOwoJCWVjaG8gJHJvd1snY29kZSddIC4gIlxuIjsKCQllY2hvICItLS0gRU5EIENPREUgLS0tXG4iOwoJfQp9CgplY2hvICJcbk9LOiByZWFkLW9ubHkgcXVlcnkgY29tcGxldGVkXG4iOwo=" | base64 -d > /tmp/query-global-header-snippet.php;
+
+             php -l /tmp/query-global-header-snippet.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on query script";
+               rm -f /tmp/query-global-header-snippet.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/query-global-header-snippet.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/query-global-header-snippet.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - see log above for details";
+               exit 1;
+             fi;
+
+             echo "OK: workflow completed successfully"'

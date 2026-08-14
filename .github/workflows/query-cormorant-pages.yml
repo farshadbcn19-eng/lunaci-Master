@@ -1,0 +1,63 @@
+name: Query - Cormorant Garamond occurrences on pages 57/59, font-face+root on page 60 (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  query:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Query post_content for pages 57, 59, 60 (read-only)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJG5lZWRsZTEgPSAiZm9udC1mYW1pbHk6J0Nvcm1vcmFudCBHYXJhbW9uZCcsc2VyaWYiOwokbmVlZGxlMiA9ICJmYW1pbHk9Q29ybW9yYW50K0dhcmFtb25kIjsKCmZ1bmN0aW9uIGx1bmFjaV9yZXBvcnRfcGFnZSggJHBhZ2VfaWQsICRsYWJlbCwgJG5lZWRsZTEsICRuZWVkbGUyICkgewoJZ2xvYmFsICR3cGRiOwoKCWVjaG8gIiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjXG4iOwoJZWNobyAiUEFHRSBJRD17JHBhZ2VfaWR9ICh7JGxhYmVsfSlcbiI7CgllY2hvICIjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjI1xuIjsKCgkkY29udGVudCA9ICR3cGRiLT5nZXRfdmFyKAoJCSR3cGRiLT5wcmVwYXJlKCAiU0VMRUNUIHBvc3RfY29udGVudCBGUk9NIHskd3BkYi0+cG9zdHN9IFdIRVJFIElEID0gJWQiLCAkcGFnZV9pZCApCgkpOwoKCWlmICggbnVsbCA9PT0gJGNvbnRlbnQgKSB7CgkJZWNobyAiQUJPUlQ6IHBhZ2UgSUQ9eyRwYWdlX2lkfSBub3QgZm91bmQgKG5vIHBvc3RfY29udGVudCByb3cpLlxuXG4iOwoJCXJldHVybjsKCX0KCgllY2hvICJwb3N0X2NvbnRlbnQgYnl0ZSBsZW5ndGg6ICIgLiBzdHJsZW4oICRjb250ZW50ICkgLiAiIGJ5dGVzXG4iOwoKCSRjb3VudDEgPSBzdWJzdHJfY291bnQoICRjb250ZW50LCAkbmVlZGxlMSApOwoJJGNvdW50MiA9IHN1YnN0cl9jb3VudCggJGNvbnRlbnQsICRuZWVkbGUyICk7CgoJZWNobyAiT2NjdXJyZW5jZXMgb2YgXCJ7JG5lZWRsZTF9XCI6IHskY291bnQxfVxuIjsKCWVjaG8gIk9jY3VycmVuY2VzIG9mIFwieyRuZWVkbGUyfVwiOiB7JGNvdW50Mn1cblxuIjsKfQoKbHVuYWNpX3JlcG9ydF9wYWdlKCA1NywgJ0hvbWUnLCAkbmVlZGxlMSwgJG5lZWRsZTIgKTsKbHVuYWNpX3JlcG9ydF9wYWdlKCA1OSwgJ0Fib3V0IFVzJywgJG5lZWRsZTEsICRuZWVkbGUyICk7CgplY2hvICIjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjI1xuIjsKZWNobyAiUEFHRSBJRD02MCAoQ29udGFjdCkgLSBmdWxsIHBvc3RfY29udGVudCBsZW5ndGggKyBAZm9udC1mYWNlIGJsb2NrcyArIDpyb290IGJsb2NrXG4iOwplY2hvICIjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjI1xuIjsKCiRjb250ZW50NjAgPSAkd3BkYi0+Z2V0X3ZhcigKCSR3cGRiLT5wcmVwYXJlKCAiU0VMRUNUIHBvc3RfY29udGVudCBGUk9NIHskd3BkYi0+cG9zdHN9IFdIRVJFIElEID0gJWQiLCA2MCApCik7CgppZiAoIG51bGwgPT09ICRjb250ZW50NjAgKSB7CgllY2hvICJBQk9SVDogcGFnZSBJRD02MCBub3QgZm91bmQgKG5vIHBvc3RfY29udGVudCByb3cpLlxuIjsKfSBlbHNlIHsKCWVjaG8gInBvc3RfY29udGVudCBieXRlIGxlbmd0aDogIiAuIHN0cmxlbiggJGNvbnRlbnQ2MCApIC4gIiBieXRlc1xuXG4iOwoKCWVjaG8gIi0tLSBAZm9udC1mYWNlIGJsb2NrcyByZWZlcmVuY2luZyAnL3dwLWNvbnRlbnQvdGhlbWVzL2x1bmFjaS9mb250cy8nIC0tLVxuIjsKCSRvZmZzZXQgPSAwOwoJJGZvdW5kX2FueV9mb250ZmFjZSA9IGZhbHNlOwoJd2hpbGUgKCBmYWxzZSAhPT0gKCAkcG9zID0gc3RycG9zKCAkY29udGVudDYwLCAnQGZvbnQtZmFjZScsICRvZmZzZXQgKSApICkgewoJCSRjbG9zZSA9IHN0cnBvcyggJGNvbnRlbnQ2MCwgJ30nLCAkcG9zICk7CgkJaWYgKCBmYWxzZSA9PT0gJGNsb3NlICkgewoJCQllY2hvICJXQVJOSU5HOiBmb3VuZCAnQGZvbnQtZmFjZScgYXQgb2Zmc2V0IHskcG9zfSBidXQgbm8gY2xvc2luZyAnfScgZm91bmQgLSBzdG9wcGluZyBzY2FuLlxuIjsKCQkJYnJlYWs7CgkJfQoJCSRibG9jayA9IHN1YnN0ciggJGNvbnRlbnQ2MCwgJHBvcywgJGNsb3NlIC0gJHBvcyArIDEgKTsKCQlpZiAoIGZhbHNlICE9PSBzdHJwb3MoICRibG9jaywgJy93cC1jb250ZW50L3RoZW1lcy9sdW5hY2kvZm9udHMvJyApICkgewoJCQkkZm91bmRfYW55X2ZvbnRmYWNlID0gdHJ1ZTsKCQkJZWNobyAiLS0tIGJsb2NrIGF0IG9mZnNldCB7JHBvc30gLS0tXG4iOwoJCQllY2hvICRibG9jayAuICJcblxuIjsKCQl9CgkJJG9mZnNldCA9ICRjbG9zZSArIDE7Cgl9CglpZiAoICEgJGZvdW5kX2FueV9mb250ZmFjZSApIHsKCQllY2hvICJObyBAZm9udC1mYWNlIGJsb2NrIHJlZmVyZW5jaW5nICcvd3AtY29udGVudC90aGVtZXMvbHVuYWNpL2ZvbnRzLycgZm91bmQuXG5cbiI7Cgl9CgoJZWNobyAiLS0tIDpyb290IGJsb2NrIC0tLVxuIjsKCSRyb290X3BvcyA9IHN0cnBvcyggJGNvbnRlbnQ2MCwgJzpyb290JyApOwoJaWYgKCBmYWxzZSA9PT0gJHJvb3RfcG9zICkgewoJCWVjaG8gIk5vICc6cm9vdCcgc2VsZWN0b3IgZm91bmQgaW4gcG9zdF9jb250ZW50LlxuIjsKCX0gZWxzZSB7CgkJJGJyYWNlX29wZW4gPSBzdHJwb3MoICRjb250ZW50NjAsICd7JywgJHJvb3RfcG9zICk7CgkJaWYgKCBmYWxzZSA9PT0gJGJyYWNlX29wZW4gKSB7CgkJCWVjaG8gIldBUk5JTkc6IGZvdW5kICc6cm9vdCcgYXQgb2Zmc2V0IHskcm9vdF9wb3N9IGJ1dCBubyBvcGVuaW5nICd7JyBmb3VuZC5cbiI7CgkJfSBlbHNlIHsKCQkJJGJyYWNlX2Nsb3NlID0gc3RycG9zKCAkY29udGVudDYwLCAnfScsICRicmFjZV9vcGVuICk7CgkJCWlmICggZmFsc2UgPT09ICRicmFjZV9jbG9zZSApIHsKCQkJCWVjaG8gIldBUk5JTkc6IGZvdW5kICc6cm9vdCB7JyBidXQgbm8gY2xvc2luZyAnfScgZm91bmQuXG4iOwoJCQl9IGVsc2UgewoJCQkJJHJvb3RfYmxvY2sgPSBzdWJzdHIoICRjb250ZW50NjAsICRyb290X3BvcywgJGJyYWNlX2Nsb3NlIC0gJHJvb3RfcG9zICsgMSApOwoJCQkJJGhhc19zZXJpZiAgPSAoIGZhbHNlICE9PSBzdHJwb3MoICRyb290X2Jsb2NrLCAnLS1zZXJpZicgKSApOwoJCQkJJGhhc19zYW5zICAgPSAoIGZhbHNlICE9PSBzdHJwb3MoICRyb290X2Jsb2NrLCAnLS1zYW5zJyApICk7CgkJCQllY2hvICJCbG9jayBmb3VuZCBhdCBvZmZzZXQgeyRyb290X3Bvc30gKGNvbnRhaW5zIC0tc2VyaWY6ICIgLiAoICRoYXNfc2VyaWYgPyAnWUVTJyA6ICdOTycgKSAuICIsIGNvbnRhaW5zIC0tc2FuczogIiAuICggJGhhc19zYW5zID8gJ1lFUycgOiAnTk8nICkgLiAiKTpcbiI7CgkJCQllY2hvICRyb290X2Jsb2NrIC4gIlxuIjsKCQkJfQoJCX0KCX0KfQoKZWNobyAiXG5PSzogcmVhZC1vbmx5IHF1ZXJ5IGNvbXBsZXRlZFxuIjsK" | base64 -d > /tmp/query-cormorant-pages.php;
+
+             php -l /tmp/query-cormorant-pages.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on query script";
+               rm -f /tmp/query-cormorant-pages.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/query-cormorant-pages.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/query-cormorant-pages.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - see log above for details";
+               exit 1;
+             fi;
+
+             echo "OK: workflow completed successfully"'

@@ -1,0 +1,70 @@
+name: Full cache clear (LiteSpeed page + object cache, WP object cache) - no writes
+
+on:
+  workflow_dispatch:
+
+jobs:
+  clear:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Run all cache-clear commands unconditionally
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "";
+             echo "==================== STEP 1: wp litespeed-purge all ====================";
+             wp litespeed-purge all --path="$WP_PATH";
+             echo "(exit code: $?)";
+
+             echo "";
+             echo "==================== STEP 2: wp cache flush (WordPress object cache, unconditional) ====================";
+             wp cache flush --path="$WP_PATH";
+             echo "(exit code: $?)";
+
+             echo "";
+             echo "==================== STEP 3: check for wp litespeed-purge object subcommand ====================";
+             HELP_OUTPUT=$(wp litespeed-purge --help --path="$WP_PATH" 2>&1);
+             echo "$HELP_OUTPUT";
+             if echo "$HELP_OUTPUT" | grep -qw "object"; then
+               echo "";
+               echo "-- \"object\" subcommand found in help output - running: wp litespeed-purge object --";
+               wp litespeed-purge object --path="$WP_PATH";
+               echo "(exit code: $?)";
+             else
+               echo "";
+               echo "-- \"object\" subcommand not listed in wp litespeed-purge --help output - skipping (not treated as a failure) --";
+             fi;
+
+             echo "";
+             echo "OK: full cache clear completed"'

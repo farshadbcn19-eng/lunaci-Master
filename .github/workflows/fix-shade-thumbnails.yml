@@ -1,0 +1,107 @@
+name: Fix - shade swatch thumbnails for 32 product variations (guarded, isolated)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: STEP A/B/C - update _thumbnail_id for 32 variations, per-item isolated
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJGl0ZW1zID0gYXJyYXkoCgkvLyBMaXAgRml4IEVOIChwYXJlbnQgMzI4KQoJYXJyYXkoIDY1NywgNDMxLCAzNDcsICdMaXAgRml4IEVOJyApLAoJYXJyYXkoIDY1OCwgNDMyLCAzNDksICdMaXAgRml4IEVOJyApLAoJYXJyYXkoIDY1OSwgNDMzLCAzNTEsICdMaXAgRml4IEVOJyApLAoJYXJyYXkoIDY2MCwgNDM0LCAzNTMsICdMaXAgRml4IEVOJyApLAoJYXJyYXkoIDY2MSwgNDM1LCAzNTUsICdMaXAgRml4IEVOJyApLAoJYXJyYXkoIDY2MiwgNDM2LCAzNTcsICdMaXAgRml4IEVOJyApLAoJLy8gTGlwIEZpeCBFUyAocGFyZW50IDcxMSkKCWFycmF5KCA3MTIsIDQzMSwgMzQ3LCAnTGlwIEZpeCBFUycgKSwKCWFycmF5KCA3MTMsIDQzMiwgMzQ5LCAnTGlwIEZpeCBFUycgKSwKCWFycmF5KCA3MTQsIDQzMywgMzUxLCAnTGlwIEZpeCBFUycgKSwKCWFycmF5KCA3MTUsIDQzNCwgMzUzLCAnTGlwIEZpeCBFUycgKSwKCWFycmF5KCA3MTYsIDQzNSwgMzU1LCAnTGlwIEZpeCBFUycgKSwKCWFycmF5KCA3MTcsIDQzNiwgMzU3LCAnTGlwIEZpeCBFUycgKSwKCS8vIExpcGdsb3NzIFZlbHZldCBFTiAocGFyZW50IDMyNykKCWFycmF5KCA2NTMsIDQyNywgMzg5LCAnTGlwZ2xvc3MgVmVsdmV0IEVOJyApLAoJYXJyYXkoIDY1NCwgNDI4LCAzOTAsICdMaXBnbG9zcyBWZWx2ZXQgRU4nICksCglhcnJheSggNjU1LCA0MjksIDM5MSwgJ0xpcGdsb3NzIFZlbHZldCBFTicgKSwKCWFycmF5KCA2NTYsIDQzMCwgMzkyLCAnTGlwZ2xvc3MgVmVsdmV0IEVOJyApLAoJLy8gTGlwZ2xvc3MgVmVsdmV0IEVTIChwYXJlbnQgNzIzKQoJYXJyYXkoIDcyNCwgNDI3LCAzODksICdMaXBnbG9zcyBWZWx2ZXQgRVMnICksCglhcnJheSggNzI1LCA0MjgsIDM5MCwgJ0xpcGdsb3NzIFZlbHZldCBFUycgKSwKCWFycmF5KCA3MjYsIDQyOSwgMzkxLCAnTGlwZ2xvc3MgVmVsdmV0IEVTJyApLAoJYXJyYXkoIDcyNywgNDMwLCAzOTIsICdMaXBnbG9zcyBWZWx2ZXQgRVMnICksCgkvLyBGb3VuZGF0aW9uIEVOIChwYXJlbnQgMzI0KQoJYXJyYXkoIDYzOCwgNDM3LCAzOTMsICdGb3VuZGF0aW9uIEVOJyApLAoJYXJyYXkoIDYzOSwgNDM4LCAzOTQsICdGb3VuZGF0aW9uIEVOJyApLAoJYXJyYXkoIDY0MCwgNDM5LCAzOTUsICdGb3VuZGF0aW9uIEVOJyApLAoJYXJyYXkoIDY0MSwgNDQwLCAzOTYsICdGb3VuZGF0aW9uIEVOJyApLAoJYXJyYXkoIDY0MiwgNDQxLCAzOTcsICdGb3VuZGF0aW9uIEVOJyApLAoJYXJyYXkoIDY0MywgNDQyLCAzOTgsICdGb3VuZGF0aW9uIEVOJyApLAoJLy8gRm91bmRhdGlvbiBFUyAocGFyZW50IDY4NikKCWFycmF5KCA3MDAsIDQzNywgMzkzLCAnRm91bmRhdGlvbiBFUycgKSwKCWFycmF5KCA3MDEsIDQzOCwgMzk0LCAnRm91bmRhdGlvbiBFUycgKSwKCWFycmF5KCA3MDIsIDQzOSwgMzk1LCAnRm91bmRhdGlvbiBFUycgKSwKCWFycmF5KCA3MDMsIDQ0MCwgMzk2LCAnRm91bmRhdGlvbiBFUycgKSwKCWFycmF5KCA3MDQsIDQ0MSwgMzk3LCAnRm91bmRhdGlvbiBFUycgKSwKCWFycmF5KCA3MDUsIDQ0MiwgMzk4LCAnRm91bmRhdGlvbiBFUycgKSwKKTsKCiRyZXN1bHRzID0gYXJyYXkoKTsKCmZvcmVhY2ggKCAkaXRlbXMgYXMgJGl0ZW0gKSB7CglsaXN0KCAkdmlkLCAkZXhwZWN0ZWRfb2xkLCAkbmV3X2lkLCAkZ3JvdXAgKSA9ICRpdGVtOwoKCWVjaG8gIi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG4iOwoJZWNobyAiVmFyaWF0aW9uIElEPXskdmlkfSAoeyRncm91cH0pICBleHBlY3RlZF9vbGQ9eyRleHBlY3RlZF9vbGR9ICBuZXc9eyRuZXdfaWR9XG4iOwoKCWVjaG8gIi0tIFNURVAgQTogUFJFUEFSRSAtLVxuIjsKCgkkcm93X2NvdW50ID0gKGludCkgJHdwZGItPmdldF92YXIoCgkJJHdwZGItPnByZXBhcmUoCgkJCSJTRUxFQ1QgQ09VTlQoKikgRlJPTSB7JHdwZGItPnBvc3RtZXRhfSBXSEVSRSBwb3N0X2lkID0gJWQgQU5EIG1ldGFfa2V5ID0gJ190aHVtYm5haWxfaWQnIiwKCQkJJHZpZAoJCSkKCSk7CgllY2hvICJDSEVDSzogbnVtYmVyIG9mIF90aHVtYm5haWxfaWQgcm93cyBmb3IgcG9zdF9pZD17JHZpZH06IHskcm93X2NvdW50fSAoZXhwZWN0ZWQgMSlcbiI7CgoJaWYgKCAxICE9PSAkcm93X2NvdW50ICkgewoJCWVjaG8gIlNLSVAgKHZhcmlhdGlvbiB7JHZpZH0pOiBleHBlY3RlZCBleGFjdGx5IDEgX3RodW1ibmFpbF9pZCByb3csIGZvdW5kIHskcm93X2NvdW50fS4gTm8gd3JpdGUgcGVyZm9ybWVkLlxuXG4iOwoJCSRyZXN1bHRzW10gPSBhcnJheSggJHZpZCwgJGV4cGVjdGVkX29sZCwgJG5ld19pZCwgIlNLSVBQRUQ6IHskcm93X2NvdW50fSByb3dzIGZvdW5kIChleHBlY3RlZCAxKSIgKTsKCQljb250aW51ZTsKCX0KCgkkY3VycmVudF92YWx1ZSA9ICR3cGRiLT5nZXRfdmFyKAoJCSR3cGRiLT5wcmVwYXJlKAoJCQkiU0VMRUNUIG1ldGFfdmFsdWUgRlJPTSB7JHdwZGItPnBvc3RtZXRhfSBXSEVSRSBwb3N0X2lkID0gJWQgQU5EIG1ldGFfa2V5ID0gJ190aHVtYm5haWxfaWQnIiwKCQkJJHZpZAoJCSkKCSk7CgllY2hvICJDSEVDSzogY3VycmVudCBtZXRhX3ZhbHVlID0gIiAuIHZhcl9leHBvcnQoICRjdXJyZW50X3ZhbHVlLCB0cnVlICkgLiAiIChleHBlY3RlZCBcInskZXhwZWN0ZWRfb2xkfVwiKVxuIjsKCglpZiAoIChpbnQpICRjdXJyZW50X3ZhbHVlICE9PSAoaW50KSAkZXhwZWN0ZWRfb2xkICkgewoJCWVjaG8gIlNLSVAgKHZhcmlhdGlvbiB7JHZpZH0pOiBjdXJyZW50IG1ldGFfdmFsdWUgZG9lcyBub3QgbWF0Y2ggZXhwZWN0ZWQuIE5vIHdyaXRlIHBlcmZvcm1lZC5cblxuIjsKCQkkcmVzdWx0c1tdID0gYXJyYXkoICR2aWQsICRleHBlY3RlZF9vbGQsICRuZXdfaWQsICJTS0lQUEVEOiBmb3VuZCBtZXRhX3ZhbHVlPXskY3VycmVudF92YWx1ZX0sIGV4cGVjdGVkIHskZXhwZWN0ZWRfb2xkfSIgKTsKCQljb250aW51ZTsKCX0KCgllY2hvICJPSyAodmFyaWF0aW9uIHskdmlkfSk6IFNURVAgQSBwYXNzZWQuIFByb2NlZWRpbmcgdG8gU1RFUCBCLlxuIjsKCgllY2hvICItLSBTVEVQIEI6IENPTU1JVCAtLVxuIjsKCgkkdXBkYXRlX3Jlc3VsdCA9ICR3cGRiLT51cGRhdGUoCgkJJHdwZGItPnBvc3RtZXRhLAoJCWFycmF5KCAnbWV0YV92YWx1ZScgPT4gJG5ld19pZCApLAoJCWFycmF5KCAncG9zdF9pZCcgPT4gJHZpZCwgJ21ldGFfa2V5JyA9PiAnX3RodW1ibmFpbF9pZCcgKSwKCQlhcnJheSggJyVzJyApLAoJCWFycmF5KCAnJWQnLCAnJXMnICkKCSk7CgoJaWYgKCBmYWxzZSA9PT0gJHVwZGF0ZV9yZXN1bHQgKSB7CgkJZWNobyAiRVJST1IgKHZhcmlhdGlvbiB7JHZpZH0pOiBcJHdwZGItPnVwZGF0ZSgpIGZhaWxlZDogeyR3cGRiLT5sYXN0X2Vycm9yfVxuXG4iOwoJCSRyZXN1bHRzW10gPSBhcnJheSggJHZpZCwgJGV4cGVjdGVkX29sZCwgJG5ld19pZCwgJ0VSUk9SOiB1cGRhdGUoKSBmYWlsZWQnICk7CgkJY29udGludWU7Cgl9CgoJZWNobyAiT0sgKHZhcmlhdGlvbiB7JHZpZH0pOiBVUERBVEUgZXhlY3V0ZWQsIHJvd3MgYWZmZWN0ZWQ9eyR1cGRhdGVfcmVzdWx0fVxuIjsKCgllY2hvICItLSBTVEVQIEM6IFZFUklGWSAtLVxuIjsKCgkkYWZ0ZXJfdmFsdWUgPSAkd3BkYi0+Z2V0X3ZhcigKCQkkd3BkYi0+cHJlcGFyZSgKCQkJIlNFTEVDVCBtZXRhX3ZhbHVlIEZST00geyR3cGRiLT5wb3N0bWV0YX0gV0hFUkUgcG9zdF9pZCA9ICVkIEFORCBtZXRhX2tleSA9ICdfdGh1bWJuYWlsX2lkJyIsCgkJCSR2aWQKCQkpCgkpOwoKCSRtYXRjaGVzID0gKCAoaW50KSAkYWZ0ZXJfdmFsdWUgPT09IChpbnQpICRuZXdfaWQgKTsKCWVjaG8gIkNIRUNLOiByZS1yZWFkIG1ldGFfdmFsdWUgPSAiIC4gdmFyX2V4cG9ydCggJGFmdGVyX3ZhbHVlLCB0cnVlICkgLiAiIChleHBlY3RlZCBcInskbmV3X2lkfVwiKTogIiAuICggJG1hdGNoZXMgPyAnWUVTJyA6ICdOTycgKSAuICJcblxuIjsKCglpZiAoICRtYXRjaGVzICkgewoJCSRyZXN1bHRzW10gPSBhcnJheSggJHZpZCwgJGV4cGVjdGVkX29sZCwgJG5ld19pZCwgJ1NVQ0NFU1MnICk7Cgl9IGVsc2UgewoJCSRyZXN1bHRzW10gPSBhcnJheSggJHZpZCwgJGV4cGVjdGVkX29sZCwgJG5ld19pZCwgIkFCT1JULUFGVEVSLVdSSVRFOiByZS1yZWFkIHNob3dzIHskYWZ0ZXJfdmFsdWV9LCBleHBlY3RlZCB7JG5ld19pZH0iICk7Cgl9Cn0KCmVjaG8gIlxuIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjI1xuIjsKZWNobyAiRklOQUwgU1VNTUFSWVxuIjsKZWNobyAiIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjI1xuIjsKcHJpbnRmKCAiJS0xNHMgJS02cyAlLTZzICVzXG4iLCAndmFyaWF0aW9uX2lkJywgJ29sZCcsICduZXcnLCAnc3RhdHVzJyApOwokc3VjY2Vzc19jb3VudCA9IDA7CiRza2lwX2NvdW50ICAgID0gMDsKJGVycm9yX2NvdW50ICAgPSAwOwpmb3JlYWNoICggJHJlc3VsdHMgYXMgJHIgKSB7CglsaXN0KCAkdmlkLCAkb2xkLCAkbmV3LCAkc3RhdHVzICkgPSAkcjsKCXByaW50ZiggIiUtMTRzICUtNnMgJS02cyAlc1xuIiwgJHZpZCwgJG9sZCwgJG5ldywgJHN0YXR1cyApOwoJaWYgKCAnU1VDQ0VTUycgPT09ICRzdGF0dXMgKSB7CgkJJHN1Y2Nlc3NfY291bnQrKzsKCX0gZWxzZWlmICggMCA9PT0gc3RycG9zKCAkc3RhdHVzLCAnU0tJUFBFRCcgKSApIHsKCQkkc2tpcF9jb3VudCsrOwoJfSBlbHNlIHsKCQkkZXJyb3JfY291bnQrKzsKCX0KfQoKZWNobyAiXG5Ub3RhbHM6ICIgLiBjb3VudCggJHJlc3VsdHMgKSAuICIgcHJvY2Vzc2VkLCB7JHN1Y2Nlc3NfY291bnR9IHN1Y2NlZWRlZCwgeyRza2lwX2NvdW50fSBza2lwcGVkLCB7JGVycm9yX2NvdW50fSBlcnJvcmVkLlxuIjsKCmVjaG8gIlxuT0s6IHNjcmlwdCBjb21wbGV0ZWQgKGNhY2hlIHB1cmdlIHJ1bnMgYXMgYSBzZXBhcmF0ZSBTU0ggc2hlbGwgc3RlcCBvdXRzaWRlIHRoaXMgUEhQIHNjcmlwdCkuXG4iOwo=" | base64 -d > /tmp/fix-shade-thumbnails.php;
+
+             php -l /tmp/fix-shade-thumbnails.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on write script";
+               rm -f /tmp/fix-shade-thumbnails.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/fix-shade-thumbnails.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/fix-shade-thumbnails.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - see log above for details";
+               exit 1;
+             fi;
+
+             echo "OK: guarded write step completed successfully"'
+
+      - name: Purge cache (both commands unconditionally, no exec())
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "";
+             echo "==================== wp litespeed-purge all ====================";
+             wp litespeed-purge all --path="$WP_PATH";
+             echo "(exit code: $?)";
+
+             echo "";
+             echo "==================== wp cache flush (unconditional) ====================";
+             wp cache flush --path="$WP_PATH";
+             echo "(exit code: $?)";
+
+             echo "";
+             echo "OK: cache purge completed"'

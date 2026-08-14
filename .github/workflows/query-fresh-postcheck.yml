@@ -1,0 +1,63 @@
+name: Query - fresh DB read of pages 57/59 post_content + post_modified (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  query:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Fresh wp_posts SELECT for pages 57/59 (read-only)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJG5lZWRsZV9jb3Jtb3JhbnQgPSAnQ29ybW9yYW50JzsKJG5lZWRsZV90cmFkZWdvdGhpYyA9ICdUcmFkZSBHb3RoaWMgTFQgU3RkIEV4dGVuZGVkJzsKCmZvcmVhY2ggKCBhcnJheSggNTcgPT4gJ0hvbWUnLCA1OSA9PiAnQWJvdXQgVXMnICkgYXMgJHBhZ2VfaWQgPT4gJGxhYmVsICkgewoJZWNobyAiIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyNcbiI7CgllY2hvICJQQUdFIElEPXskcGFnZV9pZH0gKHskbGFiZWx9KSAtIGZyZXNoIFNFTEVDVCBwb3N0X2NvbnRlbnQgRlJPTSB3cF9wb3N0c1xuIjsKCWVjaG8gIiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjXG4iOwoKCSRjb250ZW50ID0gJHdwZGItPmdldF92YXIoCgkJJHdwZGItPnByZXBhcmUoICJTRUxFQ1QgcG9zdF9jb250ZW50IEZST00geyR3cGRiLT5wb3N0c30gV0hFUkUgSUQgPSAlZCIsICRwYWdlX2lkICkKCSk7CgoJaWYgKCBudWxsID09PSAkY29udGVudCApIHsKCQllY2hvICJBQk9SVDogcGFnZSBJRD17JHBhZ2VfaWR9IG5vdCBmb3VuZC5cblxuIjsKCQljb250aW51ZTsKCX0KCgllY2hvICJwb3N0X2NvbnRlbnQgYnl0ZSBsZW5ndGg6ICIgLiBzdHJsZW4oICRjb250ZW50ICkgLiAiIGJ5dGVzXG4iOwoJZWNobyAiT2NjdXJyZW5jZXMgb2YgXCJ7JG5lZWRsZV9jb3Jtb3JhbnR9XCI6ICIgLiBzdWJzdHJfY291bnQoICRjb250ZW50LCAkbmVlZGxlX2Nvcm1vcmFudCApIC4gIlxuIjsKCWVjaG8gIk9jY3VycmVuY2VzIG9mIFwieyRuZWVkbGVfdHJhZGVnb3RoaWN9XCI6ICIgLiBzdWJzdHJfY291bnQoICRjb250ZW50LCAkbmVlZGxlX3RyYWRlZ290aGljICkgLiAiXG5cbiI7Cn0KCmVjaG8gIiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjXG4iOwplY2hvICJwb3N0X21vZGlmaWVkIC8gcG9zdF9tb2RpZmllZF9nbXQgZm9yIHBhZ2VzIDU3IGFuZCA1OVxuIjsKZWNobyAiIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyNcbiI7Cgokcm93cyA9ICR3cGRiLT5nZXRfcmVzdWx0cygKCSJTRUxFQ1QgSUQsIHBvc3RfbW9kaWZpZWQsIHBvc3RfbW9kaWZpZWRfZ210IEZST00geyR3cGRiLT5wb3N0c30gV0hFUkUgSUQgSU4gKDU3LCA1OSkgT1JERVIgQlkgSUQiLAoJQVJSQVlfQQopOwoKaWYgKCBlbXB0eSggJHJvd3MgKSApIHsKCWVjaG8gIk5vIHJvd3MgZm91bmQgZm9yIElEcyA1NywgNTkuXG4iOwp9IGVsc2UgewoJZm9yZWFjaCAoICRyb3dzIGFzICRyb3cgKSB7CgkJZWNobyAiSUQ9eyRyb3dbJ0lEJ119ICBwb3N0X21vZGlmaWVkPXskcm93Wydwb3N0X21vZGlmaWVkJ119ICBwb3N0X21vZGlmaWVkX2dtdD17JHJvd1sncG9zdF9tb2RpZmllZF9nbXQnXX1cbiI7Cgl9Cn0KCmVjaG8gIlxuT0s6IHJlYWQtb25seSBxdWVyeSBjb21wbGV0ZWRcbiI7Cg==" | base64 -d > /tmp/query-fresh-postcheck.php;
+
+             php -l /tmp/query-fresh-postcheck.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on query script";
+               rm -f /tmp/query-fresh-postcheck.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/query-fresh-postcheck.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/query-fresh-postcheck.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - see log above for details";
+               exit 1;
+             fi;
+
+             echo "OK: workflow completed successfully"'

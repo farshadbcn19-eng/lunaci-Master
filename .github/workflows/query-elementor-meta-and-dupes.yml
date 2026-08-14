@@ -1,0 +1,63 @@
+name: Query - elementor meta for pages 59/57/60 and about-us slug duplicates (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  query:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Query elementor meta + slug duplicates (read-only)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKZnVuY3Rpb24gbHVuYWNpX2NoZWNrX3BhZ2VfbWV0YSggJHBhZ2VfaWQsICRsYWJlbCApIHsKCWdsb2JhbCAkd3BkYjsKCgllY2hvICI9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PVxuIjsKCWVjaG8gIlBhZ2UgSUQ9eyRwYWdlX2lkfSAoeyRsYWJlbH0pXG4iOwoJZWNobyAiPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiI7CgoJJHBvc3QgPSAkd3BkYi0+Z2V0X3JvdygKCQkkd3BkYi0+cHJlcGFyZSggIlNFTEVDVCBJRCwgcG9zdF90aXRsZSwgcG9zdF90eXBlLCBwb3N0X3N0YXR1cyBGUk9NIHskd3BkYi0+cG9zdHN9IFdIRVJFIElEID0gJWQiLCAkcGFnZV9pZCApLAoJCUFSUkFZX0EKCSk7CgoJaWYgKCAhICRwb3N0ICkgewoJCWVjaG8gIkFCT1JUOiBwb3N0IElEPXskcGFnZV9pZH0gbm90IGZvdW5kLlxuXG4iOwoJCXJldHVybjsKCX0KCgllY2hvICJwb3N0X3RpdGxlPVwieyRwb3N0Wydwb3N0X3RpdGxlJ119XCIgIHBvc3RfdHlwZT17JHBvc3RbJ3Bvc3RfdHlwZSddfSAgcG9zdF9zdGF0dXM9eyRwb3N0Wydwb3N0X3N0YXR1cyddfVxuXG4iOwoKCSRlbGVtZW50b3JfZGF0YSA9ICR3cGRiLT5nZXRfdmFyKAoJCSR3cGRiLT5wcmVwYXJlKCAiU0VMRUNUIG1ldGFfdmFsdWUgRlJPTSB7JHdwZGItPnBvc3RtZXRhfSBXSEVSRSBwb3N0X2lkID0gJWQgQU5EIG1ldGFfa2V5ID0gJ19lbGVtZW50b3JfZGF0YSciLCAkcGFnZV9pZCApCgkpOwoKCWlmICggbnVsbCA9PT0gJGVsZW1lbnRvcl9kYXRhICkgewoJCWVjaG8gIl9lbGVtZW50b3JfZGF0YTogTk9UIFNFVCAobm8gcm93IGZvdW5kKVxuIjsKCX0gZWxzZSB7CgkJJGxlbiA9IHN0cmxlbiggJGVsZW1lbnRvcl9kYXRhICk7CgkJZWNobyAiX2VsZW1lbnRvcl9kYXRhOiBFWElTVFMsIGJ5dGUgbGVuZ3RoPXskbGVufVxuIjsKCQllY2hvICJGaXJzdCAzMDAgY2hhcmFjdGVyczogIiAuIHZhcl9leHBvcnQoIHN1YnN0ciggJGVsZW1lbnRvcl9kYXRhLCAwLCAzMDAgKSwgdHJ1ZSApIC4gIlxuIjsKCX0KCgkkZWRpdF9tb2RlID0gJHdwZGItPmdldF92YXIoCgkJJHdwZGItPnByZXBhcmUoICJTRUxFQ1QgbWV0YV92YWx1ZSBGUk9NIHskd3BkYi0+cG9zdG1ldGF9IFdIRVJFIHBvc3RfaWQgPSAlZCBBTkQgbWV0YV9rZXkgPSAnX2VsZW1lbnRvcl9lZGl0X21vZGUnIiwgJHBhZ2VfaWQgKQoJKTsKCWVjaG8gIl9lbGVtZW50b3JfZWRpdF9tb2RlOiAiIC4gKCBudWxsID09PSAkZWRpdF9tb2RlID8gJ05PVCBTRVQnIDogdmFyX2V4cG9ydCggJGVkaXRfbW9kZSwgdHJ1ZSApICkgLiAiXG4iOwoKCSRwYWdlX3RlbXBsYXRlID0gJHdwZGItPmdldF92YXIoCgkJJHdwZGItPnByZXBhcmUoICJTRUxFQ1QgbWV0YV92YWx1ZSBGUk9NIHskd3BkYi0+cG9zdG1ldGF9IFdIRVJFIHBvc3RfaWQgPSAlZCBBTkQgbWV0YV9rZXkgPSAnX3dwX3BhZ2VfdGVtcGxhdGUnIiwgJHBhZ2VfaWQgKQoJKTsKCWVjaG8gIl93cF9wYWdlX3RlbXBsYXRlOiAiIC4gKCBudWxsID09PSAkcGFnZV90ZW1wbGF0ZSA/ICdOT1QgU0VUJyA6IHZhcl9leHBvcnQoICRwYWdlX3RlbXBsYXRlLCB0cnVlICkgKSAuICJcbiI7CgoJZWNobyAiXG4iOwp9CgplY2hvICIjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjI1xuIjsKZWNobyAiVEFTSyAxICYgMjogX2VsZW1lbnRvcl9kYXRhIC8gX2VsZW1lbnRvcl9lZGl0X21vZGUgLyBfd3BfcGFnZV90ZW1wbGF0ZSBmb3IgcGFnZXMgNTksIDU3LCA2MFxuIjsKZWNobyAiIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyNcblxuIjsKCmx1bmFjaV9jaGVja19wYWdlX21ldGEoIDU5LCAnQWJvdXQgVXMnICk7Cmx1bmFjaV9jaGVja19wYWdlX21ldGEoIDU3LCAnSG9tZScgKTsKbHVuYWNpX2NoZWNrX3BhZ2VfbWV0YSggNjAsICdDb250YWN0JyApOwoKZWNobyAiIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyNcbiI7CmVjaG8gIlRBU0sgMzogZHVwbGljYXRlIHBvc3RzIHdpdGggcG9zdF9uYW1lID0gJ2Fib3V0LXVzJ1xuIjsKZWNobyAiIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyNcblxuIjsKCiRkdXBlcyA9ICR3cGRiLT5nZXRfcmVzdWx0cygKCSJTRUxFQ1QgSUQsIHBvc3RfdGl0bGUsIHBvc3Rfc3RhdHVzLCBwb3N0X3R5cGUgRlJPTSB7JHdwZGItPnBvc3RzfSBXSEVSRSBwb3N0X25hbWUgPSAnYWJvdXQtdXMnIiwKCUFSUkFZX0EKKTsKCmlmICggZW1wdHkoICRkdXBlcyApICkgewoJZWNobyAiTm8gcG9zdHMgZm91bmQgd2l0aCBwb3N0X25hbWUgPSAnYWJvdXQtdXMnLlxuIjsKfSBlbHNlIHsKCWVjaG8gIkZvdW5kICIgLiBjb3VudCggJGR1cGVzICkgLiAiIHBvc3Qocykgd2l0aCBwb3N0X25hbWUgPSAnYWJvdXQtdXMnOlxuXG4iOwoJZm9yZWFjaCAoICRkdXBlcyBhcyAkZCApIHsKCQllY2hvICIgIElEPXskZFsnSUQnXX0gIHBvc3RfdGl0bGU9XCJ7JGRbJ3Bvc3RfdGl0bGUnXX1cIiAgcG9zdF9zdGF0dXM9eyRkWydwb3N0X3N0YXR1cyddfSAgcG9zdF90eXBlPXskZFsncG9zdF90eXBlJ119XG4iOwoJfQp9CgplY2hvICJcbk9LOiByZWFkLW9ubHkgcXVlcnkgY29tcGxldGVkXG4iOwo=" | base64 -d > /tmp/query-elementor-meta-and-dupes.php;
+
+             php -l /tmp/query-elementor-meta-and-dupes.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on query script";
+               rm -f /tmp/query-elementor-meta-and-dupes.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/query-elementor-meta-and-dupes.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/query-elementor-meta-and-dupes.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - see log above for details";
+               exit 1;
+             fi;
+
+             echo "OK: read-only query step completed successfully"'

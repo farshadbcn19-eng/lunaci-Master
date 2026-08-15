@@ -1,0 +1,63 @@
+name: Query - extract all visible widget text from _elementor_data for page 57 (Home, read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  query:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Extract widget text from _elementor_data (read-only)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJHBhZ2VfaWQgICAgICAgICAgID0gNTc7CiRleHBlY3RlZF9ieXRlX2xlbiA9IDE4OTc3OyAvLyBmcm9tIFBSICMxNDUncyBkaWFnbm9zdGljIC0gd2FybmluZyBvbmx5LCBub3QgYW4gYWJvcnQgY29uZGl0aW9uIChyZWFkLW9ubHkgdGFzaykKCmVjaG8gIiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjXG4iOwplY2hvICJFeHRyYWN0IGFsbCB2aXNpYmxlIHdpZGdldCB0ZXh0IGZyb20gX2VsZW1lbnRvcl9kYXRhIGZvciBwYWdlIElEPXskcGFnZV9pZH0gKEhvbWUpXG4iOwplY2hvICIjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjI1xuXG4iOwoKJHJhdyA9ICR3cGRiLT5nZXRfdmFyKAoJJHdwZGItPnByZXBhcmUoICJTRUxFQ1QgbWV0YV92YWx1ZSBGUk9NIHskd3BkYi0+cG9zdG1ldGF9IFdIRVJFIHBvc3RfaWQgPSAlZCBBTkQgbWV0YV9rZXkgPSAnX2VsZW1lbnRvcl9kYXRhJyIsICRwYWdlX2lkICkKKTsKCmlmICggbnVsbCA9PT0gJHJhdyApIHsKCWVjaG8gIkFCT1JUOiBfZWxlbWVudG9yX2RhdGEgbm90IGZvdW5kIGZvciBwYWdlIElEPXskcGFnZV9pZH0uIE5vdGhpbmcgdG8gZXh0cmFjdC5cbiI7CglyZXR1cm47Cn0KCiRhY3R1YWxfYnl0ZV9sZW4gPSBzdHJsZW4oICRyYXcgKTsKZWNobyAiLS0gU1RFUCAxOiBieXRlIGxlbmd0aCBjaGVjayAoaW5mb3JtYXRpb25hbCBvbmx5LCByZWFkLW9ubHkgdGFzaykgLS1cbiI7CmVjaG8gIkN1cnJlbnQgYnl0ZSBsZW5ndGggPSB7JGFjdHVhbF9ieXRlX2xlbn0gKGV4cGVjdGVkIHskZXhwZWN0ZWRfYnl0ZV9sZW59IHBlciBQUiAjMTQ1J3MgZGlhZ25vc3RpYylcbiI7CmlmICggJGFjdHVhbF9ieXRlX2xlbiAhPT0gJGV4cGVjdGVkX2J5dGVfbGVuICkgewoJZWNobyAiV0FSTklORzogYnl0ZSBsZW5ndGggZGlmZmVycyBmcm9tIHRoZSBsYXN0IGRpYWdub3N0aWMgLSBjb250ZW50IG1heSBoYXZlIGNoYW5nZWQgc2luY2UgUFIgIzE0NS4gQ29udGludWluZyBhbnl3YXkgKHJlYWQtb25seSwgbm8gd3JpdGUgYXQgcmlzaykuXG4iOwp9IGVsc2UgewoJZWNobyAiT0s6IGJ5dGUgbGVuZ3RoIG1hdGNoZXMgdGhlIGxhc3QgZGlhZ25vc3RpYy5cbiI7Cn0KZWNobyAiXG4iOwoKZWNobyAiLS0gU1RFUCAyOiBqc29uX2RlY29kZSAtLVxuIjsKJGRlY29kZWQgPSBqc29uX2RlY29kZSggJHJhdywgdHJ1ZSApOwppZiAoIEpTT05fRVJST1JfTk9ORSAhPT0ganNvbl9sYXN0X2Vycm9yKCkgKSB7CgllY2hvICJBQk9SVDoganNvbl9kZWNvZGUgZmFpbGVkOiAiIC4ganNvbl9sYXN0X2Vycm9yX21zZygpIC4gIi4gQ2Fubm90IHByb2NlZWQgd2l0aCBzdHJ1Y3R1cmVkIGV4dHJhY3Rpb24uXG4iOwoJcmV0dXJuOwp9CmVjaG8gIk9LOiBqc29uX2RlY29kZSBzdWNjZWVkZWQuXG5cbiI7CgovKioKICogUmVjdXJzaXZlbHkgd2FsayB0aGUgRWxlbWVudG9yIGVsZW1lbnQgdHJlZSBhbmQgZXh0cmFjdCB2aXNpYmxlIHdpZGdldCB0ZXh0LgogKiBQcmlvcml0eSBmaWVsZHMgcGVyIHdpZGdldCB0eXBlIChodG1sL2hlYWRpbmcvdGV4dC1lZGl0b3IpLCBwbHVzIGFueSBvdGhlcgogKiBzdHJpbmcgc2V0dGluZyBsb25nZXIgdGhhbiAyMCBjaGFyYWN0ZXJzICh0byBmaWx0ZXIgb3V0IGNvbG9ycy9pZHMvZXRjKS4KICovCmZ1bmN0aW9uIGx1bmFjaV9leHRyYWN0X3RleHRzKCAkbm9kZSwgJHBhdGgsICYkcmVzdWx0cyApIHsKCWlmICggISBpc19hcnJheSggJG5vZGUgKSApIHsKCQlyZXR1cm47Cgl9CgoJJGN1cnJlbnRfaWQgICAgID0gaXNzZXQoICRub2RlWydpZCddICkgPyAkbm9kZVsnaWQnXSA6IG51bGw7CgkkY3VycmVudF9lbHR5cGUgPSBpc3NldCggJG5vZGVbJ2VsVHlwZSddICkgPyAkbm9kZVsnZWxUeXBlJ10gOiBudWxsOwoKCWlmICggbnVsbCAhPT0gJGN1cnJlbnRfaWQgJiYgbnVsbCAhPT0gJGN1cnJlbnRfZWx0eXBlICkgewoJCSRwYXRoID0gJHBhdGggLiAnLycgLiAkY3VycmVudF9lbHR5cGUgLiAnW2lkPScgLiAkY3VycmVudF9pZCAuICddJzsKCX0KCglpZiAoICd3aWRnZXQnID09PSAkY3VycmVudF9lbHR5cGUgJiYgaXNzZXQoICRub2RlWydzZXR0aW5ncyddICkgJiYgaXNfYXJyYXkoICRub2RlWydzZXR0aW5ncyddICkgKSB7CgkJJHdpZGdldF90eXBlID0gaXNzZXQoICRub2RlWyd3aWRnZXRUeXBlJ10gKSA/ICRub2RlWyd3aWRnZXRUeXBlJ10gOiAnKHVua25vd24pJzsKCQkkc2V0dGluZ3MgICAgPSAkbm9kZVsnc2V0dGluZ3MnXTsKCQkkY2FwdHVyZWRfa2V5cyA9IGFycmF5KCk7CgoJCWlmICggJ2h0bWwnID09PSAkd2lkZ2V0X3R5cGUgJiYgaXNzZXQoICRzZXR0aW5nc1snaHRtbCddICkgJiYgaXNfc3RyaW5nKCAkc2V0dGluZ3NbJ2h0bWwnXSApICkgewoJCQkkcmVzdWx0c1tdICAgICAgID0gYXJyYXkoICRwYXRoIC4gJy9zZXR0aW5ncy9odG1sJywgJHdpZGdldF90eXBlLCAkc2V0dGluZ3NbJ2h0bWwnXSApOwoJCQkkY2FwdHVyZWRfa2V5c1tdID0gJ2h0bWwnOwoJCX0gZWxzZWlmICggJ2hlYWRpbmcnID09PSAkd2lkZ2V0X3R5cGUgJiYgaXNzZXQoICRzZXR0aW5nc1sndGl0bGUnXSApICYmIGlzX3N0cmluZyggJHNldHRpbmdzWyd0aXRsZSddICkgKSB7CgkJCSRyZXN1bHRzW10gICAgICAgPSBhcnJheSggJHBhdGggLiAnL3NldHRpbmdzL3RpdGxlJywgJHdpZGdldF90eXBlLCAkc2V0dGluZ3NbJ3RpdGxlJ10gKTsKCQkJJGNhcHR1cmVkX2tleXNbXSA9ICd0aXRsZSc7CgkJfSBlbHNlaWYgKCBpbl9hcnJheSggJHdpZGdldF90eXBlLCBhcnJheSggJ3RleHQtZWRpdG9yJywgJ3RleHRfZWRpdG9yJyApLCB0cnVlICkgJiYgaXNzZXQoICRzZXR0aW5nc1snZWRpdG9yJ10gKSAmJiBpc19zdHJpbmcoICRzZXR0aW5nc1snZWRpdG9yJ10gKSApIHsKCQkJJHJlc3VsdHNbXSAgICAgICA9IGFycmF5KCAkcGF0aCAuICcvc2V0dGluZ3MvZWRpdG9yJywgJHdpZGdldF90eXBlLCAkc2V0dGluZ3NbJ2VkaXRvciddICk7CgkJCSRjYXB0dXJlZF9rZXlzW10gPSAnZWRpdG9yJzsKCQl9CgoJCWZvcmVhY2ggKCAkc2V0dGluZ3MgYXMgJGtleSA9PiAkdmFsdWUgKSB7CgkJCWlmICggaXNfc3RyaW5nKCAkdmFsdWUgKSAmJiBzdHJsZW4oICR2YWx1ZSApID4gMjAgJiYgISBpbl9hcnJheSggJGtleSwgJGNhcHR1cmVkX2tleXMsIHRydWUgKSApIHsKCQkJCSRyZXN1bHRzW10gPSBhcnJheSggJHBhdGggLiAnL3NldHRpbmdzLycgLiAka2V5LCAkd2lkZ2V0X3R5cGUsICR2YWx1ZSApOwoJCQl9CgkJfQoJfQoKCWZvcmVhY2ggKCAkbm9kZSBhcyAka2V5ID0+ICR2YWx1ZSApIHsKCQlpZiAoICEgaXNfYXJyYXkoICR2YWx1ZSApICkgewoJCQljb250aW51ZTsKCQl9CgkJaWYgKCAnZWxlbWVudHMnID09PSAka2V5ICkgewoJCQlmb3JlYWNoICggJHZhbHVlIGFzICRjaGlsZCApIHsKCQkJCWx1bmFjaV9leHRyYWN0X3RleHRzKCAkY2hpbGQsICRwYXRoLCAkcmVzdWx0cyApOwoJCQl9CgkJfSBlbHNlaWYgKCAnc2V0dGluZ3MnICE9PSAka2V5ICkgewoJCQlsdW5hY2lfZXh0cmFjdF90ZXh0cyggJHZhbHVlLCAkcGF0aCwgJHJlc3VsdHMgKTsKCQl9Cgl9Cn0KCmVjaG8gIi0tIFNURVAgMzogZXh0cmFjdCBhbGwgdmlzaWJsZSB3aWRnZXQgdGV4dCAtLVxuXG4iOwoKJHJlc3VsdHMgPSBhcnJheSgpOwpsdW5hY2lfZXh0cmFjdF90ZXh0cyggJGRlY29kZWQsICcnLCAkcmVzdWx0cyApOwoKaWYgKCBlbXB0eSggJHJlc3VsdHMgKSApIHsKCWVjaG8gIk5vIHRleHQgd2lkZ2V0cyBmb3VuZC5cblxuIjsKfSBlbHNlIHsKCWZvcmVhY2ggKCAkcmVzdWx0cyBhcyAkaSA9PiAkciApIHsKCQlsaXN0KCAkcGF0aCwgJHdpZGdldF90eXBlLCAkdGV4dCApID0gJHI7CgkJJG51bSA9ICRpICsgMTsKCQllY2hvICItLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuIjsKCQllY2hvICJbeyRudW19XSBwYXRoOiB7JHBhdGh9XG4iOwoJCWVjaG8gIiAgICB3aWRnZXRUeXBlOiB7JHdpZGdldF90eXBlfVxuIjsKCQllY2hvICIgICAgdGV4dCAoZnVsbCwgbm8gdHJ1bmNhdGlvbik6XG4iOwoJCWVjaG8gdmFyX2V4cG9ydCggJHRleHQsIHRydWUgKSAuICJcbiI7Cgl9CgllY2hvICJcbiI7Cn0KCmVjaG8gIi0tIFNURVAgNDogU3BhbmlzaC10ZXh0IHJlc2lkdWFsIHNjYW4gKHJhdyBfZWxlbWVudG9yX2RhdGEsIGZ1bGwtY29udGVudCBzZWFyY2gpIC0tXG5cbiI7Cgokc3BhbmlzaF9uZWVkbGVzID0gYXJyYXkoICfDsycsICfDoScsICfDrScsICfDuicsICfDsScsICfCvycsICfCoScsICdxdWUnLCAncGFyYScsICdjb24nLCAndW5hJywgJ2RlbCcsICdsb3MnLCAnbGFzJyApOwoKJGFueV9zcGFuaXNoX2ZvdW5kID0gZmFsc2U7CmZvcmVhY2ggKCAkc3BhbmlzaF9uZWVkbGVzIGFzICRuZWVkbGUgKSB7CgkkY291bnQgPSBzdWJzdHJfY291bnQoICRyYXcsICRuZWVkbGUgKTsKCWlmICggJGNvdW50ID4gMCApIHsKCQkkYW55X3NwYW5pc2hfZm91bmQgPSB0cnVlOwoJCSRwb3MgICAgICAgICAgICAgICA9IHN0cnBvcyggJHJhdywgJG5lZWRsZSApOwoJCSRjb250ZXh0X3N0YXJ0ICAgICA9IG1heCggMCwgJHBvcyAtIDQwICk7CgkJJGNvbnRleHQgICAgICAgICAgID0gc3Vic3RyKCAkcmF3LCAkY29udGV4dF9zdGFydCwgNDAgKyBzdHJsZW4oICRuZWVkbGUgKSArIDQwICk7CgkJZWNobyAiRkxBRzogXCJ7JG5lZWRsZX1cIiBmb3VuZCB7JGNvdW50fSB0aW1lKHMpLiBGaXJzdCBvY2N1cnJlbmNlIGF0IGJ5dGUgb2Zmc2V0IHskcG9zfS5cbiI7CgkJZWNobyAiICBDb250ZXh0OiAiIC4gdmFyX2V4cG9ydCggJGNvbnRleHQsIHRydWUgKSAuICJcbiI7Cgl9IGVsc2UgewoJCWVjaG8gIk9LOiBcInskbmVlZGxlfVwiIC0gMCBvY2N1cnJlbmNlc1xuIjsKCX0KfQplY2hvICJcbiI7CmlmICggISAkYW55X3NwYW5pc2hfZm91bmQgKSB7CgllY2hvICJObyBTcGFuaXNoIGluZGljYXRvcnMgZm91bmQgYW55d2hlcmUgaW4gcmF3IF9lbGVtZW50b3JfZGF0YS4gQ2xlYW4uXG5cbiI7Cn0gZWxzZSB7CgllY2hvICJTcGFuaXNoIGluZGljYXRvcnMgV0VSRSBmb3VuZCBhYm92ZSAtIHJldmlldyBjb250ZXh0IHNuaXBwZXRzIHRvIGRldGVybWluZSBpZiBhY3Rpb24gaXMgbmVlZGVkLlxuXG4iOwp9CgplY2hvICItLSBTVEVQIDU6IEZJTkFMIFNVTU1BUlkgLS1cblxuIjsKJHRvdGFsX3dpZGdldHMgICA9IGNvdW50KCAkcmVzdWx0cyApOwokdG90YWxfdGV4dF9ieXRlcyA9IDA7CmZvcmVhY2ggKCAkcmVzdWx0cyBhcyAkciApIHsKCSR0b3RhbF90ZXh0X2J5dGVzICs9IHN0cmxlbiggJHJbMl0gKTsKfQplY2hvICJUb3RhbCB0ZXh0IHdpZGdldHMgZm91bmQ6IHskdG90YWxfd2lkZ2V0c31cbiI7CmVjaG8gIlRvdGFsIGV4dHJhY3RlZCB0ZXh0IGJ5dGUgbGVuZ3RoIChzdW0gb2YgYWxsIHdpZGdldCB0ZXh0IHZhbHVlcyk6IHskdG90YWxfdGV4dF9ieXRlc31cbiI7CmVjaG8gIlNvdXJjZSBfZWxlbWVudG9yX2RhdGEgYnl0ZSBsZW5ndGg6IHskYWN0dWFsX2J5dGVfbGVufVxuIjsKCmVjaG8gIlxuT0s6IHJlYWQtb25seSBleHRyYWN0aW9uIGNvbXBsZXRlZFxuIjsK" | base64 -d > /tmp/query-page57-elementor-text-extract.php;
+
+             php -l /tmp/query-page57-elementor-text-extract.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on query script";
+               rm -f /tmp/query-page57-elementor-text-extract.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/query-page57-elementor-text-extract.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/query-page57-elementor-text-extract.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - see log above for details";
+               exit 1;
+             fi;
+
+             echo "OK: read-only extraction step completed successfully"'

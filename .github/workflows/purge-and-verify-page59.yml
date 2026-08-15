@@ -1,0 +1,60 @@
+name: Purge cache and verify page 59 live HTML is clean (no writes)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  purge-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Purge cache (both commands unconditionally) and verify live HTML
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "";
+             echo "==================== wp litespeed-purge all ====================";
+             wp litespeed-purge all --path="$WP_PATH";
+             echo "(exit code: $?)";
+
+             echo "";
+             echo "==================== wp cache flush (unconditional) ====================";
+             wp cache flush --path="$WP_PATH";
+             echo "(exit code: $?)";
+
+             echo "";
+             echo "==================== live HTML verification (cache-busting) ====================";
+             curl -s "https://lunacibarcelona.com/about-us/?nocache=$(date +%s%N)" | grep -o "Nacido de la luz dorada de Barcelona" || echo "CONFIRMED: phrase not found in live HTML";
+
+             echo "";
+             echo "OK: purge and verification completed"'

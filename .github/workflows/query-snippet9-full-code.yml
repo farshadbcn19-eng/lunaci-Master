@@ -1,0 +1,63 @@
+name: Query - full code column for snippet id=9 (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  query:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Dump full code for wp_snippets id=9 (read-only)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKJHNuaXBwZXRfaWQgPSA5OwoKZWNobyAiIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyNcbiI7CmVjaG8gIkZ1bGwgJ2NvZGUnIGNvbHVtbiBkdW1wIGZvciB3cF9zbmlwcGV0cyBpZD17JHNuaXBwZXRfaWR9IChyZWFkLW9ubHkpXG4iOwplY2hvICIjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjI1xuXG4iOwoKJHRhYmxlX2V4aXN0cyA9ICR3cGRiLT5nZXRfdmFyKAoJJHdwZGItPnByZXBhcmUoICJTRUxFQ1QgQ09VTlQoKikgRlJPTSBpbmZvcm1hdGlvbl9zY2hlbWEudGFibGVzIFdIRVJFIHRhYmxlX3NjaGVtYSA9IERBVEFCQVNFKCkgQU5EIHRhYmxlX25hbWUgPSAlcyIsICR3cGRiLT5wcmVmaXggLiAnc25pcHBldHMnICkKKTsKCmlmICggJzAnID09PSAoc3RyaW5nKSAkdGFibGVfZXhpc3RzICkgewoJZWNobyAiQUJPUlQ6IHRhYmxlIHskd3BkYi0+cHJlZml4fXNuaXBwZXRzIGRvZXMgbm90IGV4aXN0IG9uIHRoaXMgaW5zdGFsbC5cbiI7CglyZXR1cm47Cn0KCiRzbmlwcGV0X3JvdyA9ICR3cGRiLT5nZXRfcm93KAoJJHdwZGItPnByZXBhcmUoICJTRUxFQ1QgKiBGUk9NIHskd3BkYi0+cHJlZml4fXNuaXBwZXRzIFdIRVJFIGlkID0gJWQiLCAkc25pcHBldF9pZCApLAoJQVJSQVlfQQopOwoKaWYgKCBudWxsID09PSAkc25pcHBldF9yb3cgKSB7CgllY2hvICJBQk9SVDogbm8gcm93IGZvdW5kIGluIHskd3BkYi0+cHJlZml4fXNuaXBwZXRzIGZvciBpZD17JHNuaXBwZXRfaWR9LlxuIjsKCXJldHVybjsKfQoKZWNobyAiLS0gUm93IG1ldGFkYXRhIChhbGwgY29sdW1ucyBleGNlcHQgY29kZSkgLS1cblxuIjsKZm9yZWFjaCAoICRzbmlwcGV0X3JvdyBhcyAkY29sID0+ICR2YWwgKSB7CglpZiAoICdjb2RlJyA9PT0gJGNvbCApIHsKCQljb250aW51ZTsKCX0KCWVjaG8gIiAgeyRjb2x9ID0gIiAuIHZhcl9leHBvcnQoICR2YWwsIHRydWUgKSAuICJcbiI7Cn0KZWNobyAiXG4iOwoKaWYgKCAhIGlzc2V0KCAkc25pcHBldF9yb3dbJ2NvZGUnXSApIHx8ICEgaXNfc3RyaW5nKCAkc25pcHBldF9yb3dbJ2NvZGUnXSApICkgewoJZWNobyAiQUJPUlQ6ICdjb2RlJyBjb2x1bW4gbWlzc2luZyBvciBub3QgYSBzdHJpbmcgZm9yIGlkPXskc25pcHBldF9pZH0uXG4iOwoJcmV0dXJuOwp9CgokY29kZSA9ICRzbmlwcGV0X3Jvd1snY29kZSddOwoKZWNobyAiLS0gRlVMTCAnY29kZScgY29sdW1uLCBieXRlIGxlbmd0aCA9ICIgLiBzdHJsZW4oICRjb2RlICkgLiAiIChubyB0cnVuY2F0aW9uKSAtLVxuXG4iOwplY2hvICItLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSBCRUdJTiBDT0RFIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuIjsKZWNobyAkY29kZSAuICJcbiI7CmVjaG8gIi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSBFTkQgQ09ERSAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5cbiI7CgplY2hvICItLSBDcm9zcy1jaGVjazogZm9udC1mYW1pbHkgZGVjbGFyYXRpb25zIGZvdW5kIGluIGNvZGUgKGZvciBleGFjdC1zdHJpbmcgZXh0cmFjdGlvbikgLS1cblxuIjsKCmlmICggcHJlZ19tYXRjaF9hbGwoICIvZm9udC1mYW1pbHlccyo6XHMqKFteO10rKTsvaSIsICRjb2RlLCAkbWF0Y2hlcyApICkgewoJZm9yZWFjaCAoICRtYXRjaGVzWzFdIGFzICRpID0+ICRtICkgewoJCSRudW0gPSAkaSArIDE7CgkJZWNobyAiICBbeyRudW19XSBmb250LWZhbWlseTogIiAuIHZhcl9leHBvcnQoIHRyaW0oICRtICksIHRydWUgKSAuICJcbiI7Cgl9Cn0gZWxzZSB7CgllY2hvICIgIE5vIGZvbnQtZmFtaWx5IGRlY2xhcmF0aW9ucyBtYXRjaGVkIHZpYSByZWdleCAocmV2aWV3IHRoZSBmdWxsIGNvZGUgYmxvY2sgYWJvdmUgbWFudWFsbHkpLlxuIjsKfQplY2hvICJcbiI7CgppZiAoIHByZWdfbWF0Y2hfYWxsKCAiL0Bmb250LWZhY2Vccypce1tefV0qXH0vaXMiLCAkY29kZSwgJGZmX21hdGNoZXMgKSApIHsKCWVjaG8gIi0tIEZ1bGwgQGZvbnQtZmFjZSBibG9jayhzKSBmb3VuZDogIiAuIGNvdW50KCAkZmZfbWF0Y2hlc1swXSApIC4gIiAtLVxuXG4iOwoJZm9yZWFjaCAoICRmZl9tYXRjaGVzWzBdIGFzICRpID0+ICRibG9jayApIHsKCQkkbnVtID0gJGkgKyAxOwoJCWVjaG8gIiAgLS0tIEBmb250LWZhY2UgYmxvY2sgW3skbnVtfV0gLS0tXG4iOwoJCWVjaG8gJGJsb2NrIC4gIlxuXG4iOwoJfQp9IGVsc2UgewoJZWNobyAiICBObyBAZm9udC1mYWNlIGJsb2NrcyBtYXRjaGVkIHZpYSByZWdleC5cblxuIjsKfQoKZWNobyAiT0s6IGZ1bGwgY29kZSBkdW1wIGNvbXBsZXRlZFxuIjsK" | base64 -d > /tmp/query-snippet9-full-code.php;
+
+             php -l /tmp/query-snippet9-full-code.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed on query script";
+               rm -f /tmp/query-snippet9-full-code.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/query-snippet9-full-code.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/query-snippet9-full-code.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS) - see log above for details";
+               exit 1;
+             fi;
+
+             echo "OK: read-only full-code dump step completed successfully"'

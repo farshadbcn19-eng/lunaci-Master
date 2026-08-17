@@ -8,6 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Show runner public IP
+        run: curl -4 -s ifconfig.me && echo
+
       - name: Install sshpass
         run: sudo apt-get install -y sshpass
 

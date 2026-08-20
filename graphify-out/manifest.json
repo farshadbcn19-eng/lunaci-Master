@@ -1,0 +1,32 @@
+{
+  ".claude/settings.json": {
+    "mtime": 1787262486.4023063,
+    "seen": 1787262561.6777644,
+    "ast_hash": "8e354e95633a2e8f9b91523377f1968c",
+    "semantic_hash": "8e354e95633a2e8f9b91523377f1968c"
+  },
+  "mu-plugins/lunaci-mobile-nav-fix.php": {
+    "mtime": 1787261508.5228531,
+    "seen": 1787262561.6777675,
+    "ast_hash": "71341b155a509064a681f9f1be343213",
+    "semantic_hash": "71341b155a509064a681f9f1be343213"
+  },
+  "mu-plugins/lunaci-products.php": {
+    "mtime": 1787261508.5267887,
+    "seen": 1787262561.6777692,
+    "ast_hash": "fe711540641463eac07656873eba7895",
+    "semantic_hash": "fe711540641463eac07656873eba7895"
+  },
+  "scripts/convert_brand_fonts_to_woff2.py": {
+    "mtime": 1787261508.5280726,
+    "seen": 1787262561.6777709,
+    "ast_hash": "a94302025c834ae69416be8eabc79ba0",
+    "semantic_hash": "a94302025c834ae69416be8eabc79ba0"
+  },
+  "scripts/create-brand-fonts-snippet.php": {
+    "mtime": 1787261508.5308793,
+    "seen": 1787262561.6777718,
+    "ast_hash": "55c78db73689cce7e10f396ee10bb5bc",
+    "semantic_hash": "55c78db73689cce7e10f396ee10bb5bc"
+  }
+}

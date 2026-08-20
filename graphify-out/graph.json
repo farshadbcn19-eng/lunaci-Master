@@ -1,0 +1,100 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "id": "mu_plugins_lunaci_products_lunaci_render_page_fragment",
+      "label": "lunaci_render_page_fragment()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "lunaci-products.php",
+      "file_type": "code",
+      "norm_label": "lunaci_render_page_fragment()",
+      "source_file": "mu-plugins/lunaci-products.php",
+      "source_location": "L20"
+    },
+    {
+      "id": "mu_plugins_lunaci_products",
+      "label": "lunaci-products.php",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "lunaci-products.php",
+      "file_type": "code",
+      "norm_label": "lunaci-products.php",
+      "source_file": "mu-plugins/lunaci-products.php",
+      "source_location": "L1"
+    },
+    {
+      "id": "scripts_convert_brand_fonts_to_woff2",
+      "label": "convert_brand_fonts_to_woff2.py",
+      "_origin": "ast",
+      "community": 1,
+      "community_name": "convert_brand_fonts_to_woff2.py",
+      "file_type": "code",
+      "norm_label": "convert_brand_fonts_to_woff2.py",
+      "source_file": "scripts/convert_brand_fonts_to_woff2.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "scripts_convert_brand_fonts_to_woff2_rationale_1",
+      "label": "Convert LUNACI brand OTF fonts to WOFF2 and assemble the remote deploy script.\u2026",
+      "_origin": "ast",
+      "community": 1,
+      "community_name": "convert_brand_fonts_to_woff2.py",
+      "file_type": "rationale",
+      "norm_label": "convert lunaci brand otf fonts to woff2 and assemble the remote deploy script....",
+      "source_file": "scripts/convert_brand_fonts_to_woff2.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "mu_plugins_lunaci_mobile_nav_fix",
+      "label": "lunaci-mobile-nav-fix.php",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "lunaci-mobile-nav-fix.php",
+      "file_type": "code",
+      "norm_label": "lunaci-mobile-nav-fix.php",
+      "source_file": "mu-plugins/lunaci-mobile-nav-fix.php",
+      "source_location": "L1"
+    },
+    {
+      "id": "scripts_create_brand_fonts_snippet",
+      "label": "create-brand-fonts-snippet.php",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "create-brand-fonts-snippet.php",
+      "file_type": "code",
+      "norm_label": "create-brand-fonts-snippet.php",
+      "source_file": "scripts/create-brand-fonts-snippet.php",
+      "source_location": "L1"
+    }
+  ],
+  "links": [
+    {
+      "source": "mu_plugins_lunaci_products",
+      "target": "mu_plugins_lunaci_products_lunaci_render_page_fragment",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "mu-plugins/lunaci-products.php",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_convert_brand_fonts_to_woff2_rationale_1",
+      "target": "scripts_convert_brand_fonts_to_woff2",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "scripts/convert_brand_fonts_to_woff2.py",
+      "source_location": "L1",
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "62176cb7e9bd0747e9a772fcbde4154db1c986a6"
+}

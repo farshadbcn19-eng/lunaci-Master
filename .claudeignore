@@ -1,0 +1,4 @@
+# graphify writes into these on every extract; keeping them out of the
+# prompt-cache context avoids a full cache-write reload on each turn.
+graph.json
+graphify-out/

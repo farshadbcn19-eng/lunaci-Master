@@ -1,0 +1,39 @@
+{
+  "communities": {
+    "0": [
+      "mu_plugins_lunaci_products",
+      "mu_plugins_lunaci_products_lunaci_render_page_fragment"
+    ],
+    "1": [
+      "scripts_convert_brand_fonts_to_woff2",
+      "scripts_convert_brand_fonts_to_woff2_rationale_1"
+    ],
+    "2": [
+      "mu_plugins_lunaci_mobile_nav_fix"
+    ],
+    "3": [
+      "scripts_create_brand_fonts_snippet"
+    ]
+  },
+  "cohesion": {
+    "0": 1.0,
+    "1": 1.0,
+    "2": 1.0,
+    "3": 1.0
+  },
+  "gods": [
+    {
+      "id": "scripts_convert_brand_fonts_to_woff2_rationale_1",
+      "label": "Convert LUNACI brand OTF fonts to WOFF2 and assemble the remote deploy script.…",
+      "degree": 1
+    }
+  ],
+  "surprises": [],
+  "questions": [
+    {
+      "type": "no_signal",
+      "question": null,
+      "why": "Not enough signal to generate questions. This usually means the corpus has no AMBIGUOUS edges, no bridge nodes, no INFERRED relationships, and all communities are tightly cohesive. Add more files or run with --mode deep to extract richer edges."
+    }
+  ]
+}

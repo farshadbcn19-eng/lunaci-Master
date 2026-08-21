@@ -1,0 +1,78 @@
+name: Create Shipping and Returns pages (guarded write)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/create-shipping-returns-pages.yml'
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Create Shipping and Returns pages (user-approved copy)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKLyoqCiAqIExVTkFDSSBCYXJjZWxvbmEg4oCUIGNyZWF0ZSBTaGlwcGluZyBhbmQgUmV0dXJucyBwYWdlcy4KICogRm9sbG93cyB0aGUgc2FtZSBwYXR0ZXJuIGFzIGNyZWF0ZS1sZWdhbC1wYWdlcy55bWwgKFByaXZhY3kgUG9saWN5IC8gVGVybXMgb2YgU2VydmljZSk6CiAqIHBsYWluIEd1dGVuYmVyZyBibG9jayBjb250ZW50LCBwb3N0X3R5cGU9cGFnZS4gVGhlIGV4aXN0aW5nICIvcmV0dXJucyIgYW5kICIvc2hpcHBpbmciCiAqIGZvb3RlciBsaW5rcyBvbiBIb21lLCBBYm91dCBVcywgUHJvZHVjdHMsIGFuZCBTb2JyZSBOb3NvdHJvcyBhbHJlYWR5IHBvaW50IHRvIHRoZXNlCiAqIGV4YWN0IHNsdWdzLCBzbyBubyBhbmNob3IgZWRpdHMgYXJlIG5lZWRlZCBvbmNlIHRoZSBwYWdlcyBleGlzdC4KICovCgpmdW5jdGlvbiBsdW5hY2lfY3JlYXRlX29yX3VwZGF0ZV9wYWdlKCRzbHVnLCAkdGl0bGUsICRjb250ZW50KSB7CgkkZXhpc3RpbmcgPSBnZXRfcGFnZV9ieV9wYXRoKCRzbHVnLCBPQkpFQ1QsICdwYWdlJyk7CgoJJHBvc3RhcnIgPSBhcnJheSgKCQkncG9zdF90aXRsZScgICA9PiAkdGl0bGUsCgkJJ3Bvc3RfbmFtZScgICAgPT4gJHNsdWcsCgkJJ3Bvc3RfY29udGVudCcgPT4gJGNvbnRlbnQsCgkJJ3Bvc3Rfc3RhdHVzJyAgPT4gJ3B1Ymxpc2gnLAoJCSdwb3N0X3R5cGUnICAgID0+ICdwYWdlJywKCSk7CgoJaWYgKCRleGlzdGluZykgewoJCSRwb3N0YXJyWydJRCddID0gJGV4aXN0aW5nLT5JRDsKCQkkaWQgICAgID0gd3BfdXBkYXRlX3Bvc3QoJHBvc3RhcnIsIHRydWUpOwoJCSRhY3Rpb24gPSAndXBkYXRlZCc7Cgl9IGVsc2UgewoJCSRpZCAgICAgPSB3cF9pbnNlcnRfcG9zdCgkcG9zdGFyciwgdHJ1ZSk7CgkJJGFjdGlvbiA9ICdjcmVhdGVkJzsKCX0KCglpZiAoaXNfd3BfZXJyb3IoJGlkKSkgewoJCVdQX0NMSTo6ZXJyb3IoIkZhaWxlZCB0byAkYWN0aW9uIHBhZ2UgJHNsdWc6ICIgLiAkaWQtPmdldF9lcnJvcl9tZXNzYWdlKCkpOwoJfQoKCVdQX0NMSTo6bG9nKCIkYWN0aW9uIHBhZ2UgJyR0aXRsZScgKHNsdWc9JHNsdWcpIC0+IHBvc3QgSUQgJGlkIik7CglyZXR1cm4gKGludCkgJGlkOwp9Cgokc2hpcHBpbmdfY29udGVudCA9IDw8PCdTSElQUElOR19IVE1MJwo8IS0tIHdwOnBhcmFncmFwaCAtLT4KPHA+T3JkZXJzIHdpdGhpbiBTcGFpbiBhcnJpdmUgd2l0aGluIDUgdG8gOCBidXNpbmVzcyBkYXlzLCBhdCBubyBjb3N0LjwvcD4KPCEtLSAvd3A6cGFyYWdyYXBoIC0tPgoKPCEtLSB3cDpwYXJhZ3JhcGggLS0+CjxwPkZvciBkZWxpdmVyaWVzIGVsc2V3aGVyZSBpbiBFdXJvcGUsIHNoaXBwaW5nIGNvc3RzIGFyZSBjYWxjdWxhdGVkIGF0IGNoZWNrb3V0IGJhc2VkIG9uIGRlc3RpbmF0aW9uLjwvcD4KPCEtLSAvd3A6cGFyYWdyYXBoIC0tPgoKPCEtLSB3cDpwYXJhZ3JhcGggLS0+CjxwPkV2ZXJ5IG9yZGVyIGlzIHBhY2tlZCB3aXRoIGNhcmUgYW5kIGRpc3BhdGNoZWQgZnJvbSBCYXJjZWxvbmEuPC9wPgo8IS0tIC93cDpwYXJhZ3JhcGggLS0+Cgo8IS0tIHdwOnBhcmFncmFwaCAtLT4KPHA+Rm9yIHF1ZXN0aW9ucyBhYm91dCB5b3VyIGRlbGl2ZXJ5LCBjb250YWN0IDxhIGhyZWY9Im1haWx0bzppbmZvQGx1bmFjaS5lcyI+aW5mb0BsdW5hY2kuZXM8L2E+LjwvcD4KPCEtLSAvd3A6cGFyYWdyYXBoIC0tPgpTSElQUElOR19IVE1MOwoKJHJldHVybnNfY29udGVudCA9IDw8PCdSRVRVUk5TX0hUTUwnCjwhLS0gd3A6cGFyYWdyYXBoIC0tPgo8cD5JZiBhIHByb2R1Y3QgZG9lcyBub3QgbWVldCB5b3VyIGV4cGVjdGF0aW9ucywgeW91IG1heSByZXR1cm4gaXQgd2l0aGluIDE0IGRheXMgb2YgZGVsaXZlcnksIHByb3ZpZGVkIGl0IGlzIHVudXNlZCBhbmQgaW4gaXRzIG9yaWdpbmFsIHBhY2thZ2luZy48L3A+CjwhLS0gL3dwOnBhcmFncmFwaCAtLT4KCjwhLS0gd3A6cGFyYWdyYXBoIC0tPgo8cD5SZXR1cm4gc2hpcHBpbmcgaXMgdGhlIGN1c3RvbWVyJ3MgcmVzcG9uc2liaWxpdHkuPC9wPgo8IS0tIC93cDpwYXJhZ3JhcGggLS0+Cgo8IS0tIHdwOnBhcmFncmFwaCAtLT4KPHA+T25jZSB3ZSByZWNlaXZlIHlvdXIgcmV0dXJuLCB5b3VyIHJlZnVuZCBpcyBwcm9jZXNzZWQgd2l0aGluIDUgdG8gNyBidXNpbmVzcyBkYXlzLjwvcD4KPCEtLSAvd3A6cGFyYWdyYXBoIC0tPgoKPCEtLSB3cDpwYXJhZ3JhcGggLS0+CjxwPlRvIGJlZ2luIGEgcmV0dXJuLCBjb250YWN0IDxhIGhyZWY9Im1haWx0bzppbmZvQGx1bmFjaS5lcyI+aW5mb0BsdW5hY2kuZXM8L2E+LjwvcD4KPCEtLSAvd3A6cGFyYWdyYXBoIC0tPgpSRVRVUk5TX0hUTUw7CgplY2hvICItLS0gQ3JlYXRpbmcgU2hpcHBpbmcgYW5kIFJldHVybnMgcGFnZXMgLS0tXG4iOwokc2hpcHBpbmdfaWQgPSBsdW5hY2lfY3JlYXRlX29yX3VwZGF0ZV9wYWdlKCdzaGlwcGluZycsICdTaGlwcGluZycsICRzaGlwcGluZ19jb250ZW50KTsKJHJldHVybnNfaWQgID0gbHVuYWNpX2NyZWF0ZV9vcl91cGRhdGVfcGFnZSgncmV0dXJucycsICdSZXR1cm5zJywgJHJldHVybnNfY29udGVudCk7CgplY2hvICJcbi0tLSBWZXJpZmljYXRpb24gLS0tXG4iOwokcyA9IGdldF9wYWdlX2J5X3BhdGgoJ3NoaXBwaW5nJywgT0JKRUNULCAncGFnZScpOwokciA9IGdldF9wYWdlX2J5X3BhdGgoJ3JldHVybnMnLCBPQkpFQ1QsICdwYWdlJyk7CmVjaG8gInNoaXBwaW5nIC0+ICIgLiAoJHMgPyAiSUQgeyRzLT5JRH0sIHN0YXR1cyB7JHMtPnBvc3Rfc3RhdHVzfSIgOiAnTk9UIEZPVU5EJykgLiAiXG4iOwplY2hvICJyZXR1cm5zICAtPiAiIC4gKCRyID8gIklEIHskci0+SUR9LCBzdGF0dXMgeyRyLT5wb3N0X3N0YXR1c30iIDogJ05PVCBGT1VORCcpIC4gIlxuIjsKCmlmICghJHMgfHwgISRyIHx8ICRzLT5wb3N0X3N0YXR1cyAhPT0gJ3B1Ymxpc2gnIHx8ICRyLT5wb3N0X3N0YXR1cyAhPT0gJ3B1Ymxpc2gnKSB7CgllY2hvICJBQk9SVDogb25lIG9yIGJvdGggcGFnZXMgd2VyZSBub3QgY3JlYXRlZC9wdWJsaXNoZWQgY29ycmVjdGx5XG4iOwp9IGVsc2UgewoJZWNobyAiT0s6IGJvdGggcGFnZXMgY3JlYXRlZCBhbmQgcHVibGlzaGVkXG4iOwp9CmVjaG8gIkRPTkVcbiI7Cg==" | base64 -d > /tmp/create-shipping-returns-pages.php;
+
+             php -l /tmp/create-shipping-returns-pages.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed";
+               rm -f /tmp/create-shipping-returns-pages.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/create-shipping-returns-pages.php --path="$WP_PATH" > /tmp/create-output.txt 2>&1;
+             EVAL_STATUS=$?;
+             cat /tmp/create-output.txt;
+             HAS_ABORT=$(grep -c "ABORT:" /tmp/create-output.txt || true);
+             rm -f /tmp/create-shipping-returns-pages.php /tmp/create-output.txt;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "FAIL: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             if [ "${HAS_ABORT:-0}" != "0" ]; then
+               echo "FAIL: script reported ABORT - see log above";
+               exit 1;
+             fi;
+             echo "OK: pages created"'
+
+      - name: Live verification
+        run: |
+          SHIPPING_CODE=$(curl -sgL -o /dev/null -w "%{http_code}" https://lunacibarcelona.com/shipping)
+          RETURNS_CODE=$(curl -sgL -o /dev/null -w "%{http_code}" https://lunacibarcelona.com/returns)
+          echo "shipping: HTTP $SHIPPING_CODE"
+          echo "returns: HTTP $RETURNS_CODE"
+          if [ "$SHIPPING_CODE" != "200" ] || [ "$RETURNS_CODE" != "200" ]; then
+            echo "FAIL: one or both pages did not return HTTP 200"
+            exit 1
+          fi
+          echo "OK: both pages returned HTTP 200"

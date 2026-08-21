@@ -1,0 +1,66 @@
+name: Diagnose - audit follow-up 2 (read-only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/diagnose-audit-followup2.yml'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Locate header/footer/template sources for broken links and Perfect text (read-only)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKZnVuY3Rpb24gc2VjdGlvbjIoJHRpdGxlKSB7CiAgICBlY2hvICJcbj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiIgLiAkdGl0bGUgLiAiXG49PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOwp9CgpmdW5jdGlvbiBjdHgoJGhheXN0YWNrLCAkbmVlZGxlLCAkcGFkID0gNzApIHsKICAgICRwb3MgPSBzdHJpcG9zKCRoYXlzdGFjaywgJG5lZWRsZSk7CiAgICBpZiAoJHBvcyA9PT0gZmFsc2UpIHJldHVybiAnKG5vdCBmb3VuZCknOwogICAgJHN0YXJ0ID0gbWF4KDAsICRwb3MgLSAkcGFkKTsKICAgIHJldHVybiAnLi4uJyAuIHN1YnN0cigkaGF5c3RhY2ssICRzdGFydCwgc3RybGVuKCRuZWVkbGUpICsgJHBhZCAqIDIpIC4gJy4uLic7Cn0KCi8vIFNlYXJjaCBwb3N0bWV0YSAoY292ZXJzIF9lbGVtZW50b3JfZGF0YSBvbiBwYWdlcyBBTkQgb24gZWxlbWVudG9yX2xpYnJhcnkgdGhlbWUtYnVpbGRlciB0ZW1wbGF0ZXMpCnNlY3Rpb24yKCJBLiBQT1NUTUVUQSBTRUFSQ0ggRk9SOiBjb2xsZWN0aW9ucy0yIik7CiRyb3dzID0gJHdwZGItPmdldF9yZXN1bHRzKCR3cGRiLT5wcmVwYXJlKAogICAgIlNFTEVDVCBwbS5wb3N0X2lkLCBwbS5tZXRhX2tleSwgcC5wb3N0X3R5cGUsIHAucG9zdF90aXRsZSwgcC5wb3N0X3N0YXR1cywgTEVOR1RIKHBtLm1ldGFfdmFsdWUpIEFTIGxlbgogICAgIEZST00geyR3cGRiLT5wb3N0bWV0YX0gcG0gSk9JTiB7JHdwZGItPnBvc3RzfSBwIE9OIHAuSUQgPSBwbS5wb3N0X2lkCiAgICAgV0hFUkUgcG0ubWV0YV92YWx1ZSBMSUtFICVzIExJTUlUIDIwIiwKICAgICclJyAuICR3cGRiLT5lc2NfbGlrZSgnY29sbGVjdGlvbnMtMicpIC4gJyUnCikpOwpmb3JlYWNoICgkcm93cyBhcyAkcikgewogICAgZWNobyAicG9zdF9pZD17JHItPnBvc3RfaWR9IHR5cGU9eyRyLT5wb3N0X3R5cGV9IHN0YXR1cz17JHItPnBvc3Rfc3RhdHVzfSB0aXRsZT1cInskci0+cG9zdF90aXRsZX1cIiBtZXRhX2tleT17JHItPm1ldGFfa2V5fSBsZW49eyRyLT5sZW59XG4iOwp9CmlmICghJHJvd3MpIGVjaG8gIm5vIHBvc3RtZXRhIG1hdGNoZXNcbiI7CgpzZWN0aW9uMigiQi4gUE9TVE1FVEEgU0VBUkNIIEZPUjogUGVyZmVjdCAocHJvZHVjdCBjb250ZXh0KSIpOwokcm93czIgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoJHdwZGItPnByZXBhcmUoCiAgICAiU0VMRUNUIHBtLnBvc3RfaWQsIHBtLm1ldGFfa2V5LCBwLnBvc3RfdHlwZSwgcC5wb3N0X3RpdGxlLCBwLnBvc3Rfc3RhdHVzCiAgICAgRlJPTSB7JHdwZGItPnBvc3RtZXRhfSBwbSBKT0lOIHskd3BkYi0+cG9zdHN9IHAgT04gcC5JRCA9IHBtLnBvc3RfaWQKICAgICBXSEVSRSBwbS5tZXRhX3ZhbHVlIExJS0UgJXMgTElNSVQgMjAiLAogICAgJyUnIC4gJHdwZGItPmVzY19saWtlKCdQZXJmZWN0JykgLiAnJScKKSk7CmZvcmVhY2ggKCRyb3dzMiBhcyAkcikgewogICAgZWNobyAicG9zdF9pZD17JHItPnBvc3RfaWR9IHR5cGU9eyRyLT5wb3N0X3R5cGV9IHN0YXR1cz17JHItPnBvc3Rfc3RhdHVzfSB0aXRsZT1cInskci0+cG9zdF90aXRsZX1cIiBtZXRhX2tleT17JHItPm1ldGFfa2V5fVxuIjsKICAgICR2YWwgPSBnZXRfcG9zdF9tZXRhKCRyLT5wb3N0X2lkLCAkci0+bWV0YV9rZXksIHRydWUpOwogICAgaWYgKGlzX3N0cmluZygkdmFsKSkgewogICAgICAgIGVjaG8gIiAgY29udGV4dDogIiAuIGN0eCgkdmFsLCAnUGVyZmVjdCcsIDYwKSAuICJcbiI7CiAgICB9Cn0KaWYgKCEkcm93czIpIGVjaG8gIm5vIHBvc3RtZXRhIG1hdGNoZXNcbiI7CgpzZWN0aW9uMigiQy4gZWxlbWVudG9yX2xpYnJhcnkgVEVNUExBVEVTIChoZWFkZXIvZm9vdGVyL3NpbmdsZS1wcm9kdWN0KSIpOwokdGVtcGxhdGVzID0gJHdwZGItPmdldF9yZXN1bHRzKAogICAgIlNFTEVDVCBJRCwgcG9zdF90aXRsZSwgcG9zdF9zdGF0dXMgRlJPTSB7JHdwZGItPnBvc3RzfSBXSEVSRSBwb3N0X3R5cGUgPSAnZWxlbWVudG9yX2xpYnJhcnknIExJTUlUIDMwIgopOwpmb3JlYWNoICgkdGVtcGxhdGVzIGFzICR0KSB7CiAgICAkZG9jdHlwZSA9IGdldF9wb3N0X21ldGEoJHQtPklELCAnX2VsZW1lbnRvcl90ZW1wbGF0ZV90eXBlJywgdHJ1ZSk7CiAgICBlY2hvICJJRD17JHQtPklEfSB0aXRsZT1cInskdC0+cG9zdF90aXRsZX1cIiBzdGF0dXM9eyR0LT5wb3N0X3N0YXR1c30gZWxlbWVudG9yX3RlbXBsYXRlX3R5cGU9eyRkb2N0eXBlfVxuIjsKfQppZiAoISR0ZW1wbGF0ZXMpIGVjaG8gIm5vIGVsZW1lbnRvcl9saWJyYXJ5IHBvc3RzIGZvdW5kXG4iOwoKc2VjdGlvbjIoIkQuIHdwY29kZSBTTklQUEVUUyAtIGxpc3QgYWxsICh0aXRsZSArIHN0YXR1cyArIGEgY29udGVudCBmbGFnKSIpOwokc25pcHBldHMgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoCiAgICAiU0VMRUNUIElELCBwb3N0X3RpdGxlLCBwb3N0X3N0YXR1cywgcG9zdF90eXBlIEZST00geyR3cGRiLT5wb3N0c30gV0hFUkUgcG9zdF90eXBlIElOICgnd3Bjb2RlJywnd3Bjb2RlX3NuaXBwZXQnKSBMSU1JVCA0MCIKKTsKZm9yZWFjaCAoJHNuaXBwZXRzIGFzICRzKSB7CiAgICAkaGFzX2MyID0gZmFsc2U7ICRoYXNfcGVyZmVjdCA9IGZhbHNlOwogICAgJGNvbnRlbnQgPSAkd3BkYi0+Z2V0X3Zhcigkd3BkYi0+cHJlcGFyZSgiU0VMRUNUIHBvc3RfY29udGVudCBGUk9NIHskd3BkYi0+cG9zdHN9IFdIRVJFIElEPSVkIiwgJHMtPklEKSk7CiAgICBpZiAoJGNvbnRlbnQpIHsKICAgICAgICAkaGFzX2MyID0gc3RyaXBvcygkY29udGVudCwgJ2NvbGxlY3Rpb25zLTInKSAhPT0gZmFsc2U7CiAgICAgICAgJGhhc19wZXJmZWN0ID0gc3RyaXBvcygkY29udGVudCwgJ1BlcmZlY3QnKSAhPT0gZmFsc2U7CiAgICB9CiAgICBlY2hvICJJRD17JHMtPklEfSB0eXBlPXskcy0+cG9zdF90eXBlfSB0aXRsZT1cInskcy0+cG9zdF90aXRsZX1cIiBzdGF0dXM9eyRzLT5wb3N0X3N0YXR1c30gaGFzX2NvbGxlY3Rpb25zLTI9IiAuICgkaGFzX2MyID8gJ1lFUycgOiAnbm8nKSAuICIgaGFzX1BlcmZlY3Q9IiAuICgkaGFzX3BlcmZlY3QgPyAnWUVTJyA6ICdubycpIC4gIlxuIjsKfQppZiAoISRzbmlwcGV0cykgZWNobyAibm8gd3Bjb2RlIHBvc3RzIGZvdW5kXG4iOwoKZWNobyAiXG5ET05FXG4iOwo=" | base64 -d > /tmp/diagnose-audit-followup2.php;
+
+             php -l /tmp/diagnose-audit-followup2.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed";
+               rm -f /tmp/diagnose-audit-followup2.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-audit-followup2.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-audit-followup2.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: read-only diagnostic completed successfully"'

@@ -1,0 +1,28 @@
+name: EMERGENCY - verify es page (read-only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/EMERGENCY-verify-es.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Cache-busted fetch of the Spanish about page (post 680)
+        run: |
+          set +e
+          TS=$(date +%s)
+          for url in "https://lunacibarcelona.com/es/about-us-es" "https://lunacibarcelona.com/?page_id=680"; do
+            echo "=== $url?cb=$TS ==="
+            curl -sIL "$url?cb=$TS" | grep -iE '^HTTP|x-litespeed-tag'
+            body=$(curl -sL "$url?cb=$TS")
+            echo "length: ${#body}"
+            echo "$body" | grep -qi '0b0b0b' && echo "bg-dark: yes" || echo "bg-dark: NO"
+            echo "$body" | grep -qi 'd4af37' && echo "gold: yes" || echo "gold: NO"
+            echo "$body" | grep -qiE 'fatal error|parse error' && echo "ERROR MARKERS: YES" || echo "error markers: no"
+            echo
+          done

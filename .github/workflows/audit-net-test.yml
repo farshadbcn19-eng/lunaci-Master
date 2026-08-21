@@ -1,0 +1,29 @@
+name: Audit Net Test (diagnostic)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/audit-net-test.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Test outbound reachability to lunacibarcelona.com
+        run: |
+          set +e
+          echo "--- curl -v homepage ---"
+          curl -v --max-time 15 -o /dev/null https://lunacibarcelona.com/ 2>&1
+          echo "exit code: $?"
+          echo "--- curl -sI sitemap.xml ---"
+          curl -sI --max-time 15 https://lunacibarcelona.com/sitemap.xml
+          echo "exit code: $?"
+          echo "--- curl -sI sitemap_index.xml ---"
+          curl -sI --max-time 15 https://lunacibarcelona.com/sitemap_index.xml
+          echo "exit code: $?"
+          echo "--- curl -sI wp-sitemap.xml ---"
+          curl -sI --max-time 15 https://lunacibarcelona.com/wp-sitemap.xml
+          echo "exit code: $?"

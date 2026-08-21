@@ -1,0 +1,29 @@
+name: EMERGENCY - check other pages for stale-revision symptom (read-only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/EMERGENCY-check-other-pages.yml'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check structural markers on about/products/sobre-nosotros
+        run: |
+          set +e
+          TS=$(date +%s)
+          for url in "https://lunacibarcelona.com/about" "https://lunacibarcelona.com/products/" "https://lunacibarcelona.com/es/about-us-es"; do
+            echo "=== $url ==="
+            body=$(curl -sL "$url?cb=$TS")
+            echo "length: ${#body}"
+            echo "$body" | grep -qi 'ln-story' && echo "OLD marker ln-story: PRESENT" || echo "OLD marker ln-story: absent"
+            echo "$body" | grep -qi 'ln-hero__wordmark' && echo "NEW marker ln-hero__wordmark: PRESENT" || echo "NEW marker ln-hero__wordmark: absent"
+            echo "$body" | grep -qi 'ln-why__g' && echo "OLD marker ln-why__g: PRESENT" || echo "OLD marker ln-why__g: absent"
+            echo "$body" | grep -qi 'ln-why2' && echo "NEW marker ln-why2: PRESENT" || echo "NEW marker ln-why2: absent"
+            echo "$body" | grep -qiE 'fatal error|parse error' && echo "ERRORS: YES" || echo "errors: no"
+            echo
+          done

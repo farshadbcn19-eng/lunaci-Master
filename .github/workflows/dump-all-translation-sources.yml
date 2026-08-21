@@ -1,0 +1,41 @@
+name: Dump - all source content for Spanish translation (read-only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/dump-all-translation-sources.yml'
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+      - name: Run dump
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKZnVuY3Rpb24gZmluZF9odG1sKCRub2RlcywgJiRmb3VuZCkgewogICAgaWYgKCFpc19hcnJheSgkbm9kZXMpKSByZXR1cm47CiAgICBmb3JlYWNoICgkbm9kZXMgYXMgJG4pIHsKICAgICAgICBpZiAoaXNzZXQoJG5bJ3dpZGdldFR5cGUnXSkgJiYgJG5bJ3dpZGdldFR5cGUnXSA9PT0gJ2h0bWwnICYmIGlzc2V0KCRuWydzZXR0aW5ncyddWydodG1sJ10pKSB7CiAgICAgICAgICAgICRmb3VuZFtdID0gJG5bJ3NldHRpbmdzJ11bJ2h0bWwnXTsKICAgICAgICB9CiAgICAgICAgaWYgKGlzc2V0KCRuWydlbGVtZW50cyddKSkgZmluZF9odG1sKCRuWydlbGVtZW50cyddLCAkZm91bmQpOwogICAgfQp9CgokaWRzID0gYXJyYXkoCiAgICA1OCAgPT4gJ0NvbGxlY3Rpb25zJywKICAgIDYwICA9PiAnQ29udGFjdCcsCiAgICA2MSAgPT4gJ1Byb2R1Y3RzJywKICAgIDY3NiA9PiAnVGVybXMgb2YgU2VydmljZScsCiAgICAzICAgPT4gJ1ByaXZhY3kgUG9saWN5JywKICAgIDc1OSA9PiAnU2hpcHBpbmcnLAogICAgNzYwID0+ICdSZXR1cm5zJywKKTsKCmZvcmVhY2ggKCRpZHMgYXMgJHBpZCA9PiAkbGFiZWwpIHsKICAgIGVjaG8gIiMjIyMjIFBPU1QgJHBpZCAoJGxhYmVsKSAjIyMjI1xuIjsKICAgICRwb3N0ID0gZ2V0X3Bvc3QoJHBpZCk7CiAgICBpZiAoISRwb3N0KSB7IGVjaG8gIk5PVCBGT1VORFxuXG4iOyBjb250aW51ZTsgfQogICAgZWNobyAidGl0bGU9eyRwb3N0LT5wb3N0X3RpdGxlfSBzdGF0dXM9eyRwb3N0LT5wb3N0X3N0YXR1c30gcG9zdF90eXBlPXskcG9zdC0+cG9zdF90eXBlfVxuIjsKICAgIGVjaG8gInBvc3RfY29udGVudF9sZW5ndGg9IiAuIHN0cmxlbigkcG9zdC0+cG9zdF9jb250ZW50KSAuICJcbiI7CiAgICBpZiAoc3RybGVuKCRwb3N0LT5wb3N0X2NvbnRlbnQpID4gMCAmJiBzdHJsZW4oJHBvc3QtPnBvc3RfY29udGVudCkgPCA2MDAwKSB7CiAgICAgICAgZWNobyAiLS0tIHBvc3RfY29udGVudCAoYmFzZTY0KSAtLS1cbiI7CiAgICAgICAgZWNobyBiYXNlNjRfZW5jb2RlKCRwb3N0LT5wb3N0X2NvbnRlbnQpIC4gIlxuIjsKICAgIH0gZWxzZWlmIChzdHJsZW4oJHBvc3QtPnBvc3RfY29udGVudCkgPj0gNjAwMCkgewogICAgICAgIGVjaG8gIi0tLSBwb3N0X2NvbnRlbnQgdG9vIGxvbmcsIGxlbmd0aCBvbmx5IC0tLVxuIjsKICAgIH0KICAgICRlZCA9IGdldF9wb3N0X21ldGEoJHBpZCwgJ19lbGVtZW50b3JfZGF0YScsIHRydWUpOwogICAgaWYgKGlzX3N0cmluZygkZWQpICYmICRlZCAhPT0gJycpIHsKICAgICAgICAkZGVjb2RlZCA9IGpzb25fZGVjb2RlKCRlZCwgdHJ1ZSk7CiAgICAgICAgaWYgKGpzb25fbGFzdF9lcnJvcigpID09PSBKU09OX0VSUk9SX05PTkUpIHsKICAgICAgICAgICAgJGZvdW5kID0gYXJyYXkoKTsKICAgICAgICAgICAgZmluZF9odG1sKCRkZWNvZGVkLCAkZm91bmQpOwogICAgICAgICAgICBlY2hvICJlbGVtZW50b3IgaHRtbCB3aWRnZXRzIGZvdW5kOiAiIC4gY291bnQoJGZvdW5kKSAuICJcbiI7CiAgICAgICAgICAgIGZvcmVhY2ggKCRmb3VuZCBhcyAkaSA9PiAkaHRtbCkgewogICAgICAgICAgICAgICAgZWNobyAiLS0tIHdpZGdldCAkaSAobGVuZ3RoPSIgLiBzdHJsZW4oJGh0bWwpIC4gIikgYmFzZTY0IC0tLVxuIjsKICAgICAgICAgICAgICAgIGVjaG8gYmFzZTY0X2VuY29kZSgkaHRtbCkgLiAiXG4iOwogICAgICAgICAgICB9CiAgICAgICAgICAgIGlmIChjb3VudCgkZm91bmQpID09PSAwKSB7CiAgICAgICAgICAgICAgICBlY2hvICItLS0gZnVsbCBlbGVtZW50b3JfZGF0YSAoYmFzZTY0LCBubyBodG1sIHdpZGdldCBmb3VuZCkgLS0tXG4iOwogICAgICAgICAgICAgICAgZWNobyBiYXNlNjRfZW5jb2RlKCRlZCkgLiAiXG4iOwogICAgICAgICAgICB9CiAgICAgICAgfSBlbHNlIHsKICAgICAgICAgICAgZWNobyAiZWxlbWVudG9yX2RhdGEgSU5WQUxJRCBKU09OXG4iOwogICAgICAgIH0KICAgIH0gZWxzZSB7CiAgICAgICAgZWNobyAibm8gZWxlbWVudG9yX2RhdGFcbiI7CiAgICB9CiAgICBlY2hvICJcbiI7Cn0KZWNobyAiRE9ORVxuIjsK" | base64 -d > /tmp/dump-all-sources.php;
+             php -l /tmp/dump-all-sources.php;
+             wp eval-file /tmp/dump-all-sources.php --path="$WP_PATH" > /tmp/dump-output.txt 2>&1;
+             cat /tmp/dump-output.txt;
+             rm -f /tmp/dump-all-sources.php'

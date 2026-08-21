@@ -1,0 +1,39 @@
+name: EMERGENCY - final cache-busted visual verification (read-only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/EMERGENCY-final-verify.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Cache-busted fetch of homepage, about, products, sobre-nosotros
+        run: |
+          set +e
+          TS=$(date +%s)
+          for url in "https://lunacibarcelona.com/" "https://lunacibarcelona.com/about" "https://lunacibarcelona.com/products/" "https://lunacibarcelona.com/es/sobre-nosotros"; do
+            echo "=== $url?cb=$TS ==="
+            curl -sIL "$url?cb=$TS" | grep -iE '^HTTP|cache|litespeed|cf-cache|age:'
+            echo "--- brand markers ---"
+            body=$(curl -sL "$url?cb=$TS")
+            echo "length: ${#body}"
+            echo -n "contains #0B0B0B (bg): "; echo "$body" | grep -qi '0b0b0b' && echo yes || echo NO
+            echo -n "contains D4AF37 (gold): "; echo "$body" | grep -qi 'd4af37' && echo yes || echo NO
+            echo -n "contains elementor CSS link: "; echo "$body" | grep -qi 'elementor' && echo yes || echo NO
+            echo -n "contains Cormorant or Montserrat font: "; echo "$body" | grep -qiE 'cormorant|montserrat' && echo yes || echo NO
+            echo -n "contains PHP/fatal error markers: "; echo "$body" | grep -qiE 'fatal error|parse error|\[elementor' && echo "YES - PROBLEM" || echo no
+            echo
+          done
+      - name: Dump a visible-text snippet of homepage body for manual eyeballing
+        run: |
+          set +e
+          curl -sL "https://lunacibarcelona.com/?cb=$(date +%s)" | sed -n '1,400p' | grep -oE '<style[^>]*>.{0,200}' | head -5
+          echo "---"
+          curl -sL "https://lunacibarcelona.com/?cb=$(date +%s)" -o /tmp/home.html
+          wc -l /tmp/home.html
+          grep -o 'background[^;]*#[0-9a-fA-F]\{3,6\}' /tmp/home.html | head -10

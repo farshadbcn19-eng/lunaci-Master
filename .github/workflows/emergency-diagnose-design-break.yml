@@ -1,0 +1,53 @@
+name: EMERGENCY - diagnose reported design breakage (read-only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/emergency-diagnose-design-break.yml'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Check _elementor_data JSON validity on all touched posts + live homepage sanity check
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKZnVuY3Rpb24gY2hlY2soJHBpZCkgewogICAgJHBvc3QgPSBnZXRfcG9zdCgkcGlkKTsKICAgIGlmICghJHBvc3QpIHsgZWNobyAicG9zdCAkcGlkIG5vdCBmb3VuZFxuIjsgcmV0dXJuOyB9CiAgICBlY2hvICItLS0gUE9TVCAkcGlkIFwieyRwb3N0LT5wb3N0X3RpdGxlfVwiIHN0YXR1cz17JHBvc3QtPnBvc3Rfc3RhdHVzfSAtLS1cbiI7CgogICAgJGVkID0gZ2V0X3Bvc3RfbWV0YSgkcGlkLCAnX2VsZW1lbnRvcl9kYXRhJywgdHJ1ZSk7CiAgICBpZiAoIWlzX3N0cmluZygkZWQpIHx8ICRlZCA9PT0gJycpIHsKICAgICAgICBlY2hvICIgIF9lbGVtZW50b3JfZGF0YTogRU1QVFkgb3IgbWlzc2luZ1xuIjsKICAgIH0gZWxzZSB7CiAgICAgICAgJGRlY29kZWQgPSBqc29uX2RlY29kZSgkZWQpOwogICAgICAgICRlcnIgPSBqc29uX2xhc3RfZXJyb3IoKTsKICAgICAgICBlY2hvICIgIF9lbGVtZW50b3JfZGF0YTogbGVuZ3RoPSIgLiBzdHJsZW4oJGVkKSAuICIganNvbl92YWxpZD0iIC4gKCRlcnIgPT09IEpTT05fRVJST1JfTk9ORSA/ICdZRVMnIDogJ05PICgnIC4ganNvbl9sYXN0X2Vycm9yX21zZygpIC4gJyknKSAuICJcbiI7CiAgICAgICAgaWYgKCRlcnIgIT09IEpTT05fRVJST1JfTk9ORSkgewogICAgICAgICAgICAvLyBzaG93IGEgd2luZG93IGFyb3VuZCBhIHBsYXVzaWJsZSBicmVhayBwb2ludCBpc24ndCBlYXN5IHdpdGhvdXQgcG9zaXRpb247IGR1bXAgZmlyc3QvbGFzdCAzMDAgY2hhcnMKICAgICAgICAgICAgZWNobyAiICBmaXJzdCAzMDAgY2hhcnM6ICIgLiBzdWJzdHIoJGVkLCAwLCAzMDApIC4gIlxuIjsKICAgICAgICAgICAgZWNobyAiICBsYXN0IDMwMCBjaGFyczogIiAuIHN1YnN0cigkZWQsIC0zMDApIC4gIlxuIjsKICAgICAgICB9CiAgICB9CgogICAgJGNhY2hlX2V4aXN0cyA9IG1ldGFkYXRhX2V4aXN0cygncG9zdCcsICRwaWQsICdfZWxlbWVudG9yX2VsZW1lbnRfY2FjaGUnKTsKICAgIGVjaG8gIiAgX2VsZW1lbnRvcl9lbGVtZW50X2NhY2hlIGV4aXN0czogIiAuICgkY2FjaGVfZXhpc3RzID8gJ3llcycgOiAnbm8gKGNsZWFyZWQsIHdpbGwgcmVnZW5lcmF0ZSBvbiBuZXh0IEVsZW1lbnRvciByZW5kZXIpJykgLiAiXG4iOwoKICAgICRlZGl0X21vZGUgPSBnZXRfcG9zdF9tZXRhKCRwaWQsICdfZWxlbWVudG9yX2VkaXRfbW9kZScsIHRydWUpOwogICAgZWNobyAiICBfZWxlbWVudG9yX2VkaXRfbW9kZTogIiAuICgkZWRpdF9tb2RlID86ICcoZW1wdHkpJykgLiAiXG4iOwogICAgZWNobyAiXG4iOwp9CgokaWRzID0gYXJyYXkoNTcsIDU5LCA2MCwgNjEsIDY4MCk7CmZvcmVhY2ggKCRpZHMgYXMgJGlkKSBjaGVjaygkaWQpOwoKZWNobyAiPT09IExJVkUgSFRNTCBTQU5JVFkgQ0hFQ0sgKGhvbWVwYWdlKSA9PT1cbiI7CiRob21lX2h0bWwgPSB3cF9yZW1vdGVfcmV0cmlldmVfYm9keSh3cF9yZW1vdGVfZ2V0KCdodHRwczovL2x1bmFjaWJhcmNlbG9uYS5jb20vJywgYXJyYXkoJ3RpbWVvdXQnID0+IDIwKSkpOwppZiAoISRob21lX2h0bWwpIHsKICAgIGVjaG8gImNvdWxkIG5vdCBmZXRjaCBob21lcGFnZVxuIjsKfSBlbHNlIHsKICAgIGVjaG8gImhvbWVwYWdlIEhUTUwgbGVuZ3RoOiAiIC4gc3RybGVuKCRob21lX2h0bWwpIC4gIlxuIjsKICAgIGVjaG8gImNvbnRhaW5zIDxzdHlsZTogIiAuIChzdHJpcG9zKCRob21lX2h0bWwsICc8c3R5bGUnKSAhPT0gZmFsc2UgPyAneWVzJyA6ICdOTyAtIHN1c3BpY2lvdXMnKSAuICJcbiI7CiAgICBlY2hvICJjb250YWlucyBlbGVtZW50b3Ita2l0IENTUyBsaW5rOiAiIC4gKHN0cmlwb3MoJGhvbWVfaHRtbCwgJ2VsZW1lbnRvcicpICE9PSBmYWxzZSA/ICd5ZXMnIDogJ05PIC0gc3VzcGljaW91cycpIC4gIlxuIjsKICAgIGVjaG8gImNvbnRhaW5zIGxuLW5hdiAoY3VzdG9tIG5hdiBjbGFzcyk6ICIgLiAoc3RyaXBvcygkaG9tZV9odG1sLCAnbG4tbmF2JykgIT09IGZhbHNlID8gJ3llcycgOiAnTk8gLSBzdXNwaWNpb3VzJykgLiAiXG4iOwogICAgZWNobyAiY29udGFpbnMgdmlzaWJsZSBQSFAvc2hvcnRjb2RlIGVycm9yIG1hcmtlcnM6ICIgLiAoc3RyaXBvcygkaG9tZV9odG1sLCAnRmF0YWwgZXJyb3InKSAhPT0gZmFsc2UgfHwgc3RyaXBvcygkaG9tZV9odG1sLCAnW2VsZW1lbnRvcicpICE9PSBmYWxzZSA/ICdZRVMgLSBQUk9CTEVNJyA6ICdubycpIC4gIlxuIjsKfQoKZWNobyAiXG5ET05FXG4iOwo=" | base64 -d > /tmp/emergency-diagnose.php;
+
+             php -l /tmp/emergency-diagnose.php;
+             wp eval-file /tmp/emergency-diagnose.php --path="$WP_PATH";
+             rm -f /tmp/emergency-diagnose.php'
+
+      - name: Also fetch raw homepage headers and a screenshot-equivalent text render
+        run: |
+          curl -sIL https://lunacibarcelona.com/ | head -20
+          echo "---"
+          curl -sL https://lunacibarcelona.com/ | head -c 3000

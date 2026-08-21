@@ -1,0 +1,44 @@
+name: Diagnose - Blusher product image and Spanish language switcher (read-only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/diagnose-blusher-and-lang.yml'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Run diagnostic
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKZWNobyAiPT09IEFDVElWRSBMQU5HVUFHRSBQTFVHSU5TID09PVxuIjsKJGFjdGl2ZV9wbHVnaW5zID0gZ2V0X29wdGlvbignYWN0aXZlX3BsdWdpbnMnKTsKZm9yZWFjaCAoJGFjdGl2ZV9wbHVnaW5zIGFzICRwKSB7CiAgICBpZiAoc3RyaXBvcygkcCwgJ3dwbWwnKSAhPT0gZmFsc2UgfHwgc3RyaXBvcygkcCwgJ3BvbHlsYW5nJykgIT09IGZhbHNlIHx8IHN0cmlwb3MoJHAsICd0cmFuc2xhdCcpICE9PSBmYWxzZSB8fCBzdHJpcG9zKCRwLCAnbGFuZycpICE9PSBmYWxzZSkgewogICAgICAgIGVjaG8gIiAgJHBcbiI7CiAgICB9Cn0KZWNobyAiXG4iOwoKZWNobyAiPT09IEJMVVNIRVIgUFJPRFVDVCBTRUFSQ0ggPT09XG4iOwokcHJvZHVjdHMgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoCiAgICAiU0VMRUNUIElELCBwb3N0X3RpdGxlLCBwb3N0X3N0YXR1cyBGUk9NIHskd3BkYi0+cG9zdHN9CiAgICAgV0hFUkUgcG9zdF90eXBlID0gJ3Byb2R1Y3QnIEFORCBwb3N0X3RpdGxlIExJS0UgJyVCbHVzaGVyJSciCik7CmZvcmVhY2ggKCRwcm9kdWN0cyBhcyAkcCkgewogICAgZWNobyAicHJvZHVjdCBJRD17JHAtPklEfSB0aXRsZT1cInskcC0+cG9zdF90aXRsZX1cIiBzdGF0dXM9eyRwLT5wb3N0X3N0YXR1c31cbiI7CiAgICAkdGh1bWJfaWQgPSBnZXRfcG9zdF90aHVtYm5haWxfaWQoJHAtPklEKTsKICAgIGVjaG8gIiAgZmVhdHVyZWRfaW1hZ2VfaWQ6ICIgLiAoJHRodW1iX2lkID86ICcobm9uZSknKSAuICJcbiI7CiAgICBpZiAoJHRodW1iX2lkKSB7CiAgICAgICAgJHVybCA9IHdwX2dldF9hdHRhY2htZW50X3VybCgkdGh1bWJfaWQpOwogICAgICAgIGVjaG8gIiAgZmVhdHVyZWRfaW1hZ2VfdXJsOiAkdXJsXG4iOwogICAgfQogICAgJGdhbGxlcnkgPSBnZXRfcG9zdF9tZXRhKCRwLT5JRCwgJ19wcm9kdWN0X2ltYWdlX2dhbGxlcnknLCB0cnVlKTsKICAgIGVjaG8gIiAgZ2FsbGVyeV9pZHM6ICIgLiAoJGdhbGxlcnkgPzogJyhlbXB0eSknKSAuICJcbiI7Cn0KZWNobyAiXG4iOwoKZWNobyAiPT09IExBTkdVQUdFIFNXSVRDSEVSIC8gRVMgUEFHRSBDSEVDSyA9PT1cbiI7CiRjaGVja19zbHVncyA9IGFycmF5KCdhYm91dC11cy1lcycsICdjb250YWN0JywgJ2NvbnRhY3RvJyk7CmZvcmVhY2ggKCRjaGVja19zbHVncyBhcyAkc2x1ZykgewogICAgJHBvc3QgPSBnZXRfcGFnZV9ieV9wYXRoKCRzbHVnKTsKICAgIGlmICgkcG9zdCkgewogICAgICAgIGVjaG8gInNsdWc9JHNsdWcgLT4gSUQ9eyRwb3N0LT5JRH0gdGl0bGU9XCJ7JHBvc3QtPnBvc3RfdGl0bGV9XCIgc3RhdHVzPXskcG9zdC0+cG9zdF9zdGF0dXN9XG4iOwogICAgfSBlbHNlIHsKICAgICAgICAkcm93ID0gJHdwZGItPmdldF9yb3coJHdwZGItPnByZXBhcmUoCiAgICAgICAgICAgICJTRUxFQ1QgSUQsIHBvc3RfdGl0bGUsIHBvc3Rfc3RhdHVzLCBwb3N0X3R5cGUgRlJPTSB7JHdwZGItPnBvc3RzfSBXSEVSRSBwb3N0X25hbWUgPSAlcyBMSU1JVCAxIiwgJHNsdWcKICAgICAgICApKTsKICAgICAgICBpZiAoJHJvdykgewogICAgICAgICAgICBlY2hvICJzbHVnPSRzbHVnIC0+IElEPXskcm93LT5JRH0gdGl0bGU9XCJ7JHJvdy0+cG9zdF90aXRsZX1cIiBzdGF0dXM9eyRyb3ctPnBvc3Rfc3RhdHVzfSB0eXBlPXskcm93LT5wb3N0X3R5cGV9XG4iOwogICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgIGVjaG8gInNsdWc9JHNsdWcgLT4gTk9UIEZPVU5EXG4iOwogICAgICAgIH0KICAgIH0KfQplY2hvICJcbiI7CgplY2hvICI9PT0gQ09OVEFDVCBQQUdFIChwb3N0IDYwKSBTVEFURSA9PT1cbiI7CiRjb250YWN0ID0gZ2V0X3Bvc3QoNjApOwppZiAoJGNvbnRhY3QpIHsKICAgIGVjaG8gInRpdGxlPXskY29udGFjdC0+cG9zdF90aXRsZX0gc3RhdHVzPXskY29udGFjdC0+cG9zdF9zdGF0dXN9XG4iOwogICAgJGVkID0gZ2V0X3Bvc3RfbWV0YSg2MCwgJ19lbGVtZW50b3JfZGF0YScsIHRydWUpOwogICAgaWYgKGlzX3N0cmluZygkZWQpICYmICRlZCAhPT0gJycpIHsKICAgICAgICBqc29uX2RlY29kZSgkZWQpOwogICAgICAgIGVjaG8gImVsZW1lbnRvcl9kYXRhIGpzb25fdmFsaWQ9IiAuIChqc29uX2xhc3RfZXJyb3IoKSA9PT0gSlNPTl9FUlJPUl9OT05FID8gJ1lFUycgOiAnTk8nKSAuICIgbGVuZ3RoPSIgLiBzdHJsZW4oJGVkKSAuICJcbiI7CiAgICB9IGVsc2UgewogICAgICAgIGVjaG8gImVsZW1lbnRvcl9kYXRhOiBFTVBUWVxuIjsKICAgIH0KfQplY2hvICJcbiI7CgplY2hvICI9PT0gV1BNTCAvIGxhbmd1YWdlIHRhYmxlcyBpZiBwcmVzZW50ID09PVxuIjsKJGljbF90cmFuc2xhdGlvbnNfZXhpc3RzID0gJHdwZGItPmdldF92YXIoIlNIT1cgVEFCTEVTIExJS0UgJ3skd3BkYi0+cHJlZml4fWljbF90cmFuc2xhdGlvbnMnIik7CmVjaG8gImljbF90cmFuc2xhdGlvbnMgdGFibGUgZXhpc3RzOiAiIC4gKCRpY2xfdHJhbnNsYXRpb25zX2V4aXN0cyA/ICd5ZXMnIDogJ25vJykgLiAiXG4iOwppZiAoJGljbF90cmFuc2xhdGlvbnNfZXhpc3RzKSB7CiAgICAkbGFuZ3MgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoIlNFTEVDVCBESVNUSU5DVCBsYW5ndWFnZV9jb2RlIEZST00geyR3cGRiLT5wcmVmaXh9aWNsX3RyYW5zbGF0aW9ucyIpOwogICAgZm9yZWFjaCAoJGxhbmdzIGFzICRsKSBlY2hvICIgIGxhbmd1YWdlX2NvZGU6IHskbC0+bGFuZ3VhZ2VfY29kZX1cbiI7CiAgICAkaG9tZV90cmFucyA9ICR3cGRiLT5nZXRfcmVzdWx0cygkd3BkYi0+cHJlcGFyZSgKICAgICAgICAiU0VMRUNUIHRyaWQsIGxhbmd1YWdlX2NvZGUsIGVsZW1lbnRfaWQgRlJPTSB7JHdwZGItPnByZWZpeH1pY2xfdHJhbnNsYXRpb25zIFdIRVJFIGVsZW1lbnRfaWQgSU4gKDU3LDU5LDYwLDYxLDY4MCkgQU5EIGVsZW1lbnRfdHlwZSBMSUtFICdwb3N0XyUnIgogICAgKSk7CiAgICBmb3JlYWNoICgkaG9tZV90cmFucyBhcyAkdCkgewogICAgICAgIGVjaG8gIiAgdHJpZD17JHQtPnRyaWR9IGxhbmc9eyR0LT5sYW5ndWFnZV9jb2RlfSBlbGVtZW50X2lkPXskdC0+ZWxlbWVudF9pZH1cbiI7CiAgICB9Cn0KCmVjaG8gIlxuRE9ORVxuIjsK" | base64 -d > /tmp/diagnose-blusher-and-lang.php;
+             php -l /tmp/diagnose-blusher-and-lang.php;
+             wp eval-file /tmp/diagnose-blusher-and-lang.php --path="$WP_PATH";
+             rm -f /tmp/diagnose-blusher-and-lang.php'

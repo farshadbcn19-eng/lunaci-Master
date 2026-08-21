@@ -34,7 +34,7 @@ jobs:
             body=$(fetch "$candidate")
             match=$(printf '%s' "$body" | grep -c "<loc>")
             if [ "${match:-0}" -gt 0 ]; then
-              printf '%s' "$body" | grep -oP '(?<=<loc>)[^<]+' >> "$urls_file"
+              printf '%s' "$body" | grep -oP '<loc><!\[CDATA\[\K[^\]]+|(?<=<loc>)[^<]+' >> "$urls_file"
               echo "AUDIT_INFO|sitemap source: $candidate ($match locs)"
               break
             fi
@@ -53,7 +53,7 @@ jobs:
               [ -z "$sm" ] && continue
               case "$sm" in *image-sitemap*|*author-sitemap*) continue;; esac
               body=$(fetch "$sm")
-              printf '%s' "$body" | grep -oP '(?<=<loc>)[^<]+' >> "$urls_file"
+              printf '%s' "$body" | grep -oP '<loc><!\[CDATA\[\K[^\]]+|(?<=<loc>)[^<]+' >> "$urls_file"
             done <<< "$sub_sitemaps"
           fi
 

@@ -1,0 +1,40 @@
+name: Dump - snippet 8 (LUNACI Global Header) full code (read-only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/dump-snippet8.yml'
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+      - name: Run dump
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwokdGFibGUgPSAkd3BkYi0+cHJlZml4IC4gJ3NuaXBwZXRzJzsKJHJvdyA9ICR3cGRiLT5nZXRfcm93KCJTRUxFQ1QgaWQsIG5hbWUsIGNvZGUsIHNjb3BlIEZST00gJHRhYmxlIFdIRVJFIGlkID0gOCIpOwppZiAoISRyb3cpIHsgZWNobyAiTk9UIEZPVU5EXG4iOyBleGl0OyB9CmVjaG8gIm5hbWU6IHskcm93LT5uYW1lfVxuIjsKZWNobyAic2NvcGU6IHskcm93LT5zY29wZX1cbiI7CmVjaG8gImNvZGUgbGVuZ3RoOiAiIC4gc3RybGVuKCRyb3ctPmNvZGUpIC4gIlxuIjsKZWNobyAiPT09IEJBU0U2NCBPRiBGVUxMIENPREUgPT09XG4iOwplY2hvIGJhc2U2NF9lbmNvZGUoJHJvdy0+Y29kZSkgLiAiXG4iOwplY2hvICI9PT0gRU5EID09PVxuIjsK" | base64 -d > /tmp/dump-snippet8.php;
+             php -l /tmp/dump-snippet8.php;
+             wp eval-file /tmp/dump-snippet8.php --path="$WP_PATH";
+             rm -f /tmp/dump-snippet8.php'

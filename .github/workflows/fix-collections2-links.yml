@@ -1,0 +1,66 @@
+name: Fix - repoint broken /collections-2 links to real Products/category pages (guarded write)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/fix-collections2-links.yml'
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Repoint /collections-2 anchors on posts 57 (Home), 59 (About Us), 680 (Sobre Nosotros) by exact literal match, then clear Elementor cache
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKLy8gRXhhY3QgbGl0ZXJhbCBzZWFyY2ggPT4gcmVwbGFjZSBwYWlycywgYnVpbHQgZnJvbSB0aGUgZXhhY3Qgc3RyaW5ncyBvYnNlcnZlZCBpbiB0aGUKLy8gcmVhZC1vbmx5IGRpYWdub3N0aWMgKGRpYWdub3NlLWF1ZGl0LWZvbGxvd3VwMy55bWwpLiBObyByZWdleCAtIHBsYWluIHN0cl9yZXBsYWNlIG9ubHksCi8vIHNvIHRoZXJlIGlzIHplcm8gcmlzayBvZiBhbiB1bmludGVuZGVkIHBhcnRpYWwgbWF0Y2guCiRwYWlycyA9IGFycmF5KCk7CgokdmFyaWFudHMgPSBhcnJheSgKICAgIGFycmF5KCdhdHRycycgPT4gJycsICAgICAgICAgICAgICAgICAgICAgICAgJ2xhYmVsJyA9PiAnUHJvZHVjdHMnKSwKICAgIGFycmF5KCdhdHRycycgPT4gJyBjbGFzcz0iYnRuLWdvbGQiJywgICAgICAgICdsYWJlbCcgPT4gJ0V4cGxvcmUgdGhlIENvbGxlY3Rpb24nKSwKICAgIGFycmF5KCdhdHRycycgPT4gJyBjbGFzcz0iYnRuLW91dCInLCAgICAgICAgICdsYWJlbCcgPT4gJ1Nob3AgQWxsIFByb2R1Y3RzJyksCiAgICBhcnJheSgnYXR0cnMnID0+ICcgY2xhc3M9ImJ0bi1vdXQgbG4tcnYiJywgICAnbGFiZWwnID0+ICdWaWV3IEJlc3QgU2VsbGVycycpLAogICAgYXJyYXkoJ2F0dHJzJyA9PiAnJywgICAgICAgICAgICAgICAgICAgICAgICAnbGFiZWwnID0+ICdBbGwgUHJvZHVjdHMnKSwKICAgIGFycmF5KCdhdHRycycgPT4gJycsICAgICAgICAgICAgICAgICAgICAgICAgJ2xhYmVsJyA9PiAnTGlwJyksCiAgICBhcnJheSgnYXR0cnMnID0+ICcnLCAgICAgICAgICAgICAgICAgICAgICAgICdsYWJlbCcgPT4gJ0ZhY2UnKSwKICAgIGFycmF5KCdhdHRycycgPT4gJycsICAgICAgICAgICAgICAgICAgICAgICAgJ2xhYmVsJyA9PiAnRXllJyksCik7CgokbGFiZWxfdG9fcGF0aCA9IGFycmF5KAogICAgJ1Byb2R1Y3RzJyAgICAgICAgICAgICAgICA9PiAnL3Byb2R1Y3RzLycsCiAgICAnRXhwbG9yZSB0aGUgQ29sbGVjdGlvbicgID0+ICcvcHJvZHVjdHMvJywKICAgICdTaG9wIEFsbCBQcm9kdWN0cycgICAgICAgPT4gJy9wcm9kdWN0cy8nLAogICAgJ1ZpZXcgQmVzdCBTZWxsZXJzJyAgICAgICA9PiAnL3Byb2R1Y3RzLycsCiAgICAnQWxsIFByb2R1Y3RzJyAgICAgICAgICAgID0+ICcvcHJvZHVjdHMvJywKICAgICdMaXAnICAgICAgICAgICAgICAgICAgICAgPT4gJy9wcm9kdWN0LWNhdGVnb3J5L2xpcHMvJywKICAgICdGYWNlJyAgICAgICAgICAgICAgICAgICAgPT4gJy9wcm9kdWN0LWNhdGVnb3J5L2ZhY2UvJywKICAgICdFeWUnICAgICAgICAgICAgICAgICAgICAgPT4gJy9wcm9kdWN0LWNhdGVnb3J5L2V5ZXMvJywKKTsKCmZvcmVhY2ggKCR2YXJpYW50cyBhcyAkdikgewogICAgJGxhYmVsID0gJHZbJ2xhYmVsJ107CiAgICAkYXR0cnMgPSAkdlsnYXR0cnMnXTsKICAgICRuZXdfdXJsID0gJ2h0dHBzOi8vbHVuYWNpYmFyY2Vsb25hLmNvbScgLiAkbGFiZWxfdG9fcGF0aFskbGFiZWxdOwoKICAgIC8vIFJhdyBIVE1MIGZvcm0gKGFzIGluIHBsYWluIHBvc3RfY29udGVudCkKICAgICRyYXdfc2VhcmNoICA9ICdocmVmPSJodHRwczovL2x1bmFjaWJhcmNlbG9uYS5jb20vY29sbGVjdGlvbnMtMiInIC4gJGF0dHJzIC4gJz4nIC4gJGxhYmVsIC4gJzwnOwogICAgJHJhd19yZXBsYWNlID0gJ2hyZWY9IicgLiAkbmV3X3VybCAuICciJyAuICRhdHRycyAuICc+JyAuICRsYWJlbCAuICc8JzsKICAgICRwYWlyc1tdID0gYXJyYXkoJHJhd19zZWFyY2gsICRyYXdfcmVwbGFjZSk7CgogICAgLy8gSlNPTi1lc2NhcGVkIGZvcm0gKGFzIHN0b3JlZCBpbiBfZWxlbWVudG9yX2RhdGEpOiBxdW90ZXMgYW5kIHNsYXNoZXMgYXJlIGJhY2tzbGFzaC1lc2NhcGVkCiAgICAkZXNjID0gZnVuY3Rpb24gKCRzKSB7IHJldHVybiBzdHJfcmVwbGFjZShhcnJheSgnLycsICciJyksIGFycmF5KCdcLycsICdcIicpLCAkcyk7IH07CiAgICAkZXNjX3NlYXJjaCAgPSAkZXNjKCRyYXdfc2VhcmNoKTsKICAgICRlc2NfcmVwbGFjZSA9ICRlc2MoJHJhd19yZXBsYWNlKTsKICAgICRwYWlyc1tdID0gYXJyYXkoJGVzY19zZWFyY2gsICRlc2NfcmVwbGFjZSk7Cn0KCiR0YXJnZXRfcG9zdHMgPSBhcnJheSg1NywgNTksIDY4MCk7CiR0b3RhbF9maXhlZCA9IDA7Cgpmb3JlYWNoICgkdGFyZ2V0X3Bvc3RzIGFzICRwaWQpIHsKICAgICRwb3N0ID0gZ2V0X3Bvc3QoJHBpZCk7CiAgICBpZiAoISRwb3N0KSB7IGVjaG8gInBvc3QgJHBpZCBub3QgZm91bmQsIHNraXBwaW5nXG4iOyBjb250aW51ZTsgfQogICAgZWNobyAiPT09IFBPU1QgJHBpZCBcInskcG9zdC0+cG9zdF90aXRsZX1cIiA9PT1cbiI7CgogICAgLy8gcG9zdF9jb250ZW50CiAgICAkY29udGVudCA9ICRwb3N0LT5wb3N0X2NvbnRlbnQ7CiAgICAkbiA9IDA7CiAgICBmb3JlYWNoICgkcGFpcnMgYXMgJHApIHsKICAgICAgICAkY291bnQgPSBzdWJzdHJfY291bnQoJGNvbnRlbnQsICRwWzBdKTsKICAgICAgICBpZiAoJGNvdW50ID4gMCkgewogICAgICAgICAgICAkY29udGVudCA9IHN0cl9yZXBsYWNlKCRwWzBdLCAkcFsxXSwgJGNvbnRlbnQpOwogICAgICAgICAgICAkbiArPSAkY291bnQ7CiAgICAgICAgfQogICAgfQogICAgaWYgKCRuID4gMCkgewogICAgICAgICR3cGRiLT51cGRhdGUoJHdwZGItPnBvc3RzLCBhcnJheSgncG9zdF9jb250ZW50JyA9PiAkY29udGVudCksIGFycmF5KCdJRCcgPT4gJHBpZCkpOwogICAgICAgIGNsZWFuX3Bvc3RfY2FjaGUoJHBpZCk7CiAgICAgICAgZWNobyAiICBwb3N0X2NvbnRlbnQ6IGZpeGVkICRuIG9jY3VycmVuY2UocylcbiI7CiAgICAgICAgJHRvdGFsX2ZpeGVkICs9ICRuOwogICAgfSBlbHNlIHsKICAgICAgICBlY2hvICIgIHBvc3RfY29udGVudDogbm8gb2NjdXJyZW5jZXNcbiI7CiAgICB9CgogICAgLy8gX2VsZW1lbnRvcl9kYXRhCiAgICAkZWQgPSBnZXRfcG9zdF9tZXRhKCRwaWQsICdfZWxlbWVudG9yX2RhdGEnLCB0cnVlKTsKICAgIGlmIChpc19zdHJpbmcoJGVkKSAmJiAkZWQgIT09ICcnKSB7CiAgICAgICAgJG4yID0gMDsKICAgICAgICBmb3JlYWNoICgkcGFpcnMgYXMgJHApIHsKICAgICAgICAgICAgJGNvdW50ID0gc3Vic3RyX2NvdW50KCRlZCwgJHBbMF0pOwogICAgICAgICAgICBpZiAoJGNvdW50ID4gMCkgewogICAgICAgICAgICAgICAgJGVkID0gc3RyX3JlcGxhY2UoJHBbMF0sICRwWzFdLCAkZWQpOwogICAgICAgICAgICAgICAgJG4yICs9ICRjb3VudDsKICAgICAgICAgICAgfQogICAgICAgIH0KICAgICAgICBpZiAoJG4yID4gMCkgewogICAgICAgICAgICB1cGRhdGVfcG9zdF9tZXRhKCRwaWQsICdfZWxlbWVudG9yX2RhdGEnLCAkZWQpOwogICAgICAgICAgICBkZWxldGVfcG9zdF9tZXRhKCRwaWQsICdfZWxlbWVudG9yX2VsZW1lbnRfY2FjaGUnKTsKICAgICAgICAgICAgZWNobyAiICBfZWxlbWVudG9yX2RhdGE6IGZpeGVkICRuMiBvY2N1cnJlbmNlKHMpLCBjbGVhcmVkIF9lbGVtZW50b3JfZWxlbWVudF9jYWNoZVxuIjsKICAgICAgICAgICAgJHRvdGFsX2ZpeGVkICs9ICRuMjsKICAgICAgICB9IGVsc2UgewogICAgICAgICAgICBlY2hvICIgIF9lbGVtZW50b3JfZGF0YTogbm8gb2NjdXJyZW5jZXNcbiI7CiAgICAgICAgfQogICAgfQoKICAgIC8vIHZlcmlmeSBubyAnY29sbGVjdGlvbnMtMicgcmVtYWlucyBhbnl3aGVyZSBmb3IgdGhpcyBwb3N0CiAgICAkcG9zdF9mcmVzaCA9IGdldF9wb3N0KCRwaWQpOwogICAgJGVkX2ZyZXNoID0gZ2V0X3Bvc3RfbWV0YSgkcGlkLCAnX2VsZW1lbnRvcl9kYXRhJywgdHJ1ZSk7CiAgICAkcmVtYWluaW5nID0gMDsKICAgIGlmIChzdHJpcG9zKCRwb3N0X2ZyZXNoLT5wb3N0X2NvbnRlbnQsICdjb2xsZWN0aW9ucy0yJykgIT09IGZhbHNlKSAkcmVtYWluaW5nKys7CiAgICBpZiAoaXNfc3RyaW5nKCRlZF9mcmVzaCkgJiYgc3RyaXBvcygkZWRfZnJlc2gsICdjb2xsZWN0aW9ucy0yJykgIT09IGZhbHNlKSAkcmVtYWluaW5nKys7CiAgICBlY2hvICIgIHJlbWFpbmluZyAnY29sbGVjdGlvbnMtMicgcmVmZXJlbmNlcyBhZnRlciBmaXg6ICRyZW1haW5pbmdcbiI7CiAgICBpZiAoJHJlbWFpbmluZyA+IDApIHsKICAgICAgICBlY2hvICIgIFdBUk5JTkc6IG5vdCBmdWxseSBjbGVhbmVkIC0gbWFudWFsIHJldmlldyBuZWVkZWRcbiI7CiAgICB9CiAgICBlY2hvICJcbiI7Cn0KCmVjaG8gIlRPVEFMIEZJWEVEOiAkdG90YWxfZml4ZWRcbiI7CmlmICgkdG90YWxfZml4ZWQgPT09IDApIHsKICAgIGVjaG8gIkFCT1JUOiBub3RoaW5nIHdhcyBmaXhlZCAtIHJlZnVzaW5nIHRvIHJlcG9ydCBzdWNjZXNzXG4iOwp9CmVjaG8gIkRPTkVcbiI7Cg==" | base64 -d > /tmp/fix-collections2-link.php;
+
+             php -l /tmp/fix-collections2-link.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed";
+               rm -f /tmp/fix-collections2-link.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/fix-collections2-link.php --path="$WP_PATH" > /tmp/fix-output.txt 2>&1;
+             EVAL_STATUS=$?;
+             cat /tmp/fix-output.txt;
+             HAS_ABORT=$(grep -c "ABORT:" /tmp/fix-output.txt || true);
+             rm -f /tmp/fix-collections2-link.php /tmp/fix-output.txt;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "FAIL: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             if [ "${HAS_ABORT:-0}" != "0" ]; then
+               echo "FAIL: fix script reported ABORT in its output - see log above";
+               exit 1;
+             fi;
+             echo "OK: workflow completed"'

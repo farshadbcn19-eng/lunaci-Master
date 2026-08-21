@@ -1,0 +1,40 @@
+name: Diagnose - locate snippet source of language switcher (read-only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/diagnose-find-snippet.yml'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+      - name: Run diagnostic
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKZWNobyAiPT09IGNvZGUtc25pcHBldHMgcGx1Z2luIHRhYmxlID09PVxuIjsKJHRhYmxlID0gJHdwZGItPnByZWZpeCAuICdzbmlwcGV0cyc7CiRleGlzdHMgPSAkd3BkYi0+Z2V0X3ZhcigiU0hPVyBUQUJMRVMgTElLRSAnJHRhYmxlJyIpOwplY2hvICJ0YWJsZSAkdGFibGUgZXhpc3RzOiAiIC4gKCRleGlzdHMgPyAneWVzJyA6ICdubycpIC4gIlxuIjsKaWYgKCRleGlzdHMpIHsKICAgICRyb3dzID0gJHdwZGItPmdldF9yZXN1bHRzKCJTRUxFQ1QgaWQsIG5hbWUsIGFjdGl2ZSBGUk9NICR0YWJsZSBXSEVSRSBjb2RlIExJS0UgJyVsbkxhbmdNZW51JSciKTsKICAgIGZvcmVhY2ggKCRyb3dzIGFzICRyKSB7CiAgICAgICAgZWNobyAiICBNQVRDSCBpZD17JHItPmlkfSBuYW1lPVwieyRyLT5uYW1lfVwiIGFjdGl2ZT17JHItPmFjdGl2ZX1cbiI7CiAgICB9CiAgICAkYWxsID0gJHdwZGItPmdldF9yZXN1bHRzKCJTRUxFQ1QgaWQsIG5hbWUsIGFjdGl2ZSwgc2NvcGUgRlJPTSAkdGFibGUiKTsKICAgIGVjaG8gIiAgYWxsIHNuaXBwZXRzIGluIHRhYmxlOlxuIjsKICAgIGZvcmVhY2ggKCRhbGwgYXMgJHIpIHsKICAgICAgICBlY2hvICIgICAgaWQ9eyRyLT5pZH0gbmFtZT1cInskci0+bmFtZX1cIiBhY3RpdmU9eyRyLT5hY3RpdmV9IHNjb3BlPXskci0+c2NvcGV9XG4iOwogICAgfQp9CmVjaG8gIlxuIjsKCmVjaG8gIj09PSBpbnNlcnQtaGVhZGVycy1hbmQtZm9vdGVycyBwbHVnaW4gb3B0aW9ucyA9PT1cbiI7CmZvcmVhY2ggKGFycmF5KCdpaGFmX2hlYWRlcicsICdpaGFmX2Zvb3RlcicsICdpaGFmX2JvZHknKSBhcyAkb3B0KSB7CiAgICAkdmFsID0gZ2V0X29wdGlvbigkb3B0KTsKICAgIGlmICgkdmFsKSB7CiAgICAgICAgJHBvcyA9IHN0cmlwb3MoJHZhbCwgJ2xuTGFuZ01lbnUnKTsKICAgICAgICBlY2hvICJvcHRpb24gJG9wdDogbGVuZ3RoPSIgLiBzdHJsZW4oJHZhbCkgLiAiIGNvbnRhaW5zIGxuTGFuZ01lbnU9IiAuICgkcG9zICE9PSBmYWxzZSA/ICdZRVMnIDogJ25vJykgLiAiXG4iOwogICAgfSBlbHNlIHsKICAgICAgICBlY2hvICJvcHRpb24gJG9wdDogZW1wdHkvbm90IHNldFxuIjsKICAgIH0KfQplY2hvICJcbiI7CgplY2hvICI9PT0gYWxsIHdwX29wdGlvbnMgY29udGFpbmluZyBsbkxhbmdNZW51ID09PVxuIjsKJG9wdHMgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoCiAgICAiU0VMRUNUIG9wdGlvbl9uYW1lIEZST00geyR3cGRiLT5vcHRpb25zfSBXSEVSRSBvcHRpb25fdmFsdWUgTElLRSAnJWxuTGFuZ01lbnUlJyIKKTsKZm9yZWFjaCAoJG9wdHMgYXMgJG8pIHsKICAgIGVjaG8gIiAgb3B0aW9uX25hbWU9eyRvLT5vcHRpb25fbmFtZX1cbiI7Cn0KZWNobyAiXG4iOwoKZWNobyAiPT09IFdQQ29kZSBzbmlwcGV0IHBvc3RzIChmcm9tIGVhcmxpZXIgbGlzdCkgLSBjaGVjayBwb3N0X2NvbnRlbnQgb2YgZWFjaCA9PT1cbiI7CiRpZHMgPSBhcnJheSgzMTksIDQwNywgNDA4LCA0ODMpOwpmb3JlYWNoICgkaWRzIGFzICRpZCkgewogICAgJHAgPSBnZXRfcG9zdCgkaWQpOwogICAgaWYgKCRwKSB7CiAgICAgICAgJGhhcyA9IHN0cmlwb3MoJHAtPnBvc3RfY29udGVudCwgJ2xuTGFuZ01lbnUnKSAhPT0gZmFsc2U7CiAgICAgICAgZWNobyAiICBJRD0kaWQgdGl0bGU9XCJ7JHAtPnBvc3RfdGl0bGV9XCIgcG9zdF9jb250ZW50X2xlbmd0aD0iIC4gc3RybGVuKCRwLT5wb3N0X2NvbnRlbnQpIC4gIiBoYXNfbG5MYW5nTWVudT0iIC4gKCRoYXMgPyAnWUVTJyA6ICdubycpIC4gIlxuIjsKICAgICAgICAvLyBhbHNvIGNoZWNrIGFsbCBtZXRhIGZvciB0aGlzIHBvc3QKICAgICAgICAkbWV0YSA9IGdldF9wb3N0X21ldGEoJGlkKTsKICAgICAgICBmb3JlYWNoICgkbWV0YSBhcyAkayA9PiAkdikgewogICAgICAgICAgICAkdnMgPSBpc19hcnJheSgkdikgPyBpbXBsb2RlKCcnLCAkdikgOiAkdjsKICAgICAgICAgICAgaWYgKHN0cmlwb3MoJHZzLCAnbG5MYW5nTWVudScpICE9PSBmYWxzZSkgewogICAgICAgICAgICAgICAgZWNobyAiICAgIC0+IGZvdW5kIGluIHBvc3RtZXRhIGtleT0ka1xuIjsKICAgICAgICAgICAgfQogICAgICAgIH0KICAgIH0KfQoKZWNobyAiXG5ET05FXG4iOwo=" | base64 -d > /tmp/find-snippet.php;
+             php -l /tmp/find-snippet.php;
+             wp eval-file /tmp/find-snippet.php --path="$WP_PATH";
+             rm -f /tmp/find-snippet.php'

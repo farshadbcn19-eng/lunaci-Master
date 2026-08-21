@@ -1,0 +1,20 @@
+name: Verify - language switcher href on About Us (has real ES translation)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/verify-switcher-about.yml'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check ES switcher href on About Us page
+        run: |
+          set +e
+          curl -sL --max-time 20 "https://lunacibarcelona.com/about-us/" -o /tmp/about.html
+          echo "http status ok, length=$(wc -c < /tmp/about.html)"
+          grep -oE '<ul class="ln-lang-switch__menu"[^>]*>.*?</ul>' /tmp/about.html

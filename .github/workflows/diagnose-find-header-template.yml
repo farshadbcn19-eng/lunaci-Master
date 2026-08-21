@@ -1,0 +1,40 @@
+name: Diagnose - locate global header template with language switcher (read-only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/diagnose-find-header-template.yml'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+      - name: Run diagnostic
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKZWNobyAiPT09IHNlYXJjaCBwb3N0bWV0YSAoX2VsZW1lbnRvcl9kYXRhKSBmb3IgbG5MYW5nTWVudSA9PT1cbiI7CiRyb3dzID0gJHdwZGItPmdldF9yZXN1bHRzKAogICAgIlNFTEVDVCBwb3N0X2lkIEZST00geyR3cGRiLT5wb3N0bWV0YX0KICAgICBXSEVSRSBtZXRhX2tleSA9ICdfZWxlbWVudG9yX2RhdGEnIEFORCBtZXRhX3ZhbHVlIExJS0UgJyVsbkxhbmdNZW51JSciCik7CmZvcmVhY2ggKCRyb3dzIGFzICRyKSB7CiAgICAkcCA9IGdldF9wb3N0KCRyLT5wb3N0X2lkKTsKICAgIGVjaG8gInBvc3RfaWQ9eyRyLT5wb3N0X2lkfSB0aXRsZT1cIiIgLiAoJHAgPyAkcC0+cG9zdF90aXRsZSA6ICc/JykgLiAiXCIgdHlwZT0iIC4gKCRwID8gJHAtPnBvc3RfdHlwZSA6ICc/JykgLiAiIHN0YXR1cz0iIC4gKCRwID8gJHAtPnBvc3Rfc3RhdHVzIDogJz8nKSAuICJcbiI7Cn0KZWNobyAiXG4iOwoKZWNobyAiPT09IHNlYXJjaCBwb3N0X2NvbnRlbnQgZm9yIGxuTGFuZ01lbnUgPT09XG4iOwokcm93czIgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoCiAgICAiU0VMRUNUIElELCBwb3N0X3RpdGxlLCBwb3N0X3R5cGUsIHBvc3Rfc3RhdHVzIEZST00geyR3cGRiLT5wb3N0c30KICAgICBXSEVSRSBwb3N0X2NvbnRlbnQgTElLRSAnJWxuTGFuZ01lbnUlJyIKKTsKZm9yZWFjaCAoJHJvd3MyIGFzICRyKSB7CiAgICBlY2hvICJJRD17JHItPklEfSB0aXRsZT1cInskci0+cG9zdF90aXRsZX1cIiB0eXBlPXskci0+cG9zdF90eXBlfSBzdGF0dXM9eyRyLT5wb3N0X3N0YXR1c31cbiI7Cn0KZWNobyAiXG4iOwoKZWNobyAiPT09IHNlYXJjaCBBTEwgcG9zdG1ldGEgZm9yIGxuTGFuZ01lbnUgKGFueSBtZXRhX2tleSkgPT09XG4iOwokcm93czMgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoCiAgICAiU0VMRUNUIHBvc3RfaWQsIG1ldGFfa2V5IEZST00geyR3cGRiLT5wb3N0bWV0YX0KICAgICBXSEVSRSBtZXRhX3ZhbHVlIExJS0UgJyVsbkxhbmdNZW51JSciCik7CmZvcmVhY2ggKCRyb3dzMyBhcyAkcikgewogICAgJHAgPSBnZXRfcG9zdCgkci0+cG9zdF9pZCk7CiAgICBlY2hvICJwb3N0X2lkPXskci0+cG9zdF9pZH0gbWV0YV9rZXk9eyRyLT5tZXRhX2tleX0gdGl0bGU9XCIiIC4gKCRwID8gJHAtPnBvc3RfdGl0bGUgOiAnPycpIC4gIlwiIHR5cGU9IiAuICgkcCA/ICRwLT5wb3N0X3R5cGUgOiAnPycpIC4gIlxuIjsKfQplY2hvICJcbiI7CgplY2hvICI9PT0gY2hlY2sgV1BDb2RlIC8gYWN0aXZlIHBsdWdpbnMgZm9yIGN1c3RvbSBzbmlwcGV0IGluamVjdGlvbiA9PT1cbiI7CiRhY3RpdmVfcGx1Z2lucyA9IGdldF9vcHRpb24oJ2FjdGl2ZV9wbHVnaW5zJyk7CmZvcmVhY2ggKCRhY3RpdmVfcGx1Z2lucyBhcyAkcCkgewogICAgaWYgKHN0cmlwb3MoJHAsICd3cGNvZGUnKSAhPT0gZmFsc2UgfHwgc3RyaXBvcygkcCwgJ2NvZGUtc25pcHBldCcpICE9PSBmYWxzZSB8fCBzdHJpcG9zKCRwLCAnaW5zZXJ0LWhlYWRlcicpICE9PSBmYWxzZSkgewogICAgICAgIGVjaG8gIiAgJHBcbiI7CiAgICB9Cn0KZWNobyAiXG4iOwoKZWNobyAiPT09IFdQQ29kZSBzbmlwcGV0cyBjb250YWluaW5nIGxuTGFuZ01lbnUgKGlmIHdwX3dwY29kZV9zbmlwcGV0cyBvciBzaW1pbGFyIHRhYmxlKSA9PT1cbiI7CiR0YWJsZXMgPSAkd3BkYi0+Z2V0X2NvbCgiU0hPVyBUQUJMRVMgTElLRSAnJXdwY29kZSUnIik7CmZvcmVhY2ggKCR0YWJsZXMgYXMgJHQpIGVjaG8gIiAgdGFibGU6ICR0XG4iOwppZiAoIWVtcHR5KCR0YWJsZXMpKSB7CiAgICBmb3JlYWNoICgkdGFibGVzIGFzICR0KSB7CiAgICAgICAgJGNvbHMgPSAkd3BkYi0+Z2V0X2NvbCgiU0hPVyBDT0xVTU5TIEZST00gJHQiKTsKICAgICAgICBpZiAoaW5fYXJyYXkoJ2NvZGUnLCAkY29scykgfHwgaW5fYXJyYXkoJ2NvbnRlbnQnLCAkY29scykpIHsKICAgICAgICAgICAgJGNvbCA9IGluX2FycmF5KCdjb2RlJywgJGNvbHMpID8gJ2NvZGUnIDogJ2NvbnRlbnQnOwogICAgICAgICAgICAkcm93czQgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoIlNFTEVDVCAqIEZST00gJHQgV0hFUkUgJGNvbCBMSUtFICclbG5MYW5nTWVudSUnIik7CiAgICAgICAgICAgIGZvcmVhY2ggKCRyb3dzNCBhcyAkcikgewogICAgICAgICAgICAgICAgZWNobyAiICBtYXRjaCBpbiAkdDogIiAuIGpzb25fZW5jb2RlKCRyKSAuICJcbiI7CiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICB9Cn0KZWNobyAiXG4iOwoKZWNobyAiPT09IHNlYXJjaCB3cF9wb3N0cyBmb3IgcG9zdF90eXBlID0gd3Bjb2RlID09PVxuIjsKJHdwY29kZV9wb3N0cyA9ICR3cGRiLT5nZXRfcmVzdWx0cygKICAgICJTRUxFQ1QgSUQsIHBvc3RfdGl0bGUsIHBvc3RfdHlwZSwgcG9zdF9zdGF0dXMgRlJPTSB7JHdwZGItPnBvc3RzfQogICAgIFdIRVJFIHBvc3RfdHlwZSBMSUtFICcld3Bjb2RlJScgT1IgcG9zdF90eXBlIExJS0UgJyVzbmlwcGV0JSciCik7CmZvcmVhY2ggKCR3cGNvZGVfcG9zdHMgYXMgJHIpIHsKICAgIGVjaG8gIklEPXskci0+SUR9IHRpdGxlPVwieyRyLT5wb3N0X3RpdGxlfVwiIHR5cGU9eyRyLT5wb3N0X3R5cGV9IHN0YXR1cz17JHItPnBvc3Rfc3RhdHVzfVxuIjsKfQoKZWNobyAiXG5ET05FXG4iOwo=" | base64 -d > /tmp/find-header-template.php;
+             php -l /tmp/find-header-template.php;
+             wp eval-file /tmp/find-header-template.php --path="$WP_PATH";
+             rm -f /tmp/find-header-template.php'

@@ -1,0 +1,40 @@
+name: Diagnose - language switcher pattern across all pages (read-only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/diagnose-nav-pattern.yml'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+      - name: Run diagnostic
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwpmdW5jdGlvbiBmaW5kX2h0bWwoJG5vZGVzLCAmJGZvdW5kKSB7CiAgICBpZiAoIWlzX2FycmF5KCRub2RlcykpIHJldHVybjsKICAgIGZvcmVhY2ggKCRub2RlcyBhcyAkbikgewogICAgICAgIGlmIChpc3NldCgkblsnd2lkZ2V0VHlwZSddKSAmJiAkblsnd2lkZ2V0VHlwZSddID09PSAnaHRtbCcgJiYgaXNzZXQoJG5bJ3NldHRpbmdzJ11bJ2h0bWwnXSkpIHsKICAgICAgICAgICAgJGZvdW5kW10gPSAkblsnc2V0dGluZ3MnXVsnaHRtbCddOwogICAgICAgIH0KICAgICAgICBpZiAoaXNzZXQoJG5bJ2VsZW1lbnRzJ10pKSBmaW5kX2h0bWwoJG5bJ2VsZW1lbnRzJ10sICRmb3VuZCk7CiAgICB9Cn0KJGlkcyA9IGFycmF5KDU3LCA1OCwgNTksIDYwLCA2MSwgNjgwKTsKZm9yZWFjaCAoJGlkcyBhcyAkcGlkKSB7CiAgICBlY2hvICI9PT0gUE9TVCAkcGlkID09PVxuIjsKICAgICRwb3N0ID0gZ2V0X3Bvc3QoJHBpZCk7CiAgICBpZiAoISRwb3N0KSB7IGVjaG8gIiAgbm90IGZvdW5kXG5cbiI7IGNvbnRpbnVlOyB9CiAgICBlY2hvICIgIHRpdGxlPXskcG9zdC0+cG9zdF90aXRsZX0gc3RhdHVzPXskcG9zdC0+cG9zdF9zdGF0dXN9XG4iOwogICAgJGVkID0gZ2V0X3Bvc3RfbWV0YSgkcGlkLCAnX2VsZW1lbnRvcl9kYXRhJywgdHJ1ZSk7CiAgICBpZiAoIWlzX3N0cmluZygkZWQpIHx8ICRlZCA9PT0gJycpIHsgZWNobyAiICBubyBlbGVtZW50b3IgZGF0YVxuXG4iOyBjb250aW51ZTsgfQogICAgJGRlY29kZWQgPSBqc29uX2RlY29kZSgkZWQsIHRydWUpOwogICAgaWYgKGpzb25fbGFzdF9lcnJvcigpICE9PSBKU09OX0VSUk9SX05PTkUpIHsgZWNobyAiICBJTlZBTElEIEpTT05cblxuIjsgY29udGludWU7IH0KICAgICRmb3VuZCA9IGFycmF5KCk7CiAgICBmaW5kX2h0bWwoJGRlY29kZWQsICRmb3VuZCk7CiAgICBlY2hvICIgIGh0bWwgd2lkZ2V0czogIiAuIGNvdW50KCRmb3VuZCkgLiAiXG4iOwogICAgZm9yZWFjaCAoJGZvdW5kIGFzICRodG1sKSB7CiAgICAgICAgZWNobyAiICBoYXMgbG5MYW5nTWVudTogIiAuIChzdHJwb3MoJGh0bWwsICdsbkxhbmdNZW51JykgIT09IGZhbHNlID8gJ3llcycgOiAnbm8nKSAuICJcbiI7CiAgICAgICAgZWNobyAiICBjb3VudCBvZiAnbG4tbGFuZy1zd2l0Y2hfX2l0ZW0nOiAiIC4gc3Vic3RyX2NvdW50KCRodG1sLCAnbG4tbGFuZy1zd2l0Y2hfX2l0ZW0nKSAuICJcbiI7CiAgICAgICAgZWNobyAiICBjb3VudCBvZiAnPC9zY3JpcHQ+JzogIiAuIHN1YnN0cl9jb3VudCgkaHRtbCwgJzwvc2NyaXB0PicpIC4gIlxuIjsKICAgICAgICAkcG9zID0gc3RycG9zKCRodG1sLCAnbG5MYW5nTWVudScpOwogICAgICAgIGlmICgkcG9zICE9PSBmYWxzZSkgewogICAgICAgICAgICBlY2hvICIgIGNvbnRleHQ6ICIgLiBzdWJzdHIoJGh0bWwsICRwb3MgLSA1MCwgMzAwKSAuICJcbiI7CiAgICAgICAgfQogICAgfQogICAgZWNobyAiXG4iOwp9CmVjaG8gIkRPTkVcbiI7Cg==" | base64 -d > /tmp/check-nav-pattern.php;
+             php -l /tmp/check-nav-pattern.php;
+             wp eval-file /tmp/check-nav-pattern.php --path="$WP_PATH";
+             rm -f /tmp/check-nav-pattern.php'

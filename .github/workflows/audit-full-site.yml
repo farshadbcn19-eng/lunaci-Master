@@ -1,0 +1,181 @@
+name: Full Site Audit (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Full site crawl - links, images, bilingual pairs, design regressions
+        run: |
+          set -u
+          SITE="https://lunacibarcelona.com"
+          UA="Mozilla/5.0 (LunaciAudit/1.0)"
+          CURL="curl -sL --max-time 25 --retry 1 -A $UA"
+          CURL_HEAD="curl -sI -L --max-time 20 --retry 1 -A $UA"
+
+          echo "===== 1. DISCOVER URL LIST FROM SITEMAP ====="
+          urls_file=$(mktemp)
+          sitemaps_file=$(mktemp)
+          for candidate in "$SITE/sitemap_index.xml" "$SITE/sitemap.xml" "$SITE/wp-sitemap.xml"; do
+            body=$($CURL "$candidate" || true)
+            if echo "$body" | grep -q "<loc>"; then
+              echo "$candidate" >> "$sitemaps_file"
+              echo "$body" | grep -oP '(?<=<loc>)[^<]+' >> "$urls_file"
+              break
+            fi
+          done
+
+          if [ ! -s "$urls_file" ]; then
+            echo "AUDIT_FATAL|no sitemap found at sitemap_index.xml, sitemap.xml, or wp-sitemap.xml"
+            exit 0
+          fi
+
+          # If top-level file was a sitemap index (points to other sitemap xml files), expand one level
+          sub_sitemaps=$(grep -E '\.xml$' "$urls_file" || true)
+          if [ -n "$sub_sitemaps" ]; then
+            > "$urls_file"
+            while IFS= read -r sm; do
+              [ -z "$sm" ] && continue
+              case "$sm" in *image-sitemap*|*author-sitemap*) continue;; esac
+              body=$($CURL "$sm" || true)
+              echo "$body" | grep -oP '(?<=<loc>)[^<]+' >> "$urls_file"
+            done <<< "$sub_sitemaps"
+          fi
+
+          sort -u -o "$urls_file" "$urls_file"
+          # drop non-content files (feeds, xml, images) and cap to a sane number
+          grep -viE '\.(xml|jpg|jpeg|png|webp|pdf)$' "$urls_file" | sort -u > "${urls_file}.clean"
+          mv "${urls_file}.clean" "$urls_file"
+          TOTAL_URLS=$(wc -l < "$urls_file")
+          echo "AUDIT_INFO|discovered $TOTAL_URLS content URLs from sitemap"
+          echo "--- URL LIST ---"
+          cat "$urls_file"
+          echo "--- END URL LIST ---"
+
+          checked_links_file=$(mktemp)
+          checked_imgs_file=$(mktemp)
+          broken_links=0
+          broken_imgs=0
+          missing_dims=0
+          bilingual_missing=0
+          bilingual_broken=0
+          design_issues=0
+          forbidden_word_hits=0
+
+          FORBIDDEN_WORDS='flawless|revolutionary|\bperfect\b|\bbest\b|darling|\bbabe\b|gorgeous|hide your flaws'
+
+          page_count=0
+          while IFS= read -r page_url; do
+            [ -z "$page_url" ] && continue
+            page_count=$((page_count + 1))
+
+            status=$($CURL_HEAD -o /dev/null -w '%{http_code}' "$page_url" || echo "000")
+            if [ "$status" != "200" ]; then
+              echo "PAGE_BROKEN|$page_url|status=$status"
+              broken_links=$((broken_links + 1))
+              continue
+            fi
+
+            html=$($CURL "$page_url" || true)
+            [ -z "$html" ] && { echo "PAGE_EMPTY|$page_url"; continue; }
+
+            echo "===== 2. LINKS on $page_url ====="
+            while IFS= read -r href; do
+              [ -z "$href" ] && continue
+              case "$href" in
+                mailto:*|tel:*|javascript:*|\#*) continue ;;
+                /*) full="$SITE$href" ;;
+                http*) full="$href" ;;
+                *) continue ;;
+              esac
+              full="${full%%#*}"
+              [ -z "$full" ] && continue
+              case "$full" in
+                *lunacibarcelona.com*) : ;;
+                *) continue ;;  # only audit internal links for "all links connected" requirement
+              esac
+              if grep -qxF "$full" "$checked_links_file" 2>/dev/null; then continue; fi
+              echo "$full" >> "$checked_links_file"
+              lstatus=$($CURL_HEAD -o /dev/null -w '%{http_code}' "$full" || echo "000")
+              if [ "$lstatus" != "200" ]; then
+                echo "LINK_BROKEN|on_page=$page_url|target=$full|status=$lstatus"
+                broken_links=$((broken_links + 1))
+              fi
+            done < <(echo "$html" | grep -oP '(?<=href=")[^"]+' | sort -u)
+
+            echo "===== 3. IMAGES on $page_url ====="
+            while IFS= read -r imgtag; do
+              [ -z "$imgtag" ] && continue
+              src=$(echo "$imgtag" | grep -oP '(?<=src=")[^"]+' | head -1)
+              [ -z "$src" ] && src=$(echo "$imgtag" | grep -oP '(?<=data-src=")[^"]+' | head -1)
+              [ -z "$src" ] && continue
+              case "$src" in
+                /*) fullimg="$SITE$src" ;;
+                http*) fullimg="$src" ;;
+                data:*) continue ;;
+                *) continue ;;
+              esac
+              has_w=$(echo "$imgtag" | grep -oP 'width="[0-9]+"' || true)
+              has_h=$(echo "$imgtag" | grep -oP 'height="[0-9]+"' || true)
+              if [ -z "$has_w" ] || [ -z "$has_h" ]; then
+                echo "IMG_MISSING_DIMENSIONS|on_page=$page_url|img=$fullimg"
+                missing_dims=$((missing_dims + 1))
+              fi
+              if ! grep -qxF "$fullimg" "$checked_imgs_file" 2>/dev/null; then
+                echo "$fullimg" >> "$checked_imgs_file"
+                istatus=$($CURL_HEAD -o /dev/null -w '%{http_code}' "$fullimg" || echo "000")
+                if [ "$istatus" != "200" ]; then
+                  echo "IMG_BROKEN|on_page=$page_url|img=$fullimg|status=$istatus"
+                  broken_imgs=$((broken_imgs + 1))
+                fi
+              fi
+            done < <(echo "$html" | grep -oP '<img[^>]+>')
+
+            echo "===== 4. BILINGUAL PAIR for $page_url ====="
+            es_href=$(echo "$html" | grep -oP '(?<=hreflang="es")[^>]*' | grep -oP '(?<=href=")[^"]+' | head -1)
+            if [ -z "$es_href" ]; then
+              es_href=$(echo "$html" | grep -oP 'hreflang="es"[^>]*href="[^"]+"|href="[^"]+"[^>]*hreflang="es"' | grep -oP '(?<=href=")[^"]+' | head -1)
+            fi
+            case "$page_url" in
+              */es/*|*lang=es*|*?lang=es*) : ;; # already the spanish version
+              *)
+                if [ -z "$es_href" ]; then
+                  echo "BILINGUAL_MISSING|page=$page_url|no hreflang es alternate found"
+                  bilingual_missing=$((bilingual_missing + 1))
+                else
+                  estatus=$($CURL_HEAD -o /dev/null -w '%{http_code}' "$es_href" || echo "000")
+                  if [ "$estatus" != "200" ]; then
+                    echo "BILINGUAL_BROKEN|page=$page_url|es_target=$es_href|status=$estatus"
+                    bilingual_broken=$((bilingual_broken + 1))
+                  fi
+                fi
+                ;;
+            esac
+
+            echo "===== 5. DESIGN / BRAND SCAN for $page_url ====="
+            white_bg=$(echo "$html" | grep -oiE 'background(-color)?\s*:\s*(#fff(fff)?|white)\b' | sort -u | head -5)
+            if [ -n "$white_bg" ]; then
+              echo "DESIGN_WHITE_BG|page=$page_url|matches=$(echo "$white_bg" | tr '\n' ';')"
+              design_issues=$((design_issues + 1))
+            fi
+
+            visible_text=$(echo "$html" | sed -e 's/<script[^>]*>.*<\/script>//g' -e 's/<style[^>]*>.*<\/style>//g' -e 's/<[^>]*>/ /g')
+            hit=$(echo "$visible_text" | grep -oiE "$FORBIDDEN_WORDS" | sort -u | tr '\n' ',' || true)
+            if [ -n "$hit" ]; then
+              echo "FORBIDDEN_WORD|page=$page_url|words=$hit"
+              forbidden_word_hits=$((forbidden_word_hits + 1))
+            fi
+
+            excl=$(echo "$visible_text" | grep -ocE '!!+' || true)
+            if [ "$excl" != "0" ]; then
+              echo "DESIGN_MULTI_EXCLAMATION|page=$page_url|count=$excl"
+              design_issues=$((design_issues + 1))
+            fi
+
+          done < "$urls_file"
+
+          echo "===== AUDIT SUMMARY ====="
+          echo "AUDIT_SUMMARY|pages_checked=$page_count|broken_links=$broken_links|broken_images=$broken_imgs|images_missing_dimensions=$missing_dims|bilingual_missing=$bilingual_missing|bilingual_broken=$bilingual_broken|design_issues=$design_issues|forbidden_word_hits=$forbidden_word_hits"

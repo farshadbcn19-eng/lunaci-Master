@@ -1,0 +1,28 @@
+name: EMERGENCY - check other pages v2 (read-only, rate-limit-safe)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/EMERGENCY-check-other-pages-v2.yml'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check structural markers on about/products/sobre-nosotros
+        run: |
+          set +e
+          for url in "https://lunacibarcelona.com/about" "https://lunacibarcelona.com/products/" "https://lunacibarcelona.com/es/about-us-es"; do
+            echo "=== $url ==="
+            code=$(curl -sL --max-time 20 -o /tmp/page.html -w '%{http_code}' "$url")
+            echo "http_code=$code length=$(wc -c < /tmp/page.html)"
+            grep -qi 'ln-story' /tmp/page.html && echo "OLD marker ln-story: PRESENT" || echo "OLD marker ln-story: absent"
+            grep -qi 'ln-hero__wordmark' /tmp/page.html && echo "NEW marker ln-hero__wordmark: PRESENT" || echo "NEW marker ln-hero__wordmark: absent"
+            grep -qi 'ln-why__g' /tmp/page.html && echo "OLD marker ln-why__g: PRESENT" || echo "OLD marker ln-why__g: absent"
+            grep -qi 'ln-why2' /tmp/page.html && echo "NEW marker ln-why2: PRESENT" || echo "NEW marker ln-why2: absent"
+            echo
+            sleep 8
+          done

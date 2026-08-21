@@ -1,0 +1,30 @@
+name: Verify - returns/shipping links across all pages (read-only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/verify-returns-shipping-links.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check both slash variants and all pages that link to them
+        run: |
+          set +e
+          for url in \
+            "https://lunacibarcelona.com/returns" \
+            "https://lunacibarcelona.com/returns/" \
+            "https://lunacibarcelona.com/shipping" \
+            "https://lunacibarcelona.com/shipping/" \
+            "https://lunacibarcelona.com/" \
+            "https://lunacibarcelona.com/about" \
+            "https://lunacibarcelona.com/products/" \
+            "https://lunacibarcelona.com/es/about-us-es/"
+          do
+            code=$(curl -sgL -o /dev/null -w "%{http_code}" "$url")
+            echo "$url -> HTTP $code"
+          done

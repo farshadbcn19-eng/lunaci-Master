@@ -1,0 +1,44 @@
+name: EMERGENCY - deep diff live homepage vs user reference (read-only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/EMERGENCY-deep-diff.yml'
+
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Full response headers (real browser Cache-Control, CDN indicators)
+        run: |
+          set +e
+          echo "=== FULL headers, no cache-busting (what a normal visitor gets) ==="
+          curl -sD - -o /dev/null "https://lunacibarcelona.com/"
+          echo
+          echo "=== FULL headers, cache-busted ==="
+          curl -sD - -o /dev/null "https://lunacibarcelona.com/?cb=$(date +%s)"
+      - name: Diff live rendered HTML against user-provided reference widget content
+        run: |
+          set +e
+          curl -sL "https://lunacibarcelona.com/?nocache=$(date +%s)&$(date +%N)" -o /tmp/live.html
+          echo "live.html length: $(wc -c < /tmp/live.html)"
+          echo
+          echo "--- structural class presence check (live vs reference) ---"
+          for marker in "ln-hero__wordmark" "ln-collection__g" "ln-why2__title" "ln-philosophy__q" "ln-news__f" "ln-foot__g" "lnKB" "lnMQ" "Every woman is seen" "In 15" "Stay Connected With"; do
+            in_live=$(grep -c "$marker" /tmp/live.html)
+            in_ref=$(grep -c "$marker" assets/reference/home-widget-reference.html)
+            echo "marker='$marker' live_count=$in_live ref_count=$in_ref"
+          done
+          echo
+          echo "--- known intentional fixes: check state on live ---"
+          grep -o 'href="https://lunacibarcelona.com/collections-2"' /tmp/live.html | wc -l
+          grep -o 'href="https://lunacibarcelona.com/products/"' /tmp/live.html | wc -l
+          grep -o 'width="160" height="90"' /tmp/live.html | wc -l
+          echo
+          echo "--- byte size comparison ---"
+          echo "reference widget file size: $(wc -c < assets/reference/home-widget-reference.html)"
+          echo "live full page size: $(wc -c < /tmp/live.html)"

@@ -1,0 +1,44 @@
+name: Diagnose 2 - Blusher HTML context and full WPML translation map (read-only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/diagnose-blusher-lang-2.yml'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Run diagnostic
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKZWNobyAiPT09IFBPU1QgNjEgKFByb2R1Y3RzKSAtIGNvbnRleHQgYXJvdW5kICdCbHVzaGVyJyA9PT1cbiI7CiRlZCA9IGdldF9wb3N0X21ldGEoNjEsICdfZWxlbWVudG9yX2RhdGEnLCB0cnVlKTsKJGRlY29kZWQgPSBqc29uX2RlY29kZSgkZWQsIHRydWUpOwpmdW5jdGlvbiBmaW5kX2h0bWwoJG5vZGVzLCAmJGZvdW5kKSB7CiAgICBpZiAoIWlzX2FycmF5KCRub2RlcykpIHJldHVybjsKICAgIGZvcmVhY2ggKCRub2RlcyBhcyAkbikgewogICAgICAgIGlmIChpc3NldCgkblsnd2lkZ2V0VHlwZSddKSAmJiAkblsnd2lkZ2V0VHlwZSddID09PSAnaHRtbCcgJiYgaXNzZXQoJG5bJ3NldHRpbmdzJ11bJ2h0bWwnXSkpIHsKICAgICAgICAgICAgJGZvdW5kW10gPSAkblsnc2V0dGluZ3MnXVsnaHRtbCddOwogICAgICAgIH0KICAgICAgICBpZiAoaXNzZXQoJG5bJ2VsZW1lbnRzJ10pKSBmaW5kX2h0bWwoJG5bJ2VsZW1lbnRzJ10sICRmb3VuZCk7CiAgICB9Cn0KJGZvdW5kID0gYXJyYXkoKTsKZmluZF9odG1sKCRkZWNvZGVkLCAkZm91bmQpOwpmb3JlYWNoICgkZm91bmQgYXMgJGh0bWwpIHsKICAgICRwb3MgPSBzdHJpcG9zKCRodG1sLCAnQmx1c2hlcicpOwogICAgaWYgKCRwb3MgIT09IGZhbHNlKSB7CiAgICAgICAgZWNobyBzdWJzdHIoJGh0bWwsIG1heCgwLCAkcG9zIC0gNjAwKSwgMTAwMCkgLiAiXG4iOwogICAgfSBlbHNlIHsKICAgICAgICBlY2hvICInQmx1c2hlcicgbm90IGZvdW5kIGluIHRoaXMgaHRtbCB3aWRnZXQgKGxlbmd0aD0iIC4gc3RybGVuKCRodG1sKSAuICIpXG4iOwogICAgfQp9CmVjaG8gIlxuIjsKCmVjaG8gIj09PSBBbnkgRVMtbmFtZWQgcGFnZXMgZm9yIGhvbWUvcHJvZHVjdHMvY29udGFjdD8gPT09XG4iOwokY2FuZGlkYXRlcyA9ICR3cGRiLT5nZXRfcmVzdWx0cygKICAgICJTRUxFQ1QgSUQsIHBvc3RfdGl0bGUsIHBvc3RfbmFtZSwgcG9zdF9zdGF0dXMsIHBvc3RfdHlwZSBGUk9NIHskd3BkYi0+cG9zdHN9CiAgICAgV0hFUkUgcG9zdF90eXBlIElOICgncGFnZScsJ3Byb2R1Y3QnKQogICAgIEFORCBwb3N0X3N0YXR1cyBJTiAoJ3B1Ymxpc2gnLCdkcmFmdCcpCiAgICAgQU5EIChwb3N0X25hbWUgTElLRSAnJS1lcycgT1IgcG9zdF9uYW1lIExJS0UgJ2VzLSUnIE9SIHBvc3RfdGl0bGUgTElLRSAnJUluaWNpbyUnIE9SIHBvc3RfdGl0bGUgTElLRSAnJVByb2R1Y3RvcyUnIE9SIHBvc3RfdGl0bGUgTElLRSAnJUNvbnRhY3RvJScpIgopOwpmb3JlYWNoICgkY2FuZGlkYXRlcyBhcyAkYykgewogICAgZWNobyAiSUQ9eyRjLT5JRH0gdGl0bGU9XCJ7JGMtPnBvc3RfdGl0bGV9XCIgc2x1Zz17JGMtPnBvc3RfbmFtZX0gc3RhdHVzPXskYy0+cG9zdF9zdGF0dXN9IHR5cGU9eyRjLT5wb3N0X3R5cGV9XG4iOwp9CmVjaG8gIlxuIjsKCmVjaG8gIj09PSBXUE1MIGxhbmd1YWdlcyBjb25maWd1cmVkIChpY2xfbGFuZ3VhZ2VzKSA9PT1cbiI7CiR0YWJsZSA9ICR3cGRiLT5wcmVmaXggLiAnaWNsX2xhbmd1YWdlcyc7CiRleGlzdHMgPSAkd3BkYi0+Z2V0X3ZhcigiU0hPVyBUQUJMRVMgTElLRSAnJHRhYmxlJyIpOwppZiAoJGV4aXN0cykgewogICAgJGxhbmdzID0gJHdwZGItPmdldF9yZXN1bHRzKCJTRUxFQ1QgY29kZSwgYWN0aXZlLCBkZWZhdWx0X2xvY2FsZSBGUk9NICR0YWJsZSIpOwogICAgZm9yZWFjaCAoJGxhbmdzIGFzICRsKSBlY2hvICIgIGNvZGU9eyRsLT5jb2RlfSBhY3RpdmU9eyRsLT5hY3RpdmV9IGxvY2FsZT17JGwtPmRlZmF1bHRfbG9jYWxlfVxuIjsKfQplY2hvICJcbiI7CgplY2hvICI9PT0gZnVsbCB0cmlkIGxpc3QgZm9yIGFsbCBwb3N0cyAoYW55IGxhbmcgcGFpcnMgYXQgYWxsKSA9PT1cbiI7CiRhbGwgPSAkd3BkYi0+Z2V0X3Jlc3VsdHMoCiAgICAiU0VMRUNUIHQudHJpZCwgdC5sYW5ndWFnZV9jb2RlLCB0LmVsZW1lbnRfaWQsIHAucG9zdF90aXRsZSwgcC5wb3N0X3R5cGUKICAgICBGUk9NIHskd3BkYi0+cHJlZml4fWljbF90cmFuc2xhdGlvbnMgdAogICAgIExFRlQgSk9JTiB7JHdwZGItPnBvc3RzfSBwIE9OIHAuSUQgPSB0LmVsZW1lbnRfaWQKICAgICBXSEVSRSB0LmVsZW1lbnRfdHlwZSA9ICdwb3N0X3BhZ2UnCiAgICAgT1JERVIgQlkgdC50cmlkIgopOwpmb3JlYWNoICgkYWxsIGFzICRyKSB7CiAgICBlY2hvICJ0cmlkPXskci0+dHJpZH0gbGFuZz17JHItPmxhbmd1YWdlX2NvZGV9IGlkPXskci0+ZWxlbWVudF9pZH0gdGl0bGU9XCJ7JHItPnBvc3RfdGl0bGV9XCJcbiI7Cn0KCmVjaG8gIlxuRE9ORVxuIjsK" | base64 -d > /tmp/diagnose2.php;
+             php -l /tmp/diagnose2.php;
+             wp eval-file /tmp/diagnose2.php --path="$WP_PATH";
+             rm -f /tmp/diagnose2.php'

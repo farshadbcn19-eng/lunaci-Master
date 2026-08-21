@@ -1,0 +1,63 @@
+name: Fix - replace LUNACI Blusher product image (guarded, product 326 only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/fix-blusher-product-image.yml'
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Transfer image to server
+        env:
+          SSHPASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -e scp -o StrictHostKeyChecking=no -P "$SSH_PORT" \
+            assets/product-photos/lunaci-blusher-brushes.png "$SSH_USER@$SSH_HOST:/tmp/lunaci-blusher-brushes.png"
+
+      - name: Replace featured image for product 326 (LUNACI Blusher) only
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             PID=326;
+             TITLE=$(wp post get $PID --field=post_title --path="$WP_PATH" 2>/dev/null);
+             if [ "$TITLE" != "LUNACI Blusher" ]; then
+               echo "ABORT: safety guard - post $PID title is \"$TITLE\", expected \"LUNACI Blusher\"";
+               exit 1;
+             fi;
+             OLD_THUMB=$(wp post meta get $PID _thumbnail_id --path="$WP_PATH" 2>/dev/null);
+             echo "old featured image attachment id: $OLD_THUMB";
+             NEW_ID=$(wp media import /tmp/lunaci-blusher-brushes.png --post_id=$PID --featured_image --porcelain --path="$WP_PATH");
+             echo "new attachment id: $NEW_ID";
+             NEW_THUMB=$(wp post meta get $PID _thumbnail_id --path="$WP_PATH" 2>/dev/null);
+             echo "verify featured image attachment id now: $NEW_THUMB";
+             if [ "$NEW_THUMB" != "$NEW_ID" ]; then echo "FAIL: featured image not set correctly"; exit 1; fi;
+             rm -f /tmp/lunaci-blusher-brushes.png;
+             echo "OK: Blusher product image replaced"'

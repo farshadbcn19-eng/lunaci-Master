@@ -1,0 +1,75 @@
+name: EMERGENCY - rebuild page 57 with user-confirmed final content (guarded)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/EMERGENCY-rebuild-page57-final.yml'
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Transfer reference content and rebuild script to server
+        env:
+          SSHPASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -e scp -o StrictHostKeyChecking=no -P "$SSH_PORT" \
+            assets/reference/home-widget-reference.html "$SSH_USER@$SSH_HOST:/tmp/rebuild-page57-ref.html"
+          sshpass -e scp -o StrictHostKeyChecking=no -P "$SSH_PORT" \
+            assets/reference/rebuild-page57.php "$SSH_USER@$SSH_HOST:/tmp/rebuild-page57.php"
+
+      - name: Run guarded rebuild of page 57 widget content
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "WordPress found at: $WP_PATH";
+             php -l /tmp/rebuild-page57.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then echo "ABORT: php -l failed"; exit 1; fi;
+             wp eval-file /tmp/rebuild-page57.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/rebuild-page57.php /tmp/rebuild-page57-ref.html;
+             if [ "$EVAL_STATUS" -ne 0 ]; then echo "FAIL: wp eval-file failed (exit code $EVAL_STATUS)"; exit 1; fi;
+             wp litespeed-purge all --path="$WP_PATH" 2>&1 || echo "litespeed-purge not available, skipping";
+             echo "OK: workflow completed"'
+
+      - name: Cache-busted live verification
+        run: |
+          set +e
+          TS=$(date +%s)
+          body=$(curl -sL "https://lunacibarcelona.com/?cb=$TS")
+          echo "length: ${#body}"
+          echo "$body" | grep -qi 'ln-hero__wordmark' && echo "ln-hero__wordmark: yes" || echo "ln-hero__wordmark: NO"
+          echo "$body" | grep -qi 'ln-collection__g' && echo "ln-collection__g: yes" || echo "ln-collection__g: NO"
+          echo "$body" | grep -qi 'Stay Connected With' && echo "Stay Connected With: yes" || echo "Stay Connected With: NO"
+          echo "$body" | grep -qi 'width="160" height="90"' && echo "logo dims: yes" || echo "logo dims: NO"
+          echo "$body" | grep -o 'collections-2' | wc -l

@@ -1,0 +1,29 @@
+name: Diagnose - live language switcher markup and Tienda ES page (read-only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/diagnose-lang-switcher-live.yml'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check language switcher markup on homepage and Tienda (ES Shop) page load
+        run: |
+          set +e
+          curl -sL --max-time 20 "https://lunacibarcelona.com/" -o /tmp/home.html
+          echo "=== language switcher related snippets on homepage ==="
+          grep -oE '.{80}wpml.{80}' /tmp/home.html | head -10
+          grep -oE '.{80}lang-switch.{80}' /tmp/home.html -i | head -10
+          grep -oE '<a[^>]*href="[^"]*"[^>]*>[^<]*ES[^<]*</a>' /tmp/home.html -i | head -5
+          grep -c 'icl-' /tmp/home.html
+          echo
+          echo "=== Tienda (ES Shop, post 609) direct load ==="
+          code=$(curl -sL --max-time 20 -o /tmp/tienda.html -w '%{http_code}' "https://lunacibarcelona.com/es/tienda/")
+          echo "http_code=$code length=$(wc -c < /tmp/tienda.html)"
+          code2=$(curl -sL --max-time 20 -o /tmp/tienda2.html -w '%{http_code}' "https://lunacibarcelona.com/?page_id=609")
+          echo "by page_id: http_code=$code2 length=$(wc -c < /tmp/tienda2.html)"

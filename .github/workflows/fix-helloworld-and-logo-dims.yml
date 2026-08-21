@@ -1,0 +1,66 @@
+name: Fix - hello-world to draft + add width/height to site-wide logo image (guarded write)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/fix-helloworld-and-logo-dims.yml'
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Set hello-world to draft, add width/height attributes to the repeated logo <img> tag site-wide
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKZWNobyAiPT09IFBBUlQgMTogaGVsbG8td29ybGQgLT4gZHJhZnQgPT09XG4iOwokaHcgPSBnZXRfcGFnZV9ieV9wYXRoKCdoZWxsby13b3JsZCcsIE9CSkVDVCwgJ3Bvc3QnKTsKaWYgKCEkaHcpIHsKCSRyb3cgPSAkd3BkYi0+Z2V0X3JvdygiU0VMRUNUIElELCBwb3N0X3R5cGUsIHBvc3Rfc3RhdHVzIEZST00geyR3cGRiLT5wb3N0c30gV0hFUkUgcG9zdF9uYW1lID0gJ2hlbGxvLXdvcmxkJyBMSU1JVCAxIik7CglpZiAoJHJvdykgeyAkaHcgPSBnZXRfcG9zdCgkcm93LT5JRCk7IH0KfQppZiAoISRodykgewoJZWNobyAiaGVsbG8td29ybGQgcG9zdCBub3QgZm91bmQgLSBub3RoaW5nIHRvIGRvXG4iOwp9IGVsc2VpZiAoJGh3LT5wb3N0X3N0YXR1cyA9PT0gJ2RyYWZ0JykgewoJZWNobyAiaGVsbG8td29ybGQgKElEPXskaHctPklEfSkgYWxyZWFkeSBkcmFmdCAtIG5vdGhpbmcgdG8gZG9cbiI7Cn0gZWxzZSB7CgkkYmVmb3JlX3N0YXR1cyA9ICRody0+cG9zdF9zdGF0dXM7CgkkdXBkYXRlZCA9IHdwX3VwZGF0ZV9wb3N0KGFycmF5KCdJRCcgPT4gJGh3LT5JRCwgJ3Bvc3Rfc3RhdHVzJyA9PiAnZHJhZnQnKSwgdHJ1ZSk7CglpZiAoaXNfd3BfZXJyb3IoJHVwZGF0ZWQpKSB7CgkJZWNobyAiQUJPUlQ6IGZhaWxlZCB0byBzZXQgaGVsbG8td29ybGQgdG8gZHJhZnQ6ICIgLiAkdXBkYXRlZC0+Z2V0X2Vycm9yX21lc3NhZ2UoKSAuICJcbiI7Cgl9IGVsc2UgewoJCSRmcmVzaCA9IGdldF9wb3N0KCRody0+SUQpOwoJCWVjaG8gImhlbGxvLXdvcmxkIChJRD17JGh3LT5JRH0pIHN0YXR1cyBjaGFuZ2VkOiAkYmVmb3JlX3N0YXR1cyAtPiB7JGZyZXNoLT5wb3N0X3N0YXR1c31cbiI7CgkJaWYgKCRmcmVzaC0+cG9zdF9zdGF0dXMgIT09ICdkcmFmdCcpIHsKCQkJZWNobyAiQUJPUlQ6IHZlcmlmaWNhdGlvbiBmYWlsZWQgLSBzdGF0dXMgaXMgbm90IGRyYWZ0XG4iOwoJCX0KCX0KfQoKZWNobyAiXG49PT0gUEFSVCAyOiBsb2dvIGltYWdlIChhdHRhY2htZW50IDQ1KSBtaXNzaW5nIHdpZHRoL2hlaWdodCA9PT1cbiI7CiRhdHRhY2htZW50X2lkID0gNDU7CiRmaWxlID0gZ2V0X2F0dGFjaGVkX2ZpbGUoJGF0dGFjaG1lbnRfaWQpOwppZiAoISRmaWxlIHx8ICFmaWxlX2V4aXN0cygkZmlsZSkpIHsKCWVjaG8gIkFCT1JUOiBjb3VsZCBub3QgbG9jYXRlIGZpbGUgb24gZGlzayBmb3IgYXR0YWNobWVudCAkYXR0YWNobWVudF9pZFxuIjsKfSBlbHNlIHsKCSRkaW1zID0gZ2V0aW1hZ2VzaXplKCRmaWxlKTsKCWlmICghJGRpbXMpIHsKCQllY2hvICJBQk9SVDogZ2V0aW1hZ2VzaXplKCkgZmFpbGVkIGZvciAkZmlsZVxuIjsKCX0gZWxzZSB7CgkJJGludHJpbnNpY193ID0gJGRpbXNbMF07CgkJJGludHJpbnNpY19oID0gJGRpbXNbMV07CgkJLy8gUmVuZGVyZWQgaGVpZ2h0IGlzIGZpeGVkIGF0IDkwcHggdmlhIGlubGluZSBzdHlsZTsgY29tcHV0ZSBwcm9wb3J0aW9uYWwgd2lkdGguCgkJJHJlbmRlcl9oID0gOTA7CgkJJHJlbmRlcl93ID0gKGludCkgcm91bmQoJGludHJpbnNpY193ICogKCRyZW5kZXJfaCAvICRpbnRyaW5zaWNfaCkpOwoJCWVjaG8gImludHJpbnNpYyBzaXplOiB7JGludHJpbnNpY193fXh7JGludHJpbnNpY19ofSAtPiByZW5kZXJlZCBzaXplIChtYXRjaGluZyBleGlzdGluZyBoZWlnaHQ6OTBweCBzdHlsZSk6IHskcmVuZGVyX3d9eHskcmVuZGVyX2h9XG4iOwoKCQkkc2VhcmNoICA9ICc8aW1nIHNyYz0iaHR0cHM6Ly9sdW5hY2liYXJjZWxvbmEuY29tL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA1L2IzMjA0MjdiLWJkYmQtNDIyMC05MjZkLWMyZmVjY2U3ZTllNC5qcGVnIiBhbHQ9IkxVTkFDSSBCYXJjZWxvbmEiIHN0eWxlPSJoZWlnaHQ6OTBweDt3aWR0aDphdXRvO21peC1ibGVuZC1tb2RlOmxpZ2h0ZW47Ij4nOwoJCSRyZXBsYWNlID0gJzxpbWcgc3JjPSJodHRwczovL2x1bmFjaWJhcmNlbG9uYS5jb20vd3AtY29udGVudC91cGxvYWRzLzIwMjYvMDUvYjMyMDQyN2ItYmRiZC00MjIwLTkyNmQtYzJmZWNjZTdlOWU0LmpwZWciIGFsdD0iTFVOQUNJIEJhcmNlbG9uYSIgd2lkdGg9IicgLiAkcmVuZGVyX3cgLiAnIiBoZWlnaHQ9IicgLiAkcmVuZGVyX2ggLiAnIiBzdHlsZT0iaGVpZ2h0OjkwcHg7d2lkdGg6YXV0bzttaXgtYmxlbmQtbW9kZTpsaWdodGVuOyI+JzsKCgkJJGVzYyA9IGZ1bmN0aW9uICgkcykgeyByZXR1cm4gc3RyX3JlcGxhY2UoYXJyYXkoJy8nLCAnIicpLCBhcnJheSgnXC8nLCAnXCInKSwgJHMpOyB9OwoJCSRlc2Nfc2VhcmNoICA9ICRlc2MoJHNlYXJjaCk7CgkJJGVzY19yZXBsYWNlID0gJGVzYygkcmVwbGFjZSk7CgoJCS8vIFNjYW4gZXZlcnkgcHVibGlzaGVkIHBhZ2UvcG9zdC9wcm9kdWN0IGZvciBlaXRoZXIgZm9ybSBvZiB0aGUgdGFnLgoJCSRjYW5kaWRhdGVzID0gJHdwZGItPmdldF9jb2woCgkJCSJTRUxFQ1QgSUQgRlJPTSB7JHdwZGItPnBvc3RzfQoJCQkgV0hFUkUgcG9zdF9zdGF0dXMgPSAncHVibGlzaCcKCQkJIEFORCAocG9zdF9jb250ZW50IExJS0UgJyViMzIwNDI3Yi1iZGJkLTQyMjAtOTI2ZC1jMmZlY2NlN2U5ZTQlJykiCgkJKTsKCQkkbWV0YV9jYW5kaWRhdGVzID0gJHdwZGItPmdldF9jb2woJHdwZGItPnByZXBhcmUoCgkJCSJTRUxFQ1QgRElTVElOQ1QgcG9zdF9pZCBGUk9NIHskd3BkYi0+cG9zdG1ldGF9CgkJCSBXSEVSRSBtZXRhX2tleSA9ICdfZWxlbWVudG9yX2RhdGEnIEFORCBtZXRhX3ZhbHVlIExJS0UgJXMiLAoJCQknJScgLiAkd3BkYi0+ZXNjX2xpa2UoJ2IzMjA0MjdiLWJkYmQtNDIyMC05MjZkLWMyZmVjY2U3ZTllNCcpIC4gJyUnCgkJKSk7CgkJJGFsbF9pZHMgPSBhcnJheV91bmlxdWUoYXJyYXlfbWVyZ2UoJGNhbmRpZGF0ZXMsICRtZXRhX2NhbmRpZGF0ZXMpKTsKCQllY2hvICJjYW5kaWRhdGUgcG9zdHMgcmVmZXJlbmNpbmcgdGhpcyBpbWFnZTogIiAuIGNvdW50KCRhbGxfaWRzKSAuICJcbiI7CgoJCSR0b3RhbF9maXhlZCA9IDA7CgkJJHBvc3RzX3RvdWNoZWQgPSAwOwoJCWZvcmVhY2ggKCRhbGxfaWRzIGFzICRwaWQpIHsKCQkJJHBvc3QgPSBnZXRfcG9zdCgkcGlkKTsKCQkJaWYgKCEkcG9zdCkgY29udGludWU7CgkJCSR0aGlzX3Bvc3RfZml4ZWQgPSAwOwoKCQkJJGNvbnRlbnQgPSAkcG9zdC0+cG9zdF9jb250ZW50OwoJCQkkbiA9IHN1YnN0cl9jb3VudCgkY29udGVudCwgJHNlYXJjaCk7CgkJCWlmICgkbiA+IDApIHsKCQkJCSRjb250ZW50ID0gc3RyX3JlcGxhY2UoJHNlYXJjaCwgJHJlcGxhY2UsICRjb250ZW50KTsKCQkJCSR3cGRiLT51cGRhdGUoJHdwZGItPnBvc3RzLCBhcnJheSgncG9zdF9jb250ZW50JyA9PiAkY29udGVudCksIGFycmF5KCdJRCcgPT4gJHBpZCkpOwoJCQkJY2xlYW5fcG9zdF9jYWNoZSgkcGlkKTsKCQkJCSR0aGlzX3Bvc3RfZml4ZWQgKz0gJG47CgkJCX0KCgkJCSRlZCA9IGdldF9wb3N0X21ldGEoJHBpZCwgJ19lbGVtZW50b3JfZGF0YScsIHRydWUpOwoJCQlpZiAoaXNfc3RyaW5nKCRlZCkgJiYgJGVkICE9PSAnJykgewoJCQkJJG4yID0gc3Vic3RyX2NvdW50KCRlZCwgJGVzY19zZWFyY2gpOwoJCQkJaWYgKCRuMiA+IDApIHsKCQkJCQkkZWQgPSBzdHJfcmVwbGFjZSgkZXNjX3NlYXJjaCwgJGVzY19yZXBsYWNlLCAkZWQpOwoJCQkJCXVwZGF0ZV9wb3N0X21ldGEoJHBpZCwgJ19lbGVtZW50b3JfZGF0YScsICRlZCk7CgkJCQkJZGVsZXRlX3Bvc3RfbWV0YSgkcGlkLCAnX2VsZW1lbnRvcl9lbGVtZW50X2NhY2hlJyk7CgkJCQkJJHRoaXNfcG9zdF9maXhlZCArPSAkbjI7CgkJCQl9CgkJCX0KCgkJCWlmICgkdGhpc19wb3N0X2ZpeGVkID4gMCkgewoJCQkJZWNobyAiICBwb3N0IHskcGlkfSAoXCJ7JHBvc3QtPnBvc3RfdGl0bGV9XCIpOiBmaXhlZCAkdGhpc19wb3N0X2ZpeGVkIG9jY3VycmVuY2UocylcbiI7CgkJCQkkdG90YWxfZml4ZWQgKz0gJHRoaXNfcG9zdF9maXhlZDsKCQkJCSRwb3N0c190b3VjaGVkKys7CgkJCX0KCQl9CgkJZWNobyAiVE9UQUw6IGZpeGVkICR0b3RhbF9maXhlZCBvY2N1cnJlbmNlKHMpIGFjcm9zcyAkcG9zdHNfdG91Y2hlZCBwb3N0KHMpXG4iOwoJfQp9CgplY2hvICJcbkRPTkVcbiI7Cg==" | base64 -d > /tmp/fix-helloworld-logo.php;
+
+             php -l /tmp/fix-helloworld-logo.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed";
+               rm -f /tmp/fix-helloworld-logo.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/fix-helloworld-logo.php --path="$WP_PATH" > /tmp/fix-output.txt 2>&1;
+             EVAL_STATUS=$?;
+             cat /tmp/fix-output.txt;
+             HAS_ABORT=$(grep -c "ABORT:" /tmp/fix-output.txt || true);
+             rm -f /tmp/fix-helloworld-logo.php /tmp/fix-output.txt;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "FAIL: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             if [ "${HAS_ABORT:-0}" != "0" ]; then
+               echo "FAIL: script reported ABORT - see log above";
+               exit 1;
+             fi;
+             echo "OK: workflow completed"'

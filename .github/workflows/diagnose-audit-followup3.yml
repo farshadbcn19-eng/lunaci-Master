@@ -1,0 +1,66 @@
+name: Diagnose - audit follow-up 3 (read-only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/diagnose-audit-followup3.yml'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Get exact context for returns/shipping/collections-2 in post_content and _elementor_data (read-only)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" \
+                 -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then
+                 WP_PATH=$(dirname "$FOUND");
+               fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then
+               echo "ERROR: could not locate wp-config.php under $HOME";
+               exit 1;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwoKZnVuY3Rpb24gc2VjMygkdCkgeyBlY2hvICJcbj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT1cbiR0XG49PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09XG4iOyB9CgpmdW5jdGlvbiBmdWxsX2N0eCgkaGF5c3RhY2ssICRuZWVkbGUsICRwYWQgPSAyNTApIHsKICAgICRvdXQgPSBhcnJheSgpOwogICAgJG9mZnNldCA9IDA7CiAgICB3aGlsZSAoKCRwb3MgPSBzdHJpcG9zKCRoYXlzdGFjaywgJG5lZWRsZSwgJG9mZnNldCkpICE9PSBmYWxzZSkgewogICAgICAgICRzdGFydCA9IG1heCgwLCAkcG9zIC0gJHBhZCk7CiAgICAgICAgJG91dFtdID0gJy4uLicgLiBzdWJzdHIoJGhheXN0YWNrLCAkc3RhcnQsIHN0cmxlbigkbmVlZGxlKSArICRwYWQgKiAyKSAuICcuLi4nOwogICAgICAgICRvZmZzZXQgPSAkcG9zICsgc3RybGVuKCRuZWVkbGUpOwogICAgfQogICAgcmV0dXJuICRvdXQ7Cn0KCiR0YXJnZXRfcG9zdHMgPSBhcnJheSg1NywgNTksIDYxLCA2ODApOwokbmVlZGxlcyA9IGFycmF5KCcvcmV0dXJucycsICcvc2hpcHBpbmcnLCAnY29sbGVjdGlvbnMtMicpOwoKZm9yZWFjaCAoJHRhcmdldF9wb3N0cyBhcyAkcGlkKSB7CiAgICAkcG9zdCA9IGdldF9wb3N0KCRwaWQpOwogICAgc2VjMygiUE9TVCAkcGlkIFwiIiAuICgkcG9zdCA/ICRwb3N0LT5wb3N0X3RpdGxlIDogJz8nKSAuICJcIiIpOwoKICAgIC8vIHBvc3RfY29udGVudAogICAgJHBjID0gJHBvc3QgPyAkcG9zdC0+cG9zdF9jb250ZW50IDogJyc7CiAgICBmb3JlYWNoICgkbmVlZGxlcyBhcyAkbmVlZGxlKSB7CiAgICAgICAgaWYgKHN0cmlwb3MoJHBjLCAkbmVlZGxlKSAhPT0gZmFsc2UpIHsKICAgICAgICAgICAgZWNobyAiLS0gcG9zdF9jb250ZW50IG1hdGNoIGZvciAnJG5lZWRsZScgLS1cbiI7CiAgICAgICAgICAgIGZvcmVhY2ggKGZ1bGxfY3R4KCRwYywgJG5lZWRsZSkgYXMgJGMpIGVjaG8gJGMgLiAiXG5cbiI7CiAgICAgICAgfQogICAgfQoKICAgIC8vIF9lbGVtZW50b3JfZGF0YQogICAgJGVkID0gZ2V0X3Bvc3RfbWV0YSgkcGlkLCAnX2VsZW1lbnRvcl9kYXRhJywgdHJ1ZSk7CiAgICBpZiAoaXNfc3RyaW5nKCRlZCkpIHsKICAgICAgICBmb3JlYWNoICgkbmVlZGxlcyBhcyAkbmVlZGxlKSB7CiAgICAgICAgICAgIGlmIChzdHJpcG9zKCRlZCwgJG5lZWRsZSkgIT09IGZhbHNlKSB7CiAgICAgICAgICAgICAgICBlY2hvICItLSBfZWxlbWVudG9yX2RhdGEgbWF0Y2ggZm9yICckbmVlZGxlJyAtLVxuIjsKICAgICAgICAgICAgICAgIGZvcmVhY2ggKGZ1bGxfY3R4KCRlZCwgJG5lZWRsZSkgYXMgJGMpIGVjaG8gJGMgLiAiXG5cbiI7CiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICB9Cn0KCmVjaG8gIlxuRE9ORVxuIjsK" | base64 -d > /tmp/diagnose-audit-followup3.php;
+
+             php -l /tmp/diagnose-audit-followup3.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed";
+               rm -f /tmp/diagnose-audit-followup3.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/diagnose-audit-followup3.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/diagnose-audit-followup3.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: read-only diagnostic completed successfully"'

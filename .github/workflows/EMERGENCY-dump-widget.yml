@@ -1,0 +1,45 @@
+name: EMERGENCY - dump live html widget content for post 57 (read-only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/EMERGENCY-dump-widget.yml'
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Dump base64-encoded html widget content from post 57
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then
+                 WP_PATH="$candidate";
+                 break;
+               fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "PHP_B64_START";
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwokcGlkID0gNTc7CiRlZCA9IGdldF9wb3N0X21ldGEoJHBpZCwgJ19lbGVtZW50b3JfZGF0YScsIHRydWUpOwokZGVjb2RlZCA9IGpzb25fZGVjb2RlKCRlZCwgdHJ1ZSk7CmlmIChqc29uX2xhc3RfZXJyb3IoKSAhPT0gSlNPTl9FUlJPUl9OT05FKSB7CiAgICBlY2hvICJBQk9SVDogY3VycmVudCBfZWxlbWVudG9yX2RhdGEgaXMgbm90IHZhbGlkIEpTT046ICIgLiBqc29uX2xhc3RfZXJyb3JfbXNnKCkgLiAiXG4iOwogICAgZXhpdDsKfQpmdW5jdGlvbiBmaW5kX2h0bWxfd2lkZ2V0KCRub2RlcywgJiRmb3VuZCkgewogICAgaWYgKCFpc19hcnJheSgkbm9kZXMpKSByZXR1cm47CiAgICBmb3JlYWNoICgkbm9kZXMgYXMgJG4pIHsKICAgICAgICBpZiAoaXNzZXQoJG5bJ3dpZGdldFR5cGUnXSkgJiYgJG5bJ3dpZGdldFR5cGUnXSA9PT0gJ2h0bWwnICYmIGlzc2V0KCRuWydzZXR0aW5ncyddWydodG1sJ10pKSB7CiAgICAgICAgICAgICRmb3VuZFtdID0gJG5bJ3NldHRpbmdzJ11bJ2h0bWwnXTsKICAgICAgICB9CiAgICAgICAgaWYgKGlzc2V0KCRuWydlbGVtZW50cyddKSkgZmluZF9odG1sX3dpZGdldCgkblsnZWxlbWVudHMnXSwgJGZvdW5kKTsKICAgIH0KfQokZm91bmQgPSBhcnJheSgpOwpmaW5kX2h0bWxfd2lkZ2V0KCRkZWNvZGVkLCAkZm91bmQpOwplY2hvICJjb3VudCBvZiBodG1sIHdpZGdldHMgZm91bmQ6ICIgLiBjb3VudCgkZm91bmQpIC4gIlxuIjsKZm9yZWFjaCAoJGZvdW5kIGFzICRpID0+ICRodG1sKSB7CiAgICBlY2hvICI9PT0gd2lkZ2V0ICRpIGxlbmd0aD0iIC4gc3RybGVuKCRodG1sKSAuICIgPT09XG4iOwogICAgZWNobyBiYXNlNjRfZW5jb2RlKCRodG1sKSAuICJcbiI7CiAgICBlY2hvICI9PT0gZW5kIHdpZGdldCAkaSA9PT1cbiI7Cn0K" | base64 -d > /tmp/dump-widget.php;
+             php -l /tmp/dump-widget.php;
+             wp eval-file /tmp/dump-widget.php --path="$WP_PATH";
+             rm -f /tmp/dump-widget.php'

@@ -2,6 +2,11 @@ name: Full Site Audit (read-only)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/audit-full-site.yml'
 
 jobs:
   audit:

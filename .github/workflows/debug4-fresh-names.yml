@@ -1,0 +1,64 @@
+name: Debug4 - Terms/Privacy with brand-new filenames (opcache test)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/debug4-fresh-names.yml'
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Transfer with unique remote filenames
+        env:
+          SSHPASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          STAMP=$(date +%s)
+          echo "STAMP=$STAMP" >> $GITHUB_ENV
+          sshpass -e scp -o StrictHostKeyChecking=no -P "$SSH_PORT" \
+            assets/translations/create-es-3-terms-v2.php "$SSH_USER@$SSH_HOST:/tmp/terms-fresh-$STAMP.php"
+          sshpass -e scp -o StrictHostKeyChecking=no -P "$SSH_PORT" \
+            assets/translations/create-es-4-privacy-v2.php "$SSH_USER@$SSH_HOST:/tmp/privacy-fresh-$STAMP.php"
+
+      - name: Run with fresh filenames
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          STAMP: ${{ env.STAMP }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            "WP_PATH=\"\";
+             for candidate in \"\$HOME/public_html\" \"\$HOME\" \"\$(pwd)\"; do
+               if [ -f \"\$candidate/wp-config.php\" ]; then WP_PATH=\"\$candidate\"; break; fi;
+             done;
+             if [ -z \"\$WP_PATH\" ]; then
+               FOUND=\$(find -L \"\$HOME\" -maxdepth 8 -name \"wp-config.php\" -not -path \"*/wp-content/*\" -not -path \"*/node_modules/*\" 2>/dev/null | head -1);
+               if [ -n \"\$FOUND\" ]; then WP_PATH=\$(dirname \"\$FOUND\"); fi;
+             fi;
+             if [ -z \"\$WP_PATH\" ]; then echo \"ERROR: could not locate wp-config.php\"; exit 1; fi;
+             echo \"=== terms-fresh-$STAMP ===\";
+             wp eval-file /tmp/terms-fresh-$STAMP.php --path=\"\$WP_PATH\" > /tmp/terms-out-$STAMP.txt 2>&1;
+             echo \"exit=\$?\";
+             cat /tmp/terms-out-$STAMP.txt;
+             echo \"bytes=\$(wc -c < /tmp/terms-out-$STAMP.txt)\";
+             echo \"=== privacy-fresh-$STAMP ===\";
+             wp eval-file /tmp/privacy-fresh-$STAMP.php --path=\"\$WP_PATH\" > /tmp/privacy-out-$STAMP.txt 2>&1;
+             echo \"exit=\$?\";
+             cat /tmp/privacy-out-$STAMP.txt;
+             echo \"bytes=\$(wc -c < /tmp/privacy-out-$STAMP.txt)\";
+             rm -f /tmp/terms-fresh-$STAMP.php /tmp/privacy-fresh-$STAMP.php /tmp/terms-out-$STAMP.txt /tmp/privacy-out-$STAMP.txt"

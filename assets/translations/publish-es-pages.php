@@ -22,8 +22,8 @@ foreach ( $expected as $post_id => $spec ) {
 		$any_mismatch = true;
 		continue;
 	}
-	if ( $post->post_status !== 'draft' ) {
-		echo "MISMATCH: post_id=$post_id status is '{$post->post_status}', expected 'draft'\n";
+	if ( ! in_array( $post->post_status, array( 'draft', 'publish' ), true ) ) {
+		echo "MISMATCH: post_id=$post_id status is '{$post->post_status}', expected 'draft' or 'publish'\n";
 		$any_mismatch = true;
 		continue;
 	}
@@ -41,7 +41,7 @@ foreach ( $expected as $post_id => $spec ) {
 		$any_mismatch = true;
 		continue;
 	}
-	echo "OK: post_id=$post_id ('{$spec['title']}') verified draft + correct WPML link (trid={$spec['trid']})\n";
+	echo "OK: post_id=$post_id ('{$spec['title']}') verified status={$post->post_status} + correct WPML link (trid={$spec['trid']})\n";
 }
 
 if ( $any_mismatch ) {
@@ -49,9 +49,14 @@ if ( $any_mismatch ) {
 	exit(1);
 }
 
-echo "\nAll guard checks passed. Publishing...\n\n";
+echo "\nAll guard checks passed. Publishing any remaining drafts...\n\n";
 
 foreach ( $expected as $post_id => $spec ) {
+	$post = get_post( $post_id );
+	if ( $post->post_status === 'publish' ) {
+		echo "Already published: post_id=$post_id ('{$spec['title']}')\n";
+		continue;
+	}
 	$result = wp_update_post( array(
 		'ID'          => $post_id,
 		'post_status' => 'publish',

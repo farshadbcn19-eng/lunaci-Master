@@ -1,4 +1,4 @@
-name: Publish ES pages (guarded - draft to publish, v2)
+name: Publish ES pages (guarded - draft to publish, v3)
 
 on:
   push:

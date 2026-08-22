@@ -5,10 +5,10 @@ global $wpdb;
 // (b) currently status=draft, and (c) linked via WPML as the 'es' translation
 // of the expected English trid. Abort entirely if any check fails.
 $expected = array(
-	765 => array( 'trid' => 759, 'title' => 'Envío' ),
-	766 => array( 'trid' => 760, 'title' => 'Devoluciones' ),
-	768 => array( 'trid' => 676, 'title' => 'Términos de Servicio' ),
-	769 => array( 'trid' => 3,   'title' => 'Política de Privacidad' ),
+	765 => array( 'trid' => 1522, 'title' => 'Envío' ),
+	766 => array( 'trid' => 1523, 'title' => 'Devoluciones' ),
+	768 => array( 'trid' => 1458, 'title' => 'Términos de Servicio' ),
+	769 => array( 'trid' => 3,    'title' => 'Política de Privacidad' ),
 	770 => array( 'trid' => 60,  'title' => 'Contacto' ),
 	771 => array( 'trid' => 61,  'title' => 'Productos' ),
 	772 => array( 'trid' => 57,  'title' => 'Inicio' ),

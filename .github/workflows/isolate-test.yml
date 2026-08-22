@@ -1,0 +1,40 @@
+name: Isolate - test wpml_element_trid and wp_insert_post individually
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/isolate-test.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+      - name: Run isolated test
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             echo "PD9waHAKaW5pX3NldCgnZGlzcGxheV9lcnJvcnMnLCAnMScpOwplcnJvcl9yZXBvcnRpbmcoRV9BTEwpOwplY2hvICJUMTogc2NyaXB0IHN0YXJ0ZWRcbiI7CiR0cmlkID0gYXBwbHlfZmlsdGVycyggJ3dwbWxfZWxlbWVudF90cmlkJywgbnVsbCwgNzU5LCAncG9zdF9wYWdlJyApOwplY2hvICJUMjogdHJpZD0iIC4gdmFyX2V4cG9ydCgkdHJpZCwgdHJ1ZSkgLiAiXG4iOwokZXhpc3RpbmcgPSBnZXRfcGFnZV9ieV9wYXRoKCAnZW52aW8tdGVzdC1wcm9iZS14eXonICk7CmVjaG8gIlQzOiBleGlzdGluZyBjaGVjayBkb25lLCByZXN1bHQ9IiAuIHZhcl9leHBvcnQoJGV4aXN0aW5nLCB0cnVlKSAuICJcbiI7CnRyeSB7CgkkbmV3X2lkID0gd3BfaW5zZXJ0X3Bvc3QoIGFycmF5KAoJCSdwb3N0X3RpdGxlJyAgID0+ICdQcm9iZSBUZXN0JywKCQkncG9zdF9uYW1lJyAgICA9PiAnZW52aW8tdGVzdC1wcm9iZS14eXonLAoJCSdwb3N0X2NvbnRlbnQnID0+ICc8cD50ZXN0PC9wPicsCgkJJ3Bvc3Rfc3RhdHVzJyAgPT4gJ2RyYWZ0JywKCQkncG9zdF90eXBlJyAgICA9PiAncGFnZScsCgkpLCB0cnVlICk7CgllY2hvICJUNDogd3BfaW5zZXJ0X3Bvc3QgcmVzdWx0PSIgLiB2YXJfZXhwb3J0KCRuZXdfaWQsIHRydWUpIC4gIlxuIjsKfSBjYXRjaCAoXFRocm93YWJsZSAkZSkgewoJZWNobyAiVDQtQ0FVR0hUOiAiIC4gZ2V0X2NsYXNzKCRlKSAuICI6ICIgLiAkZS0+Z2V0TWVzc2FnZSgpIC4gIlxuIjsKfQppZiAoIWVtcHR5KCRuZXdfaWQpICYmICFpc193cF9lcnJvcigkbmV3X2lkKSkgewoJdHJ5IHsKCQlkb19hY3Rpb24oICd3cG1sX3NldF9lbGVtZW50X2xhbmd1YWdlX2RldGFpbHMnLCBhcnJheSgKCQkJJ2VsZW1lbnRfaWQnICAgICAgICAgICA9PiAkbmV3X2lkLAoJCQknZWxlbWVudF90eXBlJyAgICAgICAgID0+ICdwb3N0X3BhZ2UnLAoJCQkndHJpZCcgICAgICAgICAgICAgICAgID0+ICR0cmlkLAoJCQknbGFuZ3VhZ2VfY29kZScgICAgICAgID0+ICdlcycsCgkJCSdzb3VyY2VfbGFuZ3VhZ2VfY29kZScgPT4gJ2VuJywKCQkpICk7CgkJZWNobyAiVDU6IHdwbWxfc2V0X2VsZW1lbnRfbGFuZ3VhZ2VfZGV0YWlscyBkb25lXG4iOwoJfSBjYXRjaCAoXFRocm93YWJsZSAkZSkgewoJCWVjaG8gIlQ1LUNBVUdIVDogIiAuIGdldF9jbGFzcygkZSkgLiAiOiAiIC4gJGUtPmdldE1lc3NhZ2UoKSAuICJcbiI7Cgl9Cgl3cF9kZWxldGVfcG9zdCgkbmV3X2lkLCB0cnVlKTsKCWVjaG8gIlQ2OiBjbGVhbmVkIHVwIHByb2JlIHBvc3RcbiI7Cn0KZWNobyAiVDc6IHNjcmlwdCBmaW5pc2hlZFxuIjsK" | base64 -d > /tmp/isolate-test.php;
+             php -l /tmp/isolate-test.php;
+             wp eval-file /tmp/isolate-test.php --path="$WP_PATH" > /tmp/iso-out.txt 2>&1;
+             echo "EXIT=$?";
+             echo "--- output ---";
+             cat /tmp/iso-out.txt;
+             echo "--- size ---";
+             wc -c /tmp/iso-out.txt;
+             rm -f /tmp/isolate-test.php /tmp/iso-out.txt'

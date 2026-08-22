@@ -42,3 +42,4 @@ jobs:
              wp eval-file /tmp/tc-$STAMP.php --path=\"\$WP_PATH\" 2>&1;
              echo \"exit=\$?\";
              rm -f /tmp/tc-$STAMP.php"
+# retry 1787383456

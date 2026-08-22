@@ -29,6 +29,12 @@ jobs:
              for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
                if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
              done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "WP_PATH=$WP_PATH";
              echo "PD9waHAKaW5pX3NldCgnZGlzcGxheV9lcnJvcnMnLCAnMScpOwplcnJvcl9yZXBvcnRpbmcoRV9BTEwpOwplY2hvICJUMTogc2NyaXB0IHN0YXJ0ZWRcbiI7CiR0cmlkID0gYXBwbHlfZmlsdGVycyggJ3dwbWxfZWxlbWVudF90cmlkJywgbnVsbCwgNzU5LCAncG9zdF9wYWdlJyApOwplY2hvICJUMjogdHJpZD0iIC4gdmFyX2V4cG9ydCgkdHJpZCwgdHJ1ZSkgLiAiXG4iOwokZXhpc3RpbmcgPSBnZXRfcGFnZV9ieV9wYXRoKCAnZW52aW8tdGVzdC1wcm9iZS14eXonICk7CmVjaG8gIlQzOiBleGlzdGluZyBjaGVjayBkb25lLCByZXN1bHQ9IiAuIHZhcl9leHBvcnQoJGV4aXN0aW5nLCB0cnVlKSAuICJcbiI7CnRyeSB7CgkkbmV3X2lkID0gd3BfaW5zZXJ0X3Bvc3QoIGFycmF5KAoJCSdwb3N0X3RpdGxlJyAgID0+ICdQcm9iZSBUZXN0JywKCQkncG9zdF9uYW1lJyAgICA9PiAnZW52aW8tdGVzdC1wcm9iZS14eXonLAoJCSdwb3N0X2NvbnRlbnQnID0+ICc8cD50ZXN0PC9wPicsCgkJJ3Bvc3Rfc3RhdHVzJyAgPT4gJ2RyYWZ0JywKCQkncG9zdF90eXBlJyAgICA9PiAncGFnZScsCgkpLCB0cnVlICk7CgllY2hvICJUNDogd3BfaW5zZXJ0X3Bvc3QgcmVzdWx0PSIgLiB2YXJfZXhwb3J0KCRuZXdfaWQsIHRydWUpIC4gIlxuIjsKfSBjYXRjaCAoXFRocm93YWJsZSAkZSkgewoJZWNobyAiVDQtQ0FVR0hUOiAiIC4gZ2V0X2NsYXNzKCRlKSAuICI6ICIgLiAkZS0+Z2V0TWVzc2FnZSgpIC4gIlxuIjsKfQppZiAoIWVtcHR5KCRuZXdfaWQpICYmICFpc193cF9lcnJvcigkbmV3X2lkKSkgewoJdHJ5IHsKCQlkb19hY3Rpb24oICd3cG1sX3NldF9lbGVtZW50X2xhbmd1YWdlX2RldGFpbHMnLCBhcnJheSgKCQkJJ2VsZW1lbnRfaWQnICAgICAgICAgICA9PiAkbmV3X2lkLAoJCQknZWxlbWVudF90eXBlJyAgICAgICAgID0+ICdwb3N0X3BhZ2UnLAoJCQkndHJpZCcgICAgICAgICAgICAgICAgID0+ICR0cmlkLAoJCQknbGFuZ3VhZ2VfY29kZScgICAgICAgID0+ICdlcycsCgkJCSdzb3VyY2VfbGFuZ3VhZ2VfY29kZScgPT4gJ2VuJywKCQkpICk7CgkJZWNobyAiVDU6IHdwbWxfc2V0X2VsZW1lbnRfbGFuZ3VhZ2VfZGV0YWlscyBkb25lXG4iOwoJfSBjYXRjaCAoXFRocm93YWJsZSAkZSkgewoJCWVjaG8gIlQ1LUNBVUdIVDogIiAuIGdldF9jbGFzcygkZSkgLiAiOiAiIC4gJGUtPmdldE1lc3NhZ2UoKSAuICJcbiI7Cgl9Cgl3cF9kZWxldGVfcG9zdCgkbmV3X2lkLCB0cnVlKTsKCWVjaG8gIlQ2OiBjbGVhbmVkIHVwIHByb2JlIHBvc3RcbiI7Cn0KZWNobyAiVDc6IHNjcmlwdCBmaW5pc2hlZFxuIjsK" | base64 -d > /tmp/isolate-test.php;
              php -l /tmp/isolate-test.php;
              wp eval-file /tmp/isolate-test.php --path="$WP_PATH" > /tmp/iso-out.txt 2>&1;

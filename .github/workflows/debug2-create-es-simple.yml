@@ -1,0 +1,61 @@
+name: Debug2 - check remote file integrity and manual eval
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/debug2-create-es-simple.yml'
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Transfer script to server
+        env:
+          SSHPASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          echo "local file size:"
+          wc -c assets/translations/create-es-simple-pages.php
+          sshpass -e scp -o StrictHostKeyChecking=no -P "$SSH_PORT" \
+            assets/translations/create-es-simple-pages.php "$SSH_USER@$SSH_HOST:/tmp/create-es-simple-pages-dbg.php"
+
+      - name: Check remote file and run manually
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             echo "remote file size:";
+             wc -c /tmp/create-es-simple-pages-dbg.php;
+             echo "remote file first 100 chars:";
+             head -c 100 /tmp/create-es-simple-pages-dbg.php;
+             echo "";
+             echo "remote file last 100 chars:";
+             tail -c 100 /tmp/create-es-simple-pages-dbg.php;
+             echo "";
+             echo "--- php -l ---";
+             php -l /tmp/create-es-simple-pages-dbg.php;
+             echo "--- plain php CLI execution (not wp-cli) just to test parsing, will fail on wp functions but should print something before failing ---";
+             php /tmp/create-es-simple-pages-dbg.php 2>&1 | head -20;
+             echo "--- now wp eval-file with explicit --debug ---";
+             wp eval-file /tmp/create-es-simple-pages-dbg.php --path="$WP_PATH" --debug 2>&1 | head -60;
+             echo "EXIT=$?";
+             rm -f /tmp/create-es-simple-pages-dbg.php'

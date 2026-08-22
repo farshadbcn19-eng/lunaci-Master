@@ -1,0 +1,40 @@
+name: Verify - all ES pages live (HTTP status + Spanish marker text)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/verify-all-es-pages.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check each ES page for HTTP 200 and Spanish marker text
+        run: |
+          check() {
+            url="$1"
+            marker="$2"
+            code=$(curl -sS -o /tmp/page.html -w "%{http_code}" -L "$url?nocache=$(date +%s)")
+            if [ "$code" != "200" ]; then
+              echo "FAIL: $url -> HTTP $code"
+              return 1
+            fi
+            if grep -qF "$marker" /tmp/page.html; then
+              echo "OK: $url -> HTTP 200, found marker '$marker'"
+            else
+              echo "FAIL: $url -> HTTP 200 but marker '$marker' NOT found"
+              return 1
+            fi
+          }
+          ANY_FAIL=0
+          check "https://lunacibarcelona.com/es/inicio/" "Belleza de Lujo" || ANY_FAIL=1
+          check "https://lunacibarcelona.com/es/productos/" "Universo de Producto" || ANY_FAIL=1
+          check "https://lunacibarcelona.com/es/contacto/" "Contacta con LUNACI" || ANY_FAIL=1
+          check "https://lunacibarcelona.com/es/envio/" "" || true
+          check "https://lunacibarcelona.com/es/devoluciones/" "" || true
+          check "https://lunacibarcelona.com/es/politica-de-privacidad/" "" || true
+          check "https://lunacibarcelona.com/es/terminos-de-servicio/" "" || true
+          exit $ANY_FAIL

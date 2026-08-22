@@ -1,4 +1,7 @@
 <?php
+$__LOG = '/tmp/log-terms.txt';
+function llog($m) { global $__LOG; file_put_contents($__LOG, $m, FILE_APPEND); echo $m; }
+llog("BOOT: script loaded, content length=" . strlen($GLOBALS['argv'][0] ?? '') . "\n");
 $en_id = 676; $slug = 'terminos-de-servicio'; $title = 'Términos de Servicio';
 $content = '<!-- wp:paragraph -->
 <p><strong>Última actualización:</strong> 1 de agosto de 2026</p>
@@ -124,13 +127,13 @@ $content = '<!-- wp:paragraph -->
 <p>Si tienes alguna pregunta sobre estos Términos, escríbenos a <a href="mailto:info@lunaci.es">info@lunaci.es</a>.</p>
 <!-- /wp:paragraph -->';
 
-echo "start\n";
+llog("start\n");
 $existing = get_page_by_path( $slug );
 if ( $existing ) {
-	echo "ABORT: slug '$slug' already exists (ID={$existing->ID})\n";
+	llog("ABORT: slug '$slug' already exists (ID={$existing->ID})\n");
 } else {
 	$trid = apply_filters( 'wpml_element_trid', null, $en_id, 'post_page' );
-	echo "trid=$trid\n";
+	llog("trid=$trid\n");
 	$new_id = wp_insert_post( array(
 		'post_title'   => $title,
 		'post_name'    => $slug,
@@ -148,7 +151,7 @@ if ( $existing ) {
 			'language_code'        => 'es',
 			'source_language_code' => 'en',
 		) );
-		echo "OK: created es_id=$new_id slug=$slug trid=$trid\n";
+		llog("OK: created es_id=$new_id slug=$slug trid=$trid\n");
 	}
 }
-echo "done\n";
+llog("done\n");

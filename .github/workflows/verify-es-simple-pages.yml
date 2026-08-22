@@ -1,0 +1,40 @@
+name: Verify - ES simple pages created (read-only)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/verify-es-simple-pages.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+      - name: Run verify
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "PD9waHAKZ2xvYmFsICR3cGRiOwokc2x1Z3MgPSBhcnJheSgnZW52aW8nLCAnZGV2b2x1Y2lvbmVzJywgJ3Rlcm1pbm9zLWRlLXNlcnZpY2lvJywgJ3BvbGl0aWNhLWRlLXByaXZhY2lkYWQnKTsKZm9yZWFjaCAoJHNsdWdzIGFzICRzbHVnKSB7CiAgICAkcG9zdCA9IGdldF9wYWdlX2J5X3BhdGgoJHNsdWcpOwogICAgaWYgKCRwb3N0KSB7CiAgICAgICAgZWNobyAic2x1Zz0kc2x1ZyAtPiBGT1VORCBJRD17JHBvc3QtPklEfSB0aXRsZT1cInskcG9zdC0+cG9zdF90aXRsZX1cIiBzdGF0dXM9eyRwb3N0LT5wb3N0X3N0YXR1c31cbiI7CiAgICAgICAgJHRyaWQgPSBhcHBseV9maWx0ZXJzKCd3cG1sX2VsZW1lbnRfdHJpZCcsIG51bGwsICRwb3N0LT5JRCwgJ3Bvc3RfcGFnZScpOwogICAgICAgIGVjaG8gIiAgdHJpZD0kdHJpZFxuIjsKICAgIH0gZWxzZSB7CiAgICAgICAgZWNobyAic2x1Zz0kc2x1ZyAtPiBOT1QgRk9VTkRcbiI7CiAgICB9Cn0KZWNobyAiRE9ORVxuIjsK" | base64 -d > /tmp/verify-es-simple.php;
+             php -l /tmp/verify-es-simple.php;
+             wp eval-file /tmp/verify-es-simple.php --path="$WP_PATH" 2>&1;
+             rm -f /tmp/verify-es-simple.php'

@@ -1,11 +1,11 @@
-name: Dump - current live Home page elementor_data content
+name: Dump - Home page body-only content (no CSS)
 
 on:
   push:
     branches:
       - claude/lunaci-barcelona-audit-r9mp7s
     paths:
-      - '.github/workflows/dump-home-content.yml'
+      - '.github/workflows/dump-home-body-only.yml'
 
 jobs:
   dump:
@@ -26,7 +26,7 @@ jobs:
         run: |
           STAMP=$(date +%s)
           sshpass -e scp -o StrictHostKeyChecking=no -P "$SSH_PORT" \
-            assets/translations/dump-home-content.php "$SSH_USER@$SSH_HOST:/tmp/dh-$STAMP.php"
+            assets/translations/dump-home-body-only.php "$SSH_USER@$SSH_HOST:/tmp/dhb-$STAMP.php"
           sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
             -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
             -p "$SSH_PORT" \
@@ -39,6 +39,6 @@ jobs:
                FOUND=\$(find -L \"\$HOME\" -maxdepth 8 -name \"wp-config.php\" -not -path \"*/wp-content/*\" -not -path \"*/node_modules/*\" 2>/dev/null | head -1);
                if [ -n \"\$FOUND\" ]; then WP_PATH=\$(dirname \"\$FOUND\"); fi;
              fi;
-             wp eval-file /tmp/dh-$STAMP.php --path=\"\$WP_PATH\" 2>&1;
+             wp eval-file /tmp/dhb-$STAMP.php --path=\"\$WP_PATH\" 2>&1;
              echo \"exit=\$?\";
-             rm -f /tmp/dh-$STAMP.php"
+             rm -f /tmp/dhb-$STAMP.php"

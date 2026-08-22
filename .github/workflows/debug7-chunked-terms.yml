@@ -1,0 +1,44 @@
+name: Debug7 - test chunked-array terms content
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/debug7-chunked-terms.yml'
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Transfer and run
+        env:
+          SSHPASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          STAMP=$(date +%s)
+          sshpass -e scp -o StrictHostKeyChecking=no -P "$SSH_PORT" \
+            assets/translations/create-es-3-terms-chunked.php "$SSH_USER@$SSH_HOST:/tmp/tc-$STAMP.php"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            "WP_PATH=\"\";
+             for candidate in \"\$HOME/public_html\" \"\$HOME\" \"\$(pwd)\"; do
+               if [ -f \"\$candidate/wp-config.php\" ]; then WP_PATH=\"\$candidate\"; break; fi;
+             done;
+             if [ -z \"\$WP_PATH\" ]; then
+               FOUND=\$(find -L \"\$HOME\" -maxdepth 8 -name \"wp-config.php\" -not -path \"*/wp-content/*\" -not -path \"*/node_modules/*\" 2>/dev/null | head -1);
+               if [ -n \"\$FOUND\" ]; then WP_PATH=\$(dirname \"\$FOUND\"); fi;
+             fi;
+             wp eval-file /tmp/tc-$STAMP.php --path=\"\$WP_PATH\" 2>&1;
+             echo \"exit=\$?\";
+             rm -f /tmp/tc-$STAMP.php"

@@ -1,0 +1,62 @@
+name: Finish ES pages (Terms, Privacy) and delete Collections (guarded)
+
+on:
+  push:
+    branches:
+      - claude/lunaci-barcelona-audit-r9mp7s
+    paths:
+      - '.github/workflows/finish-es-and-cleanup.yml'
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Transfer scripts with unique names
+        env:
+          SSHPASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          STAMP=$(date +%s)
+          echo "STAMP=$STAMP" >> $GITHUB_ENV
+          sshpass -e scp -o StrictHostKeyChecking=no -P "$SSH_PORT" \
+            assets/translations/create-es-3-terms-v2.php "$SSH_USER@$SSH_HOST:/tmp/t-$STAMP.php"
+          sshpass -e scp -o StrictHostKeyChecking=no -P "$SSH_PORT" \
+            assets/translations/create-es-4-privacy-v2.php "$SSH_USER@$SSH_HOST:/tmp/p-$STAMP.php"
+          sshpass -e scp -o StrictHostKeyChecking=no -P "$SSH_PORT" \
+            assets/translations/delete-collections.php "$SSH_USER@$SSH_HOST:/tmp/d-$STAMP.php"
+
+      - name: Run all three
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          STAMP: ${{ env.STAMP }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            "WP_PATH=\"\";
+             for candidate in \"\$HOME/public_html\" \"\$HOME\" \"\$(pwd)\"; do
+               if [ -f \"\$candidate/wp-config.php\" ]; then WP_PATH=\"\$candidate\"; break; fi;
+             done;
+             if [ -z \"\$WP_PATH\" ]; then
+               FOUND=\$(find -L \"\$HOME\" -maxdepth 8 -name \"wp-config.php\" -not -path \"*/wp-content/*\" -not -path \"*/node_modules/*\" 2>/dev/null | head -1);
+               if [ -n \"\$FOUND\" ]; then WP_PATH=\$(dirname \"\$FOUND\"); fi;
+             fi;
+             if [ -z \"\$WP_PATH\" ]; then echo \"ERROR: could not locate wp-config.php\"; exit 1; fi;
+             echo \"=== Terms ===\";
+             wp eval-file /tmp/t-$STAMP.php --path=\"\$WP_PATH\" 2>&1;
+             echo \"=== Privacy ===\";
+             wp eval-file /tmp/p-$STAMP.php --path=\"\$WP_PATH\" 2>&1;
+             echo \"=== Delete Collections ===\";
+             wp eval-file /tmp/d-$STAMP.php --path=\"\$WP_PATH\" 2>&1;
+             rm -f /tmp/t-$STAMP.php /tmp/p-$STAMP.php /tmp/d-$STAMP.php"

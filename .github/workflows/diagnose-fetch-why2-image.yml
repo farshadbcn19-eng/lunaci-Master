@@ -1,0 +1,25 @@
+name: Diagnose - download the current Why-Lunaci (In 15 Seconds) image as an artifact (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Download the image directly from the public internet
+        run: |
+          mkdir -p artifact
+          URL="https://lunacibarcelona.com/wp-content/uploads/2026/07/lunaci-category-Lips-1.png?nocache=$(date +%s%N)"
+          echo "Fetching: $URL"
+          curl -sS -D - -o artifact/why2-current-image.png "$URL" | tee artifact/response-headers.txt
+          ls -la artifact/
+          file artifact/why2-current-image.png || true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: why2-current-image
+          path: artifact/
+          retention-days: 3

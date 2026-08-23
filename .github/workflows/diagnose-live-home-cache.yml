@@ -1,0 +1,92 @@
+name: Diagnose - check live Home page from the public internet (read-only, no writes)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch Home page directly from the public internet (this runner, not via SSH)
+        run: |
+          set -o pipefail
+
+          echo "## Live Home page diagnostic (fetched from the GitHub Actions runner's own public internet connection)" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          URL="https://lunacibarcelona.com/?nocache=$(date +%s%N)"
+          echo "Fetching: $URL"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Fetch URL: \`$URL\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "-- Response headers --"
+          curl -sS -D /tmp/home_headers.txt -o /tmp/home_body.html "$URL"
+          cat /tmp/home_headers.txt
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Response headers" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/home_headers.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+          BODY_LEN=$(wc -c < /tmp/home_body.html)
+          echo ""
+          echo "Body length: $BODY_LEN bytes"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Body length: $BODY_LEN bytes" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Content checks (grep on the fetched HTML)" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Marker | Found |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+
+          check_marker() {
+            local label="$1"
+            local needle="$2"
+            if grep -qF -- "$needle" /tmp/home_body.html; then
+              echo "PASS: $label found"
+              echo "| $label | ✅ found |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "MISSING: $label NOT found"
+              echo "| $label | ❌ NOT found |" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          }
+
+          check_marker "new hero image src" "lunaimport-hero-luna.jpg"
+          check_marker "new collection face image src" "lunaimport-collection-face-luna.jpg"
+          check_marker "new collection eyes image src" "lunaimport-collection-eyes-luna.jpg"
+          check_marker "new collection lips image src" "lunaimport-collection-lips-luna.jpg"
+          check_marker "new collection nails image src" "lunaimport-collection-nails-luna.jpg"
+          check_marker "Our Origin section class" "class=\"ln-origin\""
+          check_marker "Our Origin eyebrow text" "Our Origin"
+          check_marker "Our Origin title text" "Crafted in Barcelona."
+          check_marker "old hero image src (should be GONE)" "lunaci_hero_retouched-1-scaled.jpg"
+          check_marker "old collection face image src (should be GONE)" "lunaci-foundation.jpg"
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Image URL HTTP status checks" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Image | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+
+          check_image() {
+            local label="$1"
+            local url="$2"
+            local status
+            status=$(curl -sg -o /dev/null -w "%{http_code}" -I "$url")
+            echo "$label -> $url -> HTTP $status"
+            echo "| $label | HTTP $status |" >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          check_image "hero-luna" "https://lunacibarcelona.com/wp-content/uploads/2026/08/lunaimport-hero-luna.jpg"
+          check_image "collection-face-luna" "https://lunacibarcelona.com/wp-content/uploads/2026/08/lunaimport-collection-face-luna.jpg"
+          check_image "collection-eyes-luna" "https://lunacibarcelona.com/wp-content/uploads/2026/08/lunaimport-collection-eyes-luna.jpg"
+          check_image "collection-lips-luna" "https://lunacibarcelona.com/wp-content/uploads/2026/08/lunaimport-collection-lips-luna.jpg"
+          check_image "collection-nails-luna" "https://lunacibarcelona.com/wp-content/uploads/2026/08/lunaimport-collection-nails-luna.jpg"
+          check_image "origin-crafted-barcelona-luna" "https://lunacibarcelona.com/wp-content/uploads/2026/08/lunaimport-origin-crafted-barcelona-luna.jpg"
+
+          echo ""
+          echo "OK: live diagnostic complete (read-only, no writes)"

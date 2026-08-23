@@ -1,25 +1,36 @@
-name: Diagnose - download the current Why-Lunaci (In 15 Seconds) image as an artifact (read-only)
+name: Diagnose - commit the current Why-Lunaci (In 15 Seconds) image to a branch (read-only, image only)
 
 on:
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   fetch:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Download the image directly from the public internet
+      - name: Checkout a fresh orphan branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download the image and commit it to a dedicated branch
         run: |
-          mkdir -p artifact
+          set -e
+          BRANCH="diagnostics/why2-current-image"
+          git checkout --orphan "$BRANCH"
+          git rm -rf . > /dev/null 2>&1 || true
+
           URL="https://lunacibarcelona.com/wp-content/uploads/2026/07/lunaci-category-Lips-1.png?nocache=$(date +%s%N)"
           echo "Fetching: $URL"
-          curl -sS -D - -o artifact/why2-current-image.png "$URL" | tee artifact/response-headers.txt
-          ls -la artifact/
-          file artifact/why2-current-image.png || true
+          curl -sS -o why2-current-image.png "$URL"
+          ls -la why2-current-image.png
+          file why2-current-image.png || true
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: why2-current-image
-          path: artifact/
-          retention-days: 3
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add why2-current-image.png
+          git commit -m "diagnostic: current Why-Lunaci section image (read-only fetch, no site changes)"
+          git push --force origin "$BRANCH"

@@ -65,6 +65,8 @@ jobs:
           check_marker "Our Origin title text" "Crafted in Barcelona."
           check_marker "old hero image src (should be GONE)" "lunaci_hero_retouched-1-scaled.jpg"
           check_marker "old collection face image src (should be GONE)" "lunaci-foundation.jpg"
+          check_marker "new why2 (In 15 Seconds) image src" "lunaimport-why2-luna-replacement.jpg"
+          check_marker "old why2 image src (should be GONE)" "lunaci-category-Lips-1.png"
 
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "### Image URL HTTP status checks" >> "$GITHUB_STEP_SUMMARY"
@@ -87,6 +89,7 @@ jobs:
           check_image "collection-lips-luna" "https://lunacibarcelona.com/wp-content/uploads/2026/08/lunaimport-collection-lips-luna.jpg"
           check_image "collection-nails-luna" "https://lunacibarcelona.com/wp-content/uploads/2026/08/lunaimport-collection-nails-luna.jpg"
           check_image "origin-crafted-barcelona-luna" "https://lunacibarcelona.com/wp-content/uploads/2026/08/lunaimport-origin-crafted-barcelona-luna.jpg"
+          check_image "why2-luna-replacement" "https://lunacibarcelona.com/wp-content/uploads/2026/08/lunaimport-why2-luna-replacement.jpg"
 
           echo ""
           echo "OK: live diagnostic complete (read-only, no writes)"

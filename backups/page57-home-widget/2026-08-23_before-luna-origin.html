@@ -1,0 +1,351 @@
+<style>
+*{box-sizing:border-box;}html,body{background:#0B0B0B;}
+#ln{width:100%;background:#0B0B0B;overflow:hidden;}
+#ln img{max-width:100%;display:block;}
+.ln-nav{position:fixed;top:0;left:0;right:0;z-index:9999;display:flex;align-items:center;justify-content:space-between;padding:16px 5%;background:linear-gradient(to bottom,rgba(11,11,11,.95),transparent);transition:background .4s;border-bottom:1px solid transparent;}
+.ln-nav.scrolled{background:rgba(11,11,11,.97);border-bottom-color:rgba(212,175,55,.15);}
+.ln-nav__logo img{height:90px;width:auto;display:block;mix-blend-mode:lighten;}
+.ln-nav__links{display:flex;gap:36px;list-style:none;margin:0;padding:0;}
+.ln-nav__links a{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:10px;font-weight:400;letter-spacing:.3em;text-transform:uppercase;color:rgba(247,244,238,.9);text-decoration:none;transition:color .3s;}
+.ln-nav__links a:hover{color:#D4AF37;}
+.ln-nav__cart a{color:rgba(247,244,238,.9);text-decoration:none;}
+@media(max-width:768px){.ln-nav__links{display:none;}.ln-nav{padding:14px 5%;}}
+.ln-hero{position:relative;width:100%;height:100vh;min-height:600px;overflow:hidden;background:#0B0B0B;display:flex;align-items:flex-end;}
+.ln-hero__bg{position:absolute;inset:0;}
+.ln-hero__bg img{width:100%;height:100%;object-fit:cover;object-position:70% center;animation:lnKB 20s ease-in-out infinite alternate;}
+@keyframes lnKB{0%{transform:scale(1);}100%{transform:scale(1.08) translate(-1%,-1%);}}
+.ln-hero__ov{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(11,11,11,0) 0%,rgba(11,11,11,.5) 55%,rgba(11,11,11,.92) 100%);}
+.ln-hero__ov2{position:absolute;inset:0;background:linear-gradient(to right,rgba(11,11,11,.8) 0%,rgba(11,11,11,.4) 35%,transparent 62%);}
+.ln-hero__content{position:relative;z-index:5;padding:0 5% 8vh;width:100%;}
+.ln-hero__eye{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:10px;font-weight:400;letter-spacing:.4em;text-transform:uppercase;color:#F7F4EE;margin-bottom:16px;display:block;opacity:0;animation:lnFU .9s ease .3s forwards;}
+.ln-hero__wordmark{margin-bottom:16px;opacity:0;animation:lnFU 1s ease .5s forwards;}
+.ln-hero__wordmark .big{font-family:'Trade Gothic LT Std Extended',sans-serif;font-weight:400;font-size:clamp(48px,6.5vw,92px);letter-spacing:.05em;text-transform:uppercase;color:#D4AF37;line-height:1;display:block;text-shadow:0 4px 30px rgba(0,0,0,.55);}
+.ln-hero__wordmark .small{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:clamp(14px,1.5vw,20px);letter-spacing:.5em;text-transform:uppercase;color:#D4AF37;display:block;margin-top:8px;}
+.ln-hero__h1{font-family:'Trade Gothic LT Std Extended',sans-serif;font-weight:400;line-height:1.05;color:#F7F4EE;margin:0 0 14px;opacity:0;animation:lnFU 1s ease .6s forwards;}
+.ln-hero__h1 .line{display:block;font-size:clamp(22px,3vw,42px);letter-spacing:.01em;text-transform:uppercase;}
+.ln-hero__tagline{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:14px;font-style:italic;font-weight:300;letter-spacing:.04em;color:#F7F4EE;margin-bottom:20px;max-width:420px;opacity:0;animation:lnFU 1s ease .75s forwards;}
+.ln-hero__desc{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:12px;font-weight:300;letter-spacing:.05em;line-height:1.85;color:rgba(247,244,238,.88);max-width:400px;margin-bottom:6px;opacity:0;animation:lnFU .9s ease .9s forwards;}
+.ln-hero__subline{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:11px;font-weight:300;letter-spacing:.05em;font-style:italic;color:rgba(247,244,238,.75);margin-bottom:26px;opacity:0;animation:lnFU .9s ease 1s forwards;}
+.ln-hero__btns{display:flex;gap:12px;flex-wrap:wrap;opacity:0;animation:lnFU .9s ease 1.15s forwards;}
+.btn-gold{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:10px;font-weight:500;letter-spacing:.3em;text-transform:uppercase;color:#0B0B0B;background:#D4AF37;padding:14px 32px;text-decoration:none;border:1px solid #D4AF37;transition:all .3s;display:inline-block;}
+.btn-out{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:10px;font-weight:400;letter-spacing:.3em;text-transform:uppercase;color:#F7F4EE;background:transparent;padding:14px 32px;text-decoration:none;border:1px solid rgba(247,244,238,.5);transition:all .3s;display:inline-block;}
+@media(max-width:768px){.ln-hero__desc{max-width:100%;}.ln-hero__btns{flex-direction:column;max-width:220px;}}
+.ln-badges{display:grid;grid-template-columns:repeat(4,1fr);background:#111;border-top:1px solid rgba(212,175,55,.15);border-bottom:1px solid rgba(212,175,55,.15);}
+.ln-badge{display:flex;align-items:center;gap:16px;padding:28px 32px;border-right:1px solid rgba(212,175,55,.1);}
+.ln-badge:last-child{border-right:none;}
+.ln-badge__icon{width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid rgba(212,175,55,.4);border-radius:50%;color:#D4AF37;font-size:16px;}
+.ln-badge__title{font-family:'Trade Gothic LT Std Extended',sans-serif;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#F7F4EE;margin-bottom:4px;}
+.ln-badge__sub{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:11px;color:rgba(247,244,238,.5);}
+@media(max-width:768px){.ln-badges{grid-template-columns:1fr 1fr;}.ln-badge{border-bottom:1px solid rgba(212,175,55,.1);}}
+.ln-mq{background:#0f0f0f;padding:12px 0;border-top:1px solid rgba(212,175,55,.1);border-bottom:1px solid rgba(212,175,55,.1);overflow:hidden;}
+.ln-mq__t{display:flex;animation:lnMQ 30s linear infinite;white-space:nowrap;}
+.ln-mq__t span{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:11px;font-style:italic;letter-spacing:.15em;color:rgba(212,175,55,.6);padding:0 32px;}
+.ln-mq__t .d{color:#D4AF37;font-style:normal;}
+@keyframes lnMQ{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+.ln-sec{padding:90px 5% 60px;}
+.ln-sec-h{text-align:center;margin-bottom:52px;}
+.ln-sec-hline{width:44px;height:1px;background:#D4AF37;margin:0 auto 20px;}
+.ln-lbl{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:.38em;text-transform:uppercase;color:#D4AF37;margin-bottom:14px;display:block;text-align:center;}
+.ln-sec-title{font-family:'Trade Gothic LT Std Extended',sans-serif;font-size:clamp(28px,3.5vw,42px);font-weight:400;letter-spacing:.03em;text-transform:uppercase;color:#F7F4EE;text-align:center;}
+.ln-sec-title em{font-style:italic;color:#E5C76B;}
+.ln-sec-intro{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:13px;font-weight:300;letter-spacing:.04em;line-height:1.9;color:rgba(247,244,238,.62);max-width:560px;margin:20px auto 0;text-align:center;}
+
+.ln-collection{background:#111;}
+.ln-collection__g{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:44px;}
+.ln-collection__i{position:relative;aspect-ratio:3/4;overflow:hidden;background:#151515;border:1px solid rgba(212,175,55,.12);}
+.ln-collection__i img{width:100%;height:100%;object-fit:cover;object-position:center;}
+.ln-collection__ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(11,11,11,.88) 0%,rgba(11,11,11,.1) 45%,transparent 70%);}
+.ln-collection__label{position:absolute;left:0;right:0;bottom:0;padding:20px;}
+.ln-collection__name{font-family:'Trade Gothic LT Std Extended',sans-serif;font-size:17px;letter-spacing:.1em;text-transform:uppercase;color:#F7F4EE;margin-bottom:4px;}
+.ln-collection__p{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#D4AF37;}
+.ln-collection__cta{text-align:center;margin-top:44px;}
+@media(max-width:768px){.ln-collection__g{grid-template-columns:1fr 1fr;}}
+
+.ln-why2{padding:0;background:#0B0B0B;display:grid;grid-template-columns:1fr 1fr;align-items:stretch;}
+.ln-why2__img{position:relative;overflow:hidden;min-height:620px;}
+.ln-why2__img img{width:100%;height:100%;object-fit:cover;object-position:70% 25%;}
+.ln-why2__txt{padding:70px 7%;display:flex;flex-direction:column;justify-content:center;}
+.ln-why2__eyebrow{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:21px;font-weight:500;letter-spacing:.32em;text-transform:uppercase;color:#D4AF37;margin-bottom:22px;display:block;}
+.ln-why2__title{font-family:'Trade Gothic LT Std Extended',sans-serif;font-size:clamp(38px,4.4vw,58px);font-weight:400;letter-spacing:.03em;text-transform:uppercase;color:#F7F4EE;margin-bottom:46px;line-height:1.1;}
+.ln-why2__title em{font-style:italic;color:#D4AF37;}
+.ln-why2__list{display:flex;flex-direction:column;gap:32px;}
+.ln-why2__item{border-left:3px solid rgba(212,175,55,.3);padding-left:24px;}
+.ln-why2__name{font-family:'Trade Gothic LT Std Extended',sans-serif;font-size:22px;letter-spacing:.05em;text-transform:uppercase;color:#F7F4EE;margin-bottom:8px;}
+.ln-why2__d{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:rgba(247,244,238,.65);max-width:420px;}
+@media(max-width:768px){.ln-why2{grid-template-columns:1fr;}}
+
+.ln-featured{background:#111;text-align:center;}
+.ln-featured__list{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:13px;font-weight:300;letter-spacing:.05em;color:rgba(247,244,238,.75);margin:28px auto 40px;max-width:640px;line-height:2.1;}
+.ln-featured__list .sep{color:#D4AF37;margin:0 10px;}
+
+.ln-philosophy{background:#0B0B0B;text-align:center;padding:100px 5%;}
+.ln-philosophy__q{font-family:'Trade Gothic LT Std Extended',sans-serif;font-size:clamp(20px,2.6vw,30px);font-weight:400;line-height:1.5;color:#F7F4EE;max-width:680px;margin:0 auto 20px;}
+.ln-philosophy__q2{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-style:italic;font-size:14px;letter-spacing:.03em;color:#E5C76B;max-width:520px;margin:0 auto 20px;line-height:1.7;}
+.ln-philosophy__p{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:13px;font-weight:300;letter-spacing:.04em;line-height:1.85;color:rgba(247,244,238,.6);max-width:560px;margin:0 auto;}
+
+.ln-closing{background:#111;text-align:center;padding:80px 5%;border-top:1px solid rgba(212,175,55,.1);border-bottom:1px solid rgba(212,175,55,.1);}
+.ln-closing__l1{font-family:'Trade Gothic LT Std Extended',sans-serif;font-size:clamp(20px,2.4vw,28px);font-weight:400;color:rgba(247,244,238,.55);margin-bottom:6px;}
+.ln-closing__l2{font-family:'Trade Gothic LT Std Extended',sans-serif;font-size:clamp(20px,2.4vw,28px);font-weight:400;color:#E5C76B;}
+
+.ln-news{padding:90px 5%;background:#0B0B0B;text-align:center;}
+.ln-news__h{font-family:'Trade Gothic LT Std Extended',sans-serif;font-size:clamp(24px,3vw,38px);font-weight:400;letter-spacing:.03em;text-transform:uppercase;color:#F7F4EE;margin-bottom:8px;}
+.ln-news__s{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:12px;font-weight:300;letter-spacing:.06em;color:rgba(247,244,238,.6);margin-bottom:36px;}
+.ln-news__f{display:flex;max-width:480px;margin:0 auto;}
+.ln-news__in{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(212,175,55,.2);border-right:none;padding:13px 16px;color:#F7F4EE;font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:.06em;outline:none;}
+.ln-news__in::placeholder{color:rgba(247,244,238,.4);}
+.ln-news__btn{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:10px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;background:#D4AF37;color:#0B0B0B;border:1px solid #D4AF37;padding:13px 24px;cursor:pointer;white-space:nowrap;}
+@media(max-width:768px){.ln-news__f{flex-direction:column;}.ln-news__in{border-right:1px solid rgba(212,175,55,.2);border-bottom:none;}}
+
+.ln-foot{background:#0B0B0B;border-top:1px solid rgba(212,175,55,.1);padding:60px 5% 30px;}
+.ln-foot__g{display:grid;grid-template-columns:1.8fr 1fr 1fr 1fr;gap:32px;margin-bottom:40px;}
+.ln-foot__bn{font-family:'Trade Gothic LT Std Extended',sans-serif;font-size:20px;font-weight:400;letter-spacing:.4em;text-transform:uppercase;color:#F7F4EE;display:block;margin-bottom:4px;}
+.ln-foot__bs{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:9px;font-weight:300;letter-spacing:.35em;text-transform:uppercase;color:#D4AF37;display:block;margin-bottom:14px;}
+.ln-foot__line{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:11px;font-weight:300;letter-spacing:.06em;line-height:1.8;color:rgba(247,244,238,.5);max-width:260px;}
+.ln-foot__ct{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:10px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:#D4AF37;margin-bottom:16px;display:block;}
+.ln-foot__l{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px;}
+.ln-foot__l a{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:12px;font-weight:300;letter-spacing:.05em;color:rgba(247,244,238,.55);text-decoration:none;transition:color .3s;}
+.ln-foot__l a:hover{color:#D4AF37;}
+.ln-foot__b{padding-top:22px;border-top:1px solid rgba(212,175,55,.08);display:flex;align-items:center;justify-content:space-between;}
+.ln-foot__c{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;font-size:10px;font-weight:300;letter-spacing:.1em;color:rgba(247,244,238,.35);}
+.ln-foot__s{display:flex;gap:10px;}
+.ln-foot__s a{width:28px;height:28px;border:1px solid rgba(212,175,55,.18);display:flex;align-items:center;justify-content:center;color:rgba(247,244,238,.55);text-decoration:none;font-size:10px;font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif;transition:all .3s;}
+.ln-foot__s a:hover{border-color:#D4AF37;color:#D4AF37;}
+@media(max-width:768px){.ln-foot__g{grid-template-columns:1fr 1fr;gap:24px;}.ln-foot__b{flex-direction:column;gap:14px;text-align:center;}}
+
+@keyframes lnFU{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+@keyframes lnW{from{width:0;}to{width:44px;}}
+.ln-rv{opacity:0;transform:translateY(24px);transition:opacity .8s ease,transform .8s ease;}
+.ln-rv.on{opacity:1;transform:translateY(0);}
+.d1{transition-delay:.1s;}.d2{transition-delay:.2s;}.d3{transition-delay:.3s;}
+</style>
+<div id="ln">
+<nav class="ln-nav" id="lnNav">
+  <a href="https://lunacibarcelona.com/" class="ln-nav__logo">
+    <img src="https://lunacibarcelona.com/wp-content/uploads/2026/05/b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg" alt="LUNACI Barcelona" width="160" height="90" style="height:90px;width:auto;mix-blend-mode:lighten;">
+  </a>
+  <ul class="ln-nav__links">
+    <li><a href="https://lunacibarcelona.com/">Home</a></li>
+    <li><a href="https://lunacibarcelona.com/products/">Products</a></li>
+    <li><a href="https://lunacibarcelona.com/about">About</a></li>
+    <li><a href="https://lunacibarcelona.com/contact">Contact</a></li>
+  </ul>
+  <div class="ln-nav__cart">
+    <a href="https://lunacibarcelona.com/cart">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(247,244,238,.9)" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+    </a>
+  </div>
+</nav>
+
+<section class="ln-hero">
+  <div class="ln-hero__bg">
+    <img src="https://lunacibarcelona.com/wp-content/uploads/2026/05/lunaci_hero_retouched-1-scaled.jpg" alt="LUNACI"/>
+  </div>
+  <div class="ln-hero__ov"></div>
+  <div class="ln-hero__ov2"></div>
+  <div class="ln-hero__content">
+    <span class="ln-hero__eye">Luxury Beauty · Barcelona</span>
+    <div class="ln-hero__wordmark">
+      <span class="big">Lunaci</span>
+      <span class="small">Barcelona</span>
+    </div>
+    <p class="ln-hero__tagline">Every woman is seen. But your presence is remembered.</p>
+    <p class="ln-hero__desc">Inspired by the Mediterranean spirit of Barcelona, LUNACI creates premium cosmetics that celebrate natural beauty through thoughtful design, refined formulations, and quiet confidence.</p>
+    <p class="ln-hero__subline">For women who choose elegance over excess.</p>
+    <div class="ln-hero__btns">
+      <a href="https://lunacibarcelona.com/products/" class="btn-gold">Explore the Collection</a>
+    </div>
+  </div>
+</section>
+
+<div class="ln-badges">
+  <div class="ln-badge">
+    <div class="ln-badge__icon">&#9679;</div>
+    <div><div class="ln-badge__title">European Quality</div><div class="ln-badge__sub">Made with care in Europe</div></div>
+  </div>
+  <div class="ln-badge">
+    <div class="ln-badge__icon">&#10047;</div>
+    <div><div class="ln-badge__title">Premium Ingredients</div><div class="ln-badge__sub">Selected for your skin</div></div>
+  </div>
+  <div class="ln-badge">
+    <div class="ln-badge__icon">&#9825;</div>
+    <div><div class="ln-badge__title">Cruelty Free</div><div class="ln-badge__sub">No animal testing</div></div>
+  </div>
+  <div class="ln-badge">
+    <div class="ln-badge__icon">&#10022;</div>
+    <div><div class="ln-badge__title">Designed to Accompany</div><div class="ln-badge__sub">Never to compete</div></div>
+  </div>
+</div>
+
+<div class="ln-mq">
+  <div class="ln-mq__t">
+    <span>Mediterranean Luxury</span><span class="d">✦</span>
+    <span>European Craftsmanship</span><span class="d">✦</span>
+    <span>Sophisticated Femininity</span><span class="d">✦</span>
+    <span>Timeless Beauty</span><span class="d">✦</span>
+    <span>Barcelona Elegance</span><span class="d">✦</span>
+    <span>Premium Formulas</span><span class="d">✦</span>
+    <span>Mediterranean Luxury</span><span class="d">✦</span>
+    <span>European Craftsmanship</span><span class="d">✦</span>
+    <span>Sophisticated Femininity</span><span class="d">✦</span>
+    <span>Timeless Beauty</span><span class="d">✦</span>
+    <span>Barcelona Elegance</span><span class="d">✦</span>
+    <span>Premium Formulas</span><span class="d">✦</span>
+  </div>
+</div>
+
+<section class="ln-sec ln-collection">
+  <div class="ln-sec-h ln-rv">
+    <span class="ln-lbl">Shop By Category</span>
+    <div class="ln-sec-hline"></div>
+    <h2 class="ln-sec-title">Our <em>Collection</em></h2>
+    <p class="ln-sec-intro">Beauty is personal. Every LUNACI collection is created to support your daily ritual with products that feel effortless, comfortable, and naturally elegant.</p>
+  </div>
+  <div class="ln-collection__g">
+    <div class="ln-collection__i ln-rv">
+      <img src="https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-foundation.jpg">
+      <div class="ln-collection__ov"></div>
+      <div class="ln-collection__label"><div class="ln-collection__name">Face</div><div class="ln-collection__p">Shop Face &#8594;</div></div>
+    </div>
+    <div class="ln-collection__i ln-rv d1">
+      <img src="https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-eyeliner.jpg">
+      <div class="ln-collection__ov"></div>
+      <div class="ln-collection__label"><div class="ln-collection__name">Eyes</div><div class="ln-collection__p">Shop Eyes &#8594;</div></div>
+    </div>
+    <div class="ln-collection__i ln-rv d2">
+      <img src="https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-lipstick.png">
+      <div class="ln-collection__ov"></div>
+      <div class="ln-collection__label"><div class="ln-collection__name">Lips</div><div class="ln-collection__p">Shop Lips &#8594;</div></div>
+    </div>
+    <div class="ln-collection__i ln-rv d3">
+      <img src="https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-nail-polish.jpg">
+      <div class="ln-collection__ov"></div>
+      <div class="ln-collection__label"><div class="ln-collection__name">Nails</div><div class="ln-collection__p">Shop Nails &#8594;</div></div>
+    </div>
+  </div>
+  <div class="ln-collection__cta ln-rv">
+    <a href="https://lunacibarcelona.com/products/" class="btn-out">Shop All Products</a>
+  </div>
+</section>
+
+<section class="ln-why2">
+  <div class="ln-why2__img">
+    <img src="https://lunacibarcelona.com/wp-content/uploads/2026/07/lunaci-category-Lips-1.png">
+  </div>
+  <div class="ln-why2__txt">
+    <span class="ln-why2__eyebrow">Why Lunaci</span>
+    <h2 class="ln-why2__title">In 15 <em>Seconds</em></h2>
+    <div class="ln-why2__list">
+      <div class="ln-why2__item">
+        <div class="ln-why2__name">Mediterranean Inspiration</div>
+        <div class="ln-why2__d">Born in Barcelona, inspired by timeless Mediterranean beauty.</div>
+      </div>
+      <div class="ln-why2__item">
+        <div class="ln-why2__name">Carefully Developed Formulas</div>
+        <div class="ln-why2__d">Selected ingredients for everyday confidence.</div>
+      </div>
+      <div class="ln-why2__item">
+        <div class="ln-why2__name">European Quality</div>
+        <div class="ln-why2__d">Attention to detail, consistency, and craftsmanship.</div>
+      </div>
+      <div class="ln-why2__item">
+        <div class="ln-why2__name">Beauty with Respect</div>
+        <div class="ln-why2__d">Beauty that feels natural and stays with you.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ln-sec ln-featured">
+  <div class="ln-sec-h ln-rv">
+    <span class="ln-lbl">Best Sellers</span>
+    <div class="ln-sec-hline"></div>
+    <h2 class="ln-sec-title">Featured <em>Products</em></h2>
+    <p class="ln-sec-intro">Discover some of our most-loved essentials.</p>
+  </div>
+  <p class="ln-featured__list ln-rv">
+    Compact Powder<span class="sep">·</span>Lip Fix<span class="sep">·</span>Velvet Lipgloss<span class="sep">·</span>Mascara Volume<span class="sep">·</span>Eye Pencil
+  </p>
+  <a href="https://lunacibarcelona.com/products/" class="btn-out ln-rv">View Best Sellers</a>
+</section>
+
+<section class="ln-philosophy">
+  <p class="ln-philosophy__q ln-rv">We believe beauty is at its strongest when it feels authentic.</p>
+  <p class="ln-philosophy__q2 ln-rv d1">Luxury is restraint — knowing exactly how much is enough.</p>
+  <p class="ln-philosophy__p ln-rv d2">Every shade, every texture, and every finish is created to become part of your everyday confidence, with elegance and simplicity.</p>
+</section>
+
+<section class="ln-closing">
+  <p class="ln-closing__l1 ln-rv">Beauty may be noticed.</p>
+  <p class="ln-closing__l2 ln-rv d1">Presence is remembered.</p>
+</section>
+
+<section class="ln-news">
+  <h2 class="ln-news__h ln-rv">Stay Connected With <em>Lunaci</em></h2>
+  <p class="ln-news__s ln-rv">Be the first to discover new collections, exclusive launches, and beauty inspiration from Barcelona.</p>
+  <div class="ln-news__f ln-rv">
+    <input type="email" class="ln-news__in" placeholder="Your email address">
+    <button class="ln-news__btn">Join Our Community</button>
+  </div>
+</section>
+
+<footer class="ln-foot">
+  <div class="ln-foot__g">
+    <div>
+      <span class="ln-foot__bn">Lunaci</span>
+      <span class="ln-foot__bs">Barcelona</span>
+      <p class="ln-foot__line">Mediterranean Beauty. Quiet Confidence. Timeless Elegance.</p>
+    </div>
+    <div>
+      <span class="ln-foot__ct">Shop</span>
+      <ul class="ln-foot__l">
+        <li><a href="https://lunacibarcelona.com/products/">All Products</a></li>
+        <li><a href="https://lunacibarcelona.com/product-category/lips/">Lip</a></li>
+        <li><a href="https://lunacibarcelona.com/product-category/face/">Face</a></li>
+        <li><a href="https://lunacibarcelona.com/product-category/eyes/">Eye</a></li>
+      </ul>
+    </div>
+    <div>
+      <span class="ln-foot__ct">Brand</span>
+      <ul class="ln-foot__l">
+        <li><a href="https://lunacibarcelona.com/about">About Lunaci</a></li>
+        <li><a href="https://lunacibarcelona.com/contact">Contact</a></li>
+      </ul>
+    </div>
+    <div>
+      <span class="ln-foot__ct">Support</span>
+      <ul class="ln-foot__l">
+        <li><a href="https://lunacibarcelona.com/shipping">Shipping</a></li>
+        <li><a href="https://lunacibarcelona.com/returns">Returns</a></li>
+        <li><a href="https://lunacibarcelona.com/privacy-policy">Privacy Policy</a></li><li><a href="https://lunacibarcelona.com/terms-of-service">Terms of Service</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="ln-foot__b">
+    <p class="ln-foot__c">© 2026 LUNACI Barcelona. All rights reserved.</p>
+    <div class="ln-foot__s">
+      <a href="#">IG</a>
+      <a href="#">TK</a>
+      <a href="#">PT</a>
+    </div>
+  </div>
+</footer>
+</div>
+
+<script>
+(function(){
+  var nav=document.getElementById('lnNav');
+  window.addEventListener('scroll',function(){
+    nav.classList.toggle('scrolled',window.scrollY>50);
+  });
+  var items=document.querySelectorAll('.ln-rv');
+  var obs=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        e.target.classList.add('on');
+        obs.unobserve(e.target);
+      }
+    });
+  },{threshold:0.1});
+  items.forEach(function(el){obs.observe(el);});
+})();
+</script>

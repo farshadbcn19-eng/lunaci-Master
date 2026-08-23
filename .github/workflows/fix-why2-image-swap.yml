@@ -1,0 +1,68 @@
+name: Fix - swap Why-Lunaci (In 15 Seconds) image (guarded)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Transfer files and run guarded fix script (STEP A/B/C)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+
+          echo "-- Uploading new widget content and fix script via scp --"
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+            -P "$SSH_PORT" "assets/luna-import/page57-widget-why2.html" \
+            "$SSH_USER@$SSH_HOST:/tmp/lunaimport-page57-widget-why2.html"
+
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+            -P "$SSH_PORT" "assets/luna-import/fix-why2-image-swap.php" \
+            "$SSH_USER@$SSH_HOST:/tmp/lunaimport-fix-why2-image-swap.php"
+
+          echo "-- Running guarded STEP A/B/C fix via wp eval-file --"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "WordPress found at: $WP_PATH";
+
+             php -l /tmp/lunaimport-fix-why2-image-swap.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed";
+               rm -f /tmp/lunaimport-fix-why2-image-swap.php /tmp/lunaimport-page57-widget-why2.html;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/lunaimport-fix-why2-image-swap.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/lunaimport-fix-why2-image-swap.php /tmp/lunaimport-page57-widget-why2.html;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: fix-why2-image-swap step completed"'
+
+          echo "OK: workflow completed successfully"

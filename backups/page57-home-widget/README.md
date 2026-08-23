@@ -28,3 +28,5 @@ as `YYYY-MM-DD_after-<change-name>.html`.
 |---|---|---|---|
 | `2026-08-23_before-luna-origin.html` | `07c28625312799ec650b63ee3298b806e2d80697d5812f6698f53cac0fdfb84c` | 24734 | Live content immediately before PR #161 (Luna image src swap + "Our Origin" section). |
 | `2026-08-23_after-luna-origin.html` | `3a9873fba5e4955eabdc8461ae80aba3a3ba5d140427687cedd7956051cadfbe` | 26920 | Live content immediately after PR #161, confirmed via the fix workflow's own STEP C read-back verification (`content_matches: PASS`). |
+| `2026-08-23_before-why2-image-swap.html` | `3a9873fba5e4955eabdc8461ae80aba3a3ba5d140427687cedd7956051cadfbe` | 26920 | Same as the row above (no changes happened in between) — the state right before swapping the "Why Lunaci / In 15 Seconds" section image. |
+| `2026-08-23_after-why2-image-swap.html` | `7536208b6b0caaed06f8fae17adcbbd4865410c3542e5cd9a29042f7d36e3428` | 26934 | Live content after swapping the Why-Lunaci section image (`lunaci-category-Lips-1.png` → `lunaimport-why2-luna-replacement.jpg`), confirmed via the fix workflow's own STEP C read-back verification. |

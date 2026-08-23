@@ -1,0 +1,62 @@
+name: Import Luna homepage images (scp + wp media import)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Upload the 6 images and import each into the media library
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+          FILES="hero-luna.jpg collection-face-luna.jpg collection-eyes-luna.jpg collection-lips-luna.jpg collection-nails-luna.jpg origin-crafted-barcelona-luna.jpg"
+
+          echo "-- Uploading files via scp --"
+          for f in $FILES; do
+            sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+              -P "$SSH_PORT" "assets/luna-import/$f" "$SSH_USER@$SSH_HOST:/tmp/lunaimport-$f"
+            echo "uploaded: $f"
+          done
+
+          echo "-- Running wp media import for each file (read/write: additive only, no existing content touched) --"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            "WP_PATH=\"\";
+             for candidate in \"\$HOME/public_html\" \"\$HOME\" \"\$(pwd)\"; do
+               if [ -f \"\$candidate/wp-config.php\" ]; then WP_PATH=\"\$candidate\"; break; fi;
+             done;
+             if [ -z \"\$WP_PATH\" ]; then
+               FOUND=\$(find -L \"\$HOME\" -maxdepth 8 -name \"wp-config.php\" -not -path \"*/wp-content/*\" -not -path \"*/node_modules/*\" 2>/dev/null | head -1);
+               if [ -n \"\$FOUND\" ]; then WP_PATH=\$(dirname \"\$FOUND\"); fi;
+             fi;
+             if [ -z \"\$WP_PATH\" ]; then echo \"ERROR: could not locate wp-config.php\"; exit 1; fi;
+             echo \"WordPress found at: \$WP_PATH\";
+
+             for f in $FILES; do
+               echo \"=== IMPORT: \$f ===\";
+               ATTACH_ID=\$(wp media import \"/tmp/lunaimport-\$f\" --path=\"\$WP_PATH\" --title=\"\$f\" --porcelain);
+               if [ -z \"\$ATTACH_ID\" ]; then echo \"ABORT: wp media import returned no attachment ID for \$f\"; exit 1; fi;
+               GUID=\$(wp post get \"\$ATTACH_ID\" --field=guid --path=\"\$WP_PATH\");
+               echo \"RESULT_FILE=\$f\";
+               echo \"RESULT_ATTACHMENT_ID=\$ATTACH_ID\";
+               echo \"RESULT_URL=\$GUID\";
+               rm -f \"/tmp/lunaimport-\$f\";
+             done;
+             echo \"OK: all 6 images imported\""
+
+          echo "OK: import workflow completed successfully"

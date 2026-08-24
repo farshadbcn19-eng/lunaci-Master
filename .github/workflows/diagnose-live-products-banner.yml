@@ -44,16 +44,17 @@ jobs:
           check_marker "hero H1 text (should be UNCHANGED)" "Beauty with"
 
           echo ""
-          echo "-- Fetching the WPCode CSS output (loaded in <head>) --"
-          CSS_URLS=$(grep -oE 'https://lunacibarcelona\.com/[^"'"'"']*wpcode[^"'"'"']*\.css[^"'"'"']*' /tmp/products_body.html | sort -u)
-          if [ -z "$CSS_URLS" ]; then
-            echo "no external wpcode CSS file URL found in page; checking for inline <style> instead"
-            grep -o '\.page-hero{[^}]*}' /tmp/products_body.html || echo "no inline .page-hero rule found either"
+          echo "-- Fetching the WPCode CSS output (inline <style> or external file, loaded in <head>) --"
+          CSS_URLS=$(grep -oE 'https://lunacibarcelona\.com/[^"'"'"']*wpcode[^"'"'"']*\.css[^"'"'"']*' /tmp/products_body.html | sort -u || true)
+          if [ -n "$CSS_URLS" ]; then
+            for u in $CSS_URLS; do
+              echo "fetching external CSS: $u"
+              curl -sS "$u" -o /tmp/products_wpcode.css || echo "failed to fetch $u"
+            done
+          else
+            echo "no external wpcode CSS file URL found; using the fetched page body itself (inline <style> case) for CSS checks"
+            cp /tmp/products_body.html /tmp/products_wpcode.css
           fi
-          for u in $CSS_URLS; do
-            echo "fetching CSS: $u"
-            curl -sS "$u" -o /tmp/products_wpcode.css || echo "failed to fetch $u"
-          done
 
           if [ -f /tmp/products_wpcode.css ]; then
             echo "" >> "$GITHUB_STEP_SUMMARY"

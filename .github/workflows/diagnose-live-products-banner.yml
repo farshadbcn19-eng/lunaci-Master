@@ -1,0 +1,89 @@
+name: Diagnose - check live Products page banner from the public internet (read-only, no writes)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch Products page and its CSS directly from the public internet
+        run: |
+          set -o pipefail
+
+          echo "## Live Products page banner diagnostic" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          URL="https://lunacibarcelona.com/products/?nocache=$(date +%s%N)"
+          echo "Fetching: $URL"
+          curl -sS -D /tmp/products_headers.txt -o /tmp/products_body.html "$URL"
+          echo "-- Response headers --"
+          cat /tmp/products_headers.txt
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Content checks" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Marker | Found |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+
+          check_marker() {
+            local label="$1"
+            local needle="$2"
+            if grep -qF -- "$needle" /tmp/products_body.html; then
+              echo "PASS: $label found"
+              echo "| $label | ✅ found |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "MISSING: $label NOT found"
+              echo "| $label | ❌ NOT found |" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          }
+
+          check_marker "products page wrapper markup" "lunaci-products-page"
+          check_marker "hero eyebrow text (should be UNCHANGED)" "Product Universe"
+          check_marker "hero H1 text (should be UNCHANGED)" "Beauty with"
+
+          echo ""
+          echo "-- Fetching the WPCode CSS output (loaded in <head>) --"
+          CSS_URLS=$(grep -oE 'https://lunacibarcelona\.com/[^"'"'"']*wpcode[^"'"'"']*\.css[^"'"'"']*' /tmp/products_body.html | sort -u)
+          if [ -z "$CSS_URLS" ]; then
+            echo "no external wpcode CSS file URL found in page; checking for inline <style> instead"
+            grep -o '\.page-hero{[^}]*}' /tmp/products_body.html || echo "no inline .page-hero rule found either"
+          fi
+          for u in $CSS_URLS; do
+            echo "fetching CSS: $u"
+            curl -sS "$u" -o /tmp/products_wpcode.css || echo "failed to fetch $u"
+          done
+
+          if [ -f /tmp/products_wpcode.css ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "### WPCode CSS checks" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Marker | Found |" >> "$GITHUB_STEP_SUMMARY"
+            echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+            check_css_marker() {
+              local label="$1"
+              local needle="$2"
+              if grep -qF -- "$needle" /tmp/products_wpcode.css; then
+                echo "PASS(css): $label found"
+                echo "| $label | ✅ found |" >> "$GITHUB_STEP_SUMMARY"
+              else
+                echo "MISSING(css): $label NOT found"
+                echo "| $label | ❌ NOT found |" >> "$GITHUB_STEP_SUMMARY"
+              fi
+            }
+            check_css_marker "new banner image (lunaimport-product-hero-luna.jpg)" "lunaimport-product-hero-luna.jpg"
+            check_css_marker "old banner image (should be GONE)" "lunaci_hero_retouched-1-scaled.jpg"
+            check_css_marker "Ken-Burns keyframes (lpHeroKB)" "@keyframes lpHeroKB"
+          fi
+
+          echo ""
+          echo "-- Image URL HTTP status check --"
+          NEW_IMG="https://lunacibarcelona.com/wp-content/uploads/2026/08/lunaimport-product-hero-luna.jpg"
+          STATUS=$(curl -sg -o /dev/null -w "%{http_code}" -I "$NEW_IMG")
+          echo "$NEW_IMG -> HTTP $STATUS"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "New banner image URL: \`$NEW_IMG\` -> HTTP $STATUS" >> "$GITHUB_STEP_SUMMARY"
+
+          echo ""
+          echo "OK: live diagnostic complete (read-only, no writes)"

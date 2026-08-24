@@ -3,6 +3,9 @@ name: Diagnose - render live Products hero banner with a real browser (read-only
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   diagnose:
     runs-on: ubuntu-latest

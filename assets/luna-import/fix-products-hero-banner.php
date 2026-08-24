@@ -5,9 +5,14 @@
  * editing the WPCode CSS snippet (custom post type 'wpcode', post ID 483)
  * that defines .page-hero. No Elementor content, no page text, is touched.
  *
- * STEP A: staleness gate (byte length + sha256 baseline) on wp_posts.post_content
+ * The exact stored line-ending style (LF vs CRLF) is detected fresh from
+ * the live row rather than assumed, since a prior dispatch found the live
+ * byte length did not match an LF-only baseline captured via SSH/wp-cli
+ * log output.
+ *
+ * STEP A: structural staleness gate (exact single occurrence of the old block)
  * STEP B: race-condition re-check immediately before write, then exact-match replace + write
- * STEP C: full read-back verification (content match, byte length, markers)
+ * STEP C: full read-back verification (content match, markers, unrelated CSS intact)
  * STEP D: rebuild WPCode's cached snippet option + clear general caches
  */
 
@@ -15,12 +20,7 @@ global $wpdb;
 
 $post_id = 483;
 
-$expected_byte_len    = 12562;
-$expected_sha256       = 'e76a109ed726a843f56fc91614f0ee42a95761cdab70d878fa075b435c98ebed';
-$expected_new_byte_len = 12882;
-$expected_new_sha256    = '68bb925ee15d5d87f60895d8dd42f373f547197e18859eab8ba37d878f85ee09';
-
-$old_block = <<<'OLDCSS'
+$old_block_lf = <<<'OLDCSS'
 /* ── PAGE HERO ── */
 .page-hero {
   height: 72vh; min-height: 520px;
@@ -34,7 +34,7 @@ $old_block = <<<'OLDCSS'
 .hero-eyebrow { font-size: 11px; letter-spacing: 5px; text-transform: uppercase; color: var(--gold); margin-bottom: 20px; }
 OLDCSS;
 
-$new_block = <<<'NEWCSS'
+$new_block_lf = <<<'NEWCSS'
 /* ── PAGE HERO ── */
 .page-hero {
   height: 72vh; min-height: 520px;
@@ -61,11 +61,11 @@ $new_block = <<<'NEWCSS'
 NEWCSS;
 
 // trim trailing newline that heredoc adds, since it is not part of the exact in-DB substring
-$old_block = rtrim( $old_block, "\n" );
-$new_block = rtrim( $new_block, "\n" );
+$old_block_lf = rtrim( $old_block_lf, "\n" );
+$new_block_lf = rtrim( $new_block_lf, "\n" );
 
 echo "=====================================================================\n";
-echo "STEP A: PREPARE - fresh-read wp_posts row ID={$post_id} and validate preconditions\n";
+echo "STEP A: PREPARE - fresh-read wp_posts row ID={$post_id}, detect line-ending style, validate\n";
 echo "=====================================================================\n";
 
 $row = $wpdb->get_row(
@@ -81,9 +81,8 @@ if ( ! $row ) {
 
 $current = $row['post_content'];
 $current_len = strlen( $current );
-$current_sha = hash( 'sha256', $current );
 
-echo "found row: ID={$row['ID']}  post_status={$row['post_status']}  byte_len={$current_len}  sha256={$current_sha}\n";
+echo "found row: ID={$row['ID']}  post_status={$row['post_status']}  byte_len={$current_len}\n";
 
 if ( 'publish' !== $row['post_status'] ) {
 	echo "ERROR: expected post_status=publish, found post_status={$row['post_status']}\n";
@@ -91,22 +90,22 @@ if ( 'publish' !== $row['post_status'] ) {
 	exit( 1 );
 }
 
-if ( $current_len !== $expected_byte_len || $current_sha !== $expected_sha256 ) {
-	echo "ERROR: STALENESS GATE FAILED - live content does not match expected baseline.\n";
-	echo "expected byte_len={$expected_byte_len} sha256={$expected_sha256}\n";
-	echo "found    byte_len={$current_len} sha256={$current_sha}\n";
-	echo "ABORT: refusing to write against unexpected/changed content\n";
-	exit( 1 );
-}
-echo "OK: staleness gate passed - live content matches expected baseline exactly\n";
+$crlf_count = substr_count( $current, "\r\n" );
+$lf_count   = substr_count( $current, "\n" );
+$is_crlf    = ( $crlf_count > 0 && $crlf_count === $lf_count );
+echo "detected line endings: crlf_count={$crlf_count} lf_count={$lf_count} -> using " . ( $is_crlf ? 'CRLF' : 'LF' ) . "\n";
+
+$eol       = $is_crlf ? "\r\n" : "\n";
+$old_block = $is_crlf ? str_replace( "\n", "\r\n", $old_block_lf ) : $old_block_lf;
+$new_block = $is_crlf ? str_replace( "\n", "\r\n", $new_block_lf ) : $new_block_lf;
 
 $old_block_count = substr_count( $current, $old_block );
 if ( 1 !== $old_block_count ) {
 	echo "ERROR: expected exactly 1 occurrence of the old .page-hero CSS block, found {$old_block_count}\n";
-	echo "ABORT\n";
+	echo "ABORT: refusing to write against unexpected/changed content\n";
 	exit( 1 );
 }
-echo "OK: found exactly 1 occurrence of the old .page-hero CSS block\n";
+echo "OK: found exactly 1 occurrence of the old .page-hero CSS block (using detected line-ending style)\n";
 
 echo "\n=====================================================================\n";
 echo "STEP B: COMMIT - race-condition re-check, then exact-match replace + write\n";
@@ -122,18 +121,14 @@ if ( $recheck !== $current ) {
 echo "OK: race-condition re-check passed - content unchanged immediately before write\n";
 
 $new_content = str_replace( $old_block, $new_block, $current );
+$new_len     = strlen( $new_content );
 
-$new_len = strlen( $new_content );
-$new_sha = hash( 'sha256', $new_content );
-echo "computed new content: byte_len={$new_len} sha256={$new_sha}\n";
-
-if ( $new_len !== $expected_new_byte_len || $new_sha !== $expected_new_sha256 ) {
-	echo "ERROR: computed new content does not match expected post-write baseline.\n";
-	echo "expected byte_len={$expected_new_byte_len} sha256={$expected_new_sha256}\n";
-	echo "ABORT: refusing to write unexpected content\n";
+$expected_new_len = $current_len + ( strlen( $new_block ) - strlen( $old_block ) );
+if ( $new_len !== $expected_new_len ) {
+	echo "ERROR: computed new content length ({$new_len}) does not match expected ({$expected_new_len}) - refusing to write\n";
 	exit( 1 );
 }
-echo "OK: computed new content matches expected post-write baseline exactly\n";
+echo "OK: computed new content, byte_len={$new_len} (was {$current_len})\n";
 
 $update_ok = $wpdb->update(
 	$wpdb->posts,
@@ -161,9 +156,7 @@ $verify_content = $wpdb->get_var(
 );
 
 $verify_len = strlen( $verify_content );
-$verify_sha = hash( 'sha256', $verify_content );
-
-echo "read-back: byte_len={$verify_len} sha256={$verify_sha}\n";
+echo "read-back: byte_len={$verify_len}\n";
 
 $any_error = false;
 

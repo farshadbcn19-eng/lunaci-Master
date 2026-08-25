@@ -153,7 +153,32 @@ foreach ( $page_data as $page_id => $data ) {
 		exit( 1 );
 	}
 
-	update_post_meta( $page_id, '_elementor_data', wp_slash( $new_raw ) );
+	$update_result = update_post_meta( $page_id, '_elementor_data', wp_slash( $new_raw ) );
+	echo "DEBUG: update_post_meta() return value = " . var_export( $update_result, true ) . "\n";
+	echo "DEBUG: strlen(new_raw sent) = " . strlen( $new_raw ) . "\n";
+
+	$immediate_reread = $wpdb->get_var(
+		$wpdb->prepare( "SELECT meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = '_elementor_data'", $page_id )
+	);
+	echo "DEBUG: strlen(immediate re-read) = " . strlen( (string) $immediate_reread ) . "\n";
+	echo "DEBUG: immediate re-read contains new_image_url = " . ( false !== strpos( (string) $immediate_reread, $new_image_url ) ? 'yes' : 'no' ) . "\n";
+	echo "DEBUG: immediate re-read identical to new_raw sent = " . ( $immediate_reread === $new_raw ? 'yes' : 'no' ) . "\n";
+	if ( $immediate_reread !== $new_raw ) {
+		$min_len = min( strlen( (string) $immediate_reread ), strlen( $new_raw ) );
+		$diff_pos = -1;
+		for ( $i = 0; $i < $min_len; $i++ ) {
+			if ( $immediate_reread[ $i ] !== $new_raw[ $i ] ) {
+				$diff_pos = $i;
+				break;
+			}
+		}
+		echo "DEBUG: first diff position = {$diff_pos}\n";
+		if ( $diff_pos >= 0 ) {
+			echo "DEBUG: new_raw around diff: " . substr( $new_raw, max( 0, $diff_pos - 40 ), 100 ) . "\n";
+			echo "DEBUG: reread around diff:  " . substr( (string) $immediate_reread, max( 0, $diff_pos - 40 ), 100 ) . "\n";
+		}
+	}
+
 	echo "OK: update_post_meta() succeeded for page {$page_id}\n";
 
 	clean_post_cache( $page_id );

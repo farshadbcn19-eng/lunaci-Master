@@ -1,0 +1,3 @@
+products_en blusher img src: https://lunacibarcelona.com/wp-content/uploads/2026/08/lunaimport-blusher-product.jpg
+products_es blusher img src: https://lunacibarcelona.com/wp-content/uploads/2026/08/lunaimport-blusher-product.jpg
+done

@@ -1,0 +1,588 @@
+{
+  "result": {
+    "hits": [
+      {
+        "source": "https://fonts.googleapis.com/css?family=Roboto:100,100italic,200,200italic,300,300italic,400,400italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic&display=swap",
+        "error": "Failed to read the 'cssRules' property from 'CSSStyleSheet': Cannot access rules"
+      },
+      {
+        "source": "https://fonts.googleapis.com/css?family=Roboto+Slab:100,100italic,200,200italic,300,300italic,400,400italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic&display=swap",
+        "error": "Failed to read the 'cssRules' property from 'CSSStyleSheet': Cannot access rules"
+      },
+      {
+        "source": "https://fonts.googleapis.com/css?family=Montserrat:100,100italic,200,200italic,300,300italic,400,400italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic&display=swap",
+        "error": "Failed to read the 'cssRules' property from 'CSSStyleSheet': Cannot access rules"
+      },
+      {
+        "source": "https://fonts.googleapis.com/css?family=Open+Sans:100,100italic,200,200italic,300,300italic,400,400italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic&display=swap",
+        "error": "Failed to read the 'cssRules' property from 'CSSStyleSheet': Cannot access rules"
+      },
+      {
+        "source": "STYLE",
+        "selector": ".prod-img-wrap",
+        "cssText": "aspect-ratio: 3 / 4; overflow: hidden; position: relative; background: rgb(22, 22, 22);"
+      },
+      {
+        "source": "STYLE",
+        "selector": ".prod-img",
+        "cssText": "width: 100%; height: 100%; object-fit: cover; transition: transform 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);"
+      },
+      {
+        "source": "STYLE",
+        "selector": ".prod-card:hover .prod-img",
+        "cssText": "transform: scale(1.08);"
+      }
+    ],
+    "inlineStyleTags": [
+      {
+        "idx": 10,
+        "id": null,
+        "length": 13414,
+        "snippet": ".prod-img { width: 100%; height: 100%; object-fit: cover; transition: transform 1s cubic-bezier(.25,.46,.45,.94); }\n.prod-card:hover .prod-img { transform: scale(1.08); }\n.prod-badge { position: absolute; top: 20px; left: 20px; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: v"
+      }
+    ],
+    "linkTags": [
+      "https://lunacibarcelona.com/wp-content/plugins/jetpack/jetpack_vendor/automattic/jetpack-forms/dist/contact-form/css/jetpack-forms-layout.css?ver=16.0",
+      "https://lunacibarcelona.com/wp-content/plugins/all-in-one-seo-pack/dist/Lite/assets/css/table-of-contents/global.e90f6d47.css?ver=4.9.10",
+      "https://lunacibarcelona.com/wp-includes/js/mediaelement/mediaelementplayer-legacy.min.css?ver=4.2.17",
+      "https://lunacibarcelona.com/wp-includes/js/mediaelement/wp-mediaelement.min.css?ver=7.1",
+      "https://lunacibarcelona.com/wp-content/plugins/woocommerce/assets/css/woocommerce-layout.css?ver=10.9.4",
+      "https://lunacibarcelona.com/wp-content/plugins/woocommerce/assets/css/woocommerce-smallscreen.css?ver=10.9.4",
+      "https://lunacibarcelona.com/wp-content/plugins/woocommerce/assets/css/woocommerce.css?ver=10.9.4",
+      "https://lunacibarcelona.com/wp-content/plugins/sitepress-multilingual-cms/templates/language-switchers/legacy-list-horizontal/style.min.css?ver=1",
+      "https://lunacibarcelona.com/wp-content/plugins/hostinger-reach/frontend/dist/blocks/subscription.css?ver=1783844996",
+      "https://lunacibarcelona.com/wp-content/themes/hello-elementor/style.css?ver=7.1",
+      "https://lunacibarcelona.com/wp-content/themes/hello-elementor/assets/css/reset.css?ver=3.4.8",
+      "https://lunacibarcelona.com/wp-content/themes/hello-elementor/assets/css/theme.css?ver=3.4.8",
+      "https://lunacibarcelona.com/wp-content/themes/hello-elementor/assets/css/header-footer.css?ver=3.4.8",
+      "https://lunacibarcelona.com/wp-content/plugins/elementor/assets/css/frontend.min.css?ver=4.1.4",
+      "https://lunacibarcelona.com/wp-content/uploads/elementor/css/post-5.css?ver=1787671907",
+      "https://lunacibarcelona.com/wp-content/uploads/elementor/css/post-61.css?ver=1787671985",
+      "https://lunacibarcelona.com/wp-content/uploads/elementor/css/base-desktop.css?ver=6a8db5b19d45d",
+      "https://lunacibarcelona.com/wp-content/plugins/essential-addons-for-elementor-lite/assets/front-end/css/view/general.min.css?ver=6.7.3",
+      "https://fonts.googleapis.com/css?family=Roboto:100,100italic,200,200italic,300,300italic,400,400italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic&display=swap",
+      "https://fonts.googleapis.com/css?family=Roboto+Slab:100,100italic,200,200italic,300,300italic,400,400italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic&display=swap",
+      "https://fonts.googleapis.com/css?family=Montserrat:100,100italic,200,200italic,300,300italic,400,400italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic&display=swap",
+      "https://fonts.googleapis.com/css?family=Open+Sans:100,100italic,200,200italic,300,300italic,400,400italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic&display=swap",
+      "https://lunacibarcelona.com/wp-content/plugins/woocommerce/assets/client/blocks/wc-blocks.css?ver=wc-10.9.4",
+      "https://lunacibarcelona.com/wp-content/plugins/woocommerce/assets/css/photoswipe/photoswipe.min.css?ver=10.9.4",
+      "https://lunacibarcelona.com/wp-content/plugins/woocommerce/assets/css/photoswipe/default-skin/default-skin.min.css?ver=10.9.4"
+    ]
+  },
+  "cssResponses": [
+    {
+      "url": "https://fonts.googleapis.com/css?family=Roboto:100,100italic,200,200italic,300,300italic,400,400italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic&display=swap",
+      "status": 200,
+      "headers": {
+        "content-encoding": "gzip",
+        "x-content-type-options": "nosniff",
+        "expires": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css; charset=utf-8",
+        "vary": "Sec-Fetch-Dest, Sec-Fetch-Mode, Sec-Fetch-Site",
+        "last-modified": "Tue, 25 Aug 2026 15:23:17 GMT",
+        "x-frame-options": "SAMEORIGIN",
+        "strict-transport-security": "max-age=31536000",
+        "link": "<https://fonts.gstatic.com>; rel=preconnect; crossorigin",
+        "cache-control": "private, max-age=86400, stale-while-revalidate=604800",
+        "timing-allow-origin": "*",
+        "cross-origin-opener-policy": "same-origin-allow-popups",
+        "cross-origin-resource-policy": "cross-origin",
+        "access-control-allow-origin": "*",
+        "x-xss-protection": "0",
+        "server": "ESF"
+      }
+    },
+    {
+      "url": "https://fonts.googleapis.com/css?family=Roboto+Slab:100,100italic,200,200italic,300,300italic,400,400italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic&display=swap",
+      "status": 200,
+      "headers": {
+        "content-encoding": "gzip",
+        "x-content-type-options": "nosniff",
+        "expires": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css; charset=utf-8",
+        "vary": "Sec-Fetch-Dest, Sec-Fetch-Mode, Sec-Fetch-Site",
+        "last-modified": "Tue, 25 Aug 2026 15:27:40 GMT",
+        "x-frame-options": "SAMEORIGIN",
+        "strict-transport-security": "max-age=31536000",
+        "link": "<https://fonts.gstatic.com>; rel=preconnect; crossorigin",
+        "cache-control": "private, max-age=86400, stale-while-revalidate=604800",
+        "timing-allow-origin": "*",
+        "cross-origin-opener-policy": "same-origin-allow-popups",
+        "cross-origin-resource-policy": "cross-origin",
+        "access-control-allow-origin": "*",
+        "x-xss-protection": "0",
+        "server": "ESF"
+      }
+    },
+    {
+      "url": "https://fonts.googleapis.com/css?family=Montserrat:100,100italic,200,200italic,300,300italic,400,400italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic&display=swap",
+      "status": 200,
+      "headers": {
+        "content-encoding": "gzip",
+        "x-content-type-options": "nosniff",
+        "expires": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css; charset=utf-8",
+        "vary": "Sec-Fetch-Dest, Sec-Fetch-Mode, Sec-Fetch-Site",
+        "last-modified": "Tue, 25 Aug 2026 14:19:34 GMT",
+        "x-frame-options": "SAMEORIGIN",
+        "strict-transport-security": "max-age=31536000",
+        "link": "<https://fonts.gstatic.com>; rel=preconnect; crossorigin",
+        "cache-control": "private, max-age=86400, stale-while-revalidate=604800",
+        "timing-allow-origin": "*",
+        "cross-origin-opener-policy": "same-origin-allow-popups",
+        "cross-origin-resource-policy": "cross-origin",
+        "access-control-allow-origin": "*",
+        "x-xss-protection": "0",
+        "server": "ESF"
+      }
+    },
+    {
+      "url": "https://fonts.googleapis.com/css?family=Open+Sans:100,100italic,200,200italic,300,300italic,400,400italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic&display=swap",
+      "status": 200,
+      "headers": {
+        "content-encoding": "gzip",
+        "x-content-type-options": "nosniff",
+        "expires": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css; charset=utf-8",
+        "vary": "Sec-Fetch-Dest, Sec-Fetch-Mode, Sec-Fetch-Site",
+        "last-modified": "Tue, 25 Aug 2026 16:02:19 GMT",
+        "x-frame-options": "SAMEORIGIN",
+        "strict-transport-security": "max-age=31536000",
+        "link": "<https://fonts.gstatic.com>; rel=preconnect; crossorigin",
+        "cache-control": "private, max-age=86400, stale-while-revalidate=604800",
+        "timing-allow-origin": "*",
+        "cross-origin-opener-policy": "same-origin-allow-popups",
+        "cross-origin-resource-policy": "cross-origin",
+        "access-control-allow-origin": "*",
+        "x-xss-protection": "0",
+        "server": "ESF"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/plugins/all-in-one-seo-pack/dist/Lite/assets/css/table-of-contents/global.e90f6d47.css?ver=4.9.10",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"5cf-6a535071-85ca58d0be275c04;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "416",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Sun, 12 Jul 2026 08:29:37 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/plugins/jetpack/jetpack_vendor/automattic/jetpack-forms/dist/contact-form/css/jetpack-forms-layout.css?ver=16.0",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"381d-6a535093-1a3a1e461e7bb20a;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "826",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Sun, 12 Jul 2026 08:30:11 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-includes/js/mediaelement/mediaelementplayer-legacy.min.css?ver=4.2.17",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"2bf8-6a0d99a2-863422a565120e3b;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "2379",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Wed, 20 May 2026 11:23:14 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/plugins/woocommerce/assets/css/woocommerce-layout.css?ver=10.9.4",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"4d44-6a5350a6-2ccb861034825744;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "3173",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Sun, 12 Jul 2026 08:30:30 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-includes/js/mediaelement/wp-mediaelement.min.css?ver=7.1",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"105a-6a0d99a2-253394d2163208e2;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "979",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Wed, 20 May 2026 11:23:14 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/themes/hello-elementor/style.css?ver=7.1",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"4bf-6a0dac1e-f2d95825350b9453;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "558",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Wed, 20 May 2026 12:42:06 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/themes/hello-elementor/assets/css/reset.css?ver=3.4.8",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"1550-6a0dac1e-d72e9030170eea2a;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "1575",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Wed, 20 May 2026 12:42:06 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/plugins/hostinger-reach/frontend/dist/blocks/subscription.css?ver=1783844996",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"f7b-6a535084-af3a5f5bcc1c40d0;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "995",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Sun, 12 Jul 2026 08:29:56 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/plugins/woocommerce/assets/css/woocommerce.css?ver=10.9.4",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"15566-6a5350a6-63cfd78d1c06514d;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "10333",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Sun, 12 Jul 2026 08:30:30 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/plugins/sitepress-multilingual-cms/templates/language-switchers/legacy-list-horizontal/style.min.css?ver=1",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"38a-6a55d864-bdba41951d65c04b;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "232",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Tue, 14 Jul 2026 06:34:12 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/uploads/elementor/css/post-5.css?ver=1787671907",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"a57-6a8db563-4bfd26517d0de8a6;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "625",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Tue, 25 Aug 2026 15:31:47 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/themes/hello-elementor/assets/css/header-footer.css?ver=3.4.8",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"1c0e-6a0dac1e-50c0e33ec2591bcd;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "1259",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Wed, 20 May 2026 12:42:06 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/plugins/elementor/assets/css/frontend.min.css?ver=4.1.4",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"d58a-6a3d5d1e-ebdce0544a526d01;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "6538",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Thu, 25 Jun 2026 16:53:50 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/plugins/essential-addons-for-elementor-lite/assets/front-end/css/view/general.min.css?ver=6.7.3",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"1e42-6a86e5f8-932fa01926201102;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "1418",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Thu, 20 Aug 2026 11:33:12 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/uploads/elementor/css/post-61.css?ver=1787671985",
+      "status": 200,
+      "headers": {
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "etag": "\"6c-6a8db5b1-4906d23aa8136c6f;;;\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "108",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Tue, 25 Aug 2026 15:33:05 GMT",
+        "server": "LiteSpeed",
+        "platform": "hostinger",
+        "panel": "hpanel"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/uploads/elementor/css/base-desktop.css?ver=6a8db5b19d45d",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"6ee-6a8db5b1-12aa82a4ac9c5e01;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "454",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Tue, 25 Aug 2026 15:33:05 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/themes/hello-elementor/assets/css/theme.css?ver=3.4.8",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"13e9-6a0dac1e-64d405102b738d88;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "1127",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Wed, 20 May 2026 12:42:06 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/plugins/woocommerce/assets/client/blocks/wc-blocks.css?ver=wc-10.9.4",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"36b6-6a5350a6-9a251630c4c7e91a;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "2377",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Sun, 12 Jul 2026 08:30:30 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/plugins/woocommerce/assets/css/photoswipe/photoswipe.min.css?ver=10.9.4",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"cc1-6a5350a6-4dc3de8b8ec36148;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "844",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Sun, 12 Jul 2026 08:30:30 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/plugins/woocommerce/assets/css/photoswipe/default-skin/default-skin.min.css?ver=10.9.4",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"1f0b-6a5350a6-6e181a860d1ae6d9;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "1751",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Sun, 12 Jul 2026 08:30:30 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    },
+    {
+      "url": "https://lunacibarcelona.com/wp-content/plugins/woocommerce/assets/css/woocommerce-smallscreen.css?ver=10.9.4",
+      "status": 200,
+      "headers": {
+        "panel": "hpanel",
+        "content-security-policy": "upgrade-insecure-requests",
+        "cache-control": "public, max-age=604800",
+        "content-encoding": "br",
+        "etag": "\"21cf-6a5350a6-fec34f87e74a8646;br\"",
+        "expires": "Tue, 01 Sep 2026 16:11:20 GMT",
+        "accept-ranges": "bytes",
+        "content-length": "1299",
+        "date": "Tue, 25 Aug 2026 16:11:20 GMT",
+        "content-type": "text/css",
+        "last-modified": "Sun, 12 Jul 2026 08:30:30 GMT",
+        "vary": "Accept-Encoding",
+        "server": "LiteSpeed",
+        "platform": "hostinger"
+      }
+    }
+  ]
+}

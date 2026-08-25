@@ -4,6 +4,15 @@
  * (EN post 59 + ES post 680) with a new user-supplied photo, then safely
  * clean up the old attachment if nothing else references its physical
  * files - same pattern as fix-about-hero-banner.php (PR #195).
+ *
+ * IMPORTANT: _elementor_data is stored JSON-encoded, and PHP's json_encode
+ * (which Elementor/wp_json_encode uses) escapes forward slashes as `\/` by
+ * default. Searching the RAW postmeta string for a plain-slash URL will
+ * never match - this must operate on the DECODED widget HTML (where
+ * json_decode has already turned `\/` back into `/`), then re-encode via
+ * wp_json_encode() before writing back. An earlier version of this script
+ * searched the raw string directly and always found 0 occurrences - fixed
+ * here after diagnosing via debug output on two failed live runs.
  */
 
 global $wpdb;
@@ -15,6 +24,42 @@ $pages = array(
 	59  => 'EN About Us',
 	680 => 'ES About Us (Sobre Nosotros)',
 );
+
+function lunaci_story_find_widget_with_fragment( $node, $fragment ) {
+	if ( ! is_array( $node ) ) {
+		return null;
+	}
+	if ( isset( $node['widgetType'], $node['settings']['html'] ) && 'html' === $node['widgetType'] && false !== strpos( $node['settings']['html'], $fragment ) ) {
+		return $node;
+	}
+	foreach ( $node as $value ) {
+		if ( is_array( $value ) ) {
+			$found = lunaci_story_find_widget_with_fragment( $value, $fragment );
+			if ( null !== $found ) {
+				return $found;
+			}
+		}
+	}
+	return null;
+}
+
+function lunaci_story_set_widget_html_by_id( &$node, $target_id, $new_html_value ) {
+	if ( ! is_array( $node ) ) {
+		return false;
+	}
+	if ( isset( $node['id'] ) && $node['id'] === $target_id && isset( $node['settings']['html'] ) ) {
+		$node['settings']['html'] = $new_html_value;
+		return true;
+	}
+	foreach ( $node as &$value ) {
+		if ( is_array( $value ) ) {
+			if ( lunaci_story_set_widget_html_by_id( $value, $target_id, $new_html_value ) ) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
 
 echo "=====================================================================\n";
 echo "STEP A: PREPARE - fresh-read + validate preconditions for both pages\n";
@@ -31,18 +76,23 @@ foreach ( $pages as $page_id => $label ) {
 		echo "ABORT: no _elementor_data found for post {$page_id}\n";
 		exit( 1 );
 	}
-
-	$old_count = substr_count( $raw, $old_image_url );
-	$new_count = substr_count( $raw, $new_image_url );
-	echo "old image URL occurs {$old_count}x  new image URL already present {$new_count}x\n";
-	echo "DEBUG: strlen(raw)=" . strlen( $raw ) . "\n";
-	echo "DEBUG: contains 'lunaci-about-story' (no ext)=" . ( false !== strpos( $raw, 'lunaci-about-story' ) ? 'yes' : 'no' ) . "\n";
-	echo "DEBUG: contains 'ce307e5' (widget id)=" . ( false !== strpos( $raw, 'ce307e5' ) ? 'yes' : 'no' ) . "\n";
-	echo "DEBUG: contains '2026/06/lunaci-about'=" . ( false !== strpos( $raw, '2026/06/lunaci-about' ) ? 'yes' : 'no' ) . "\n";
-	$pos = strpos( $raw, 'lunaci-about-story' );
-	if ( false !== $pos ) {
-		echo "DEBUG: context around match: " . substr( $raw, max( 0, $pos - 60 ), 140 ) . "\n";
+	$decoded = json_decode( $raw, true );
+	if ( JSON_ERROR_NONE !== json_last_error() ) {
+		echo "ABORT: json_decode failed for post {$page_id}: " . json_last_error_msg() . "\n";
+		exit( 1 );
 	}
+
+	$widget = lunaci_story_find_widget_with_fragment( $decoded, $old_image_url );
+	if ( null === $widget ) {
+		echo "ABORT: could not find a widget containing the old image URL on post {$page_id}\n";
+		exit( 1 );
+	}
+	$widget_id = $widget['id'];
+	$html      = $widget['settings']['html'];
+
+	$old_count = substr_count( $html, $old_image_url );
+	$new_count = substr_count( $html, $new_image_url );
+	echo "widget id={$widget_id}  old image URL occurs {$old_count}x  new image URL already present {$new_count}x\n";
 
 	if ( 1 !== $old_count ) {
 		echo "ABORT: expected exactly 1 occurrence of the old image URL, found {$old_count} - refusing to proceed\n";
@@ -56,8 +106,10 @@ foreach ( $pages as $page_id => $label ) {
 	echo "OK: preconditions satisfied for page {$page_id}\n";
 
 	$page_data[ $page_id ] = array(
-		'label' => $label,
-		'raw'   => $raw,
+		'label'     => $label,
+		'widget_id' => $widget_id,
+		'raw'       => $raw,
+		'html'      => $html,
 	);
 }
 
@@ -77,9 +129,23 @@ foreach ( $page_data as $page_id => $data ) {
 	}
 	echo "PASS: race-condition guard confirms content unchanged\n";
 
-	$new_raw = str_replace( $old_image_url, $new_image_url, $fresh_raw );
-	if ( substr_count( $new_raw, $new_image_url ) !== 1 || false !== strpos( $new_raw, $old_image_url ) ) {
+	$new_html = str_replace( $old_image_url, $new_image_url, $data['html'] );
+	if ( substr_count( $new_html, $new_image_url ) !== 1 || false !== strpos( $new_html, $old_image_url ) ) {
 		echo "ABORT: replacement verification failed for page {$page_id}\n";
+		exit( 1 );
+	}
+
+	$decoded_fresh = json_decode( $fresh_raw, true );
+
+	$set_ok = lunaci_story_set_widget_html_by_id( $decoded_fresh, $data['widget_id'], $new_html );
+	if ( ! $set_ok ) {
+		echo "ABORT: failed to locate widget {$data['widget_id']} in freshly-decoded data for page {$page_id}\n";
+		exit( 1 );
+	}
+
+	$new_raw = wp_json_encode( $decoded_fresh );
+	if ( false === $new_raw || substr_count( $new_raw, $new_image_url ) < 1 ) {
+		echo "ABORT: re-encoding verification failed for page {$page_id}\n";
 		exit( 1 );
 	}
 

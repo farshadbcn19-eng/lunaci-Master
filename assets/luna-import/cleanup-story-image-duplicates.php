@@ -33,9 +33,22 @@ echo "=====================================================================\n";
 echo "PART 1: Confirm the live image is actually referenced on both pages\n";
 echo "=====================================================================\n";
 
+function lunaci_cleanup_normalize_elementor_data( $raw ) {
+	// _elementor_data is JSON-encoded with slashes escaped as `\/` by
+	// default; decode then re-encode with JSON_UNESCAPED_SLASHES so plain-
+	// slash URL searches work reliably regardless of how it was stored.
+	$decoded = json_decode( $raw, true );
+	if ( JSON_ERROR_NONE !== json_last_error() ) {
+		return $raw;
+	}
+	$normalized = wp_json_encode( $decoded, JSON_UNESCAPED_SLASHES );
+	return false !== $normalized ? $normalized : $raw;
+}
+
 foreach ( array( 59 => 'EN About Us', 680 => 'ES About Us (Sobre Nosotros)' ) as $page_id => $label ) {
-	$raw   = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = '_elementor_data'", $page_id ) );
-	$count = $raw ? substr_count( $raw, $live_image_url ) : 0;
+	$raw      = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = '_elementor_data'", $page_id ) );
+	$raw_norm = $raw ? lunaci_cleanup_normalize_elementor_data( $raw ) : '';
+	$count    = $raw ? substr_count( $raw_norm, $live_image_url ) : 0;
 	echo "{$label} (post {$page_id}): live image URL occurs {$count}x\n";
 	if ( 1 !== $count ) {
 		echo "ABORT: expected the live image to occur exactly once on page {$page_id}, found {$count} - refusing to proceed with cleanup\n";
@@ -98,8 +111,9 @@ echo "PART 3: Safe deletion of the ORIGINAL old attachment (lunaci-about-story.p
 echo "=====================================================================\n";
 
 foreach ( array( 59, 680 ) as $page_id ) {
-	$raw   = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = '_elementor_data'", $page_id ) );
-	$count = $raw ? substr_count( $raw, $old_image_url ) : 0;
+	$raw      = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = '_elementor_data'", $page_id ) );
+	$raw_norm = $raw ? lunaci_cleanup_normalize_elementor_data( $raw ) : '';
+	$count    = $raw ? substr_count( $raw_norm, $old_image_url ) : 0;
 	if ( $count > 0 ) {
 		echo "ABORT: old image URL still present on live page {$page_id} - refusing to delete the original attachment\n";
 		exit( 1 );

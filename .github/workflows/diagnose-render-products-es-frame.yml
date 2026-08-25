@@ -39,12 +39,11 @@ jobs:
           git checkout --orphan diagnostics/products-es-frame-render
           git rm -rf . > /dev/null 2>&1 || true
 
-          cp /tmp/out/es-viewport.png ./es-viewport.png
-          cp /tmp/out/es-fullpage.png ./es-fullpage.png
-          cp /tmp/out/es-info.json ./es-info.json
+          cp /tmp/out/*.png ./
+          cp /tmp/out/frame-info.json ./frame-info.json
 
-          git add es-viewport.png es-fullpage.png es-info.json
-          git commit -m "Diagnostic render of live ES Products page frame"
+          git add *.png frame-info.json
+          git commit -m "Diagnostic render of live ES/EN Products page frame at 3 viewports"
           git push --force origin diagnostics/products-es-frame-render
 
           echo "OK: pushed diagnostics/products-es-frame-render branch"

@@ -14,11 +14,12 @@ const fs = require('fs');
 
 const PAGES = {
   about_en: 'https://lunacibarcelona.com/about-us/',
+  home_en: 'https://lunacibarcelona.com/',
 };
 
 async function countRevealState(page) {
   return page.evaluate(() => {
-    const all = Array.from(document.querySelectorAll('.lna-rv'));
+    const all = Array.from(document.querySelectorAll('.lna-rv, .ln-rv'));
     const revealed = all.filter((el) => el.classList.contains('on'));
     const hiddenStillZeroOpacity = all.filter((el) => {
       const cs = getComputedStyle(el);
@@ -52,7 +53,7 @@ async function countRevealState(page) {
       await page.evaluate((scrollY) => window.scrollTo(0, scrollY), y);
       await page.waitForTimeout(400);
       if (shots < 12) {
-        await page.screenshot({ path: `/tmp/out/scroll-step-${String(shots).padStart(2, '0')}.png` });
+        await page.screenshot({ path: `/tmp/out/${key}-scroll-step-${String(shots).padStart(2, '0')}.png` });
         shots++;
       }
     }

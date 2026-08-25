@@ -1,0 +1,50 @@
+name: Diagnose - render live ES Products page frame with a real browser (read-only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: |
+          npm init -y > /dev/null
+          npm install playwright@1.48.0 > /dev/null
+          npx playwright install --with-deps chromium
+
+      - name: Run render diagnostic
+        run: |
+          mkdir -p /tmp/out
+          node assets/luna-import/screenshot-products-es-frame.js
+
+      - name: Commit screenshots + info to diagnostics branch
+        run: |
+          set -e
+          git config user.name "diagnostic-bot"
+          git config user.email "diagnostic-bot@users.noreply.github.com"
+
+          git checkout --orphan diagnostics/products-es-frame-render
+          git rm -rf . > /dev/null 2>&1 || true
+
+          cp /tmp/out/es-viewport.png ./es-viewport.png
+          cp /tmp/out/es-fullpage.png ./es-fullpage.png
+          cp /tmp/out/es-info.json ./es-info.json
+
+          git add es-viewport.png es-fullpage.png es-info.json
+          git commit -m "Diagnostic render of live ES Products page frame"
+          git push --force origin diagnostics/products-es-frame-render
+
+          echo "OK: pushed diagnostics/products-es-frame-render branch"

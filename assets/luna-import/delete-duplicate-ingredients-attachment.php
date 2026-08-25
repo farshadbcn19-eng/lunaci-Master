@@ -71,8 +71,9 @@ echo "OK: no other wp_posts row references this filename/guid in post_content\n"
 
 $referencing_meta = $wpdb->get_results(
 	$wpdb->prepare(
-		"SELECT post_id, meta_key FROM {$wpdb->postmeta}
-		 WHERE meta_value LIKE %s OR meta_value LIKE %s",
+		"SELECT post_id, meta_key, meta_value FROM {$wpdb->postmeta}
+		 WHERE post_id != %d AND (meta_value LIKE %s OR meta_value LIKE %s)",
+		$attachment_id,
 		'%' . $wpdb->esc_like( $filename_only ) . '%',
 		'%' . $wpdb->esc_like( $row['guid'] ) . '%'
 	),
@@ -80,13 +81,16 @@ $referencing_meta = $wpdb->get_results(
 );
 
 if ( $referencing_meta ) {
-	echo "ERROR: found " . count( $referencing_meta ) . " postmeta row(s) referencing this filename/guid - refusing to delete:\n";
+	echo "ERROR: found " . count( $referencing_meta ) . " OTHER post's postmeta row(s) referencing this filename/guid - refusing to delete:\n";
 	foreach ( $referencing_meta as $m ) {
+		$pos     = strpos( $m['meta_value'], $filename_only );
+		$snippet = false !== $pos ? substr( $m['meta_value'], max( 0, $pos - 60 ), 140 ) : substr( $m['meta_value'], 0, 140 );
 		echo "  - post_id={$m['post_id']} meta_key={$m['meta_key']}\n";
+		echo "    context: ...{$snippet}...\n";
 	}
 	exit( 1 );
 }
-echo "OK: no wp_postmeta row references this filename/guid\n";
+echo "OK: no OTHER post's wp_postmeta row references this filename/guid (own metadata rows on {$attachment_id} are expected and excluded)\n";
 
 echo "\n=====================================================================\n";
 echo "STEP B: DELETE - permanently remove the unused duplicate attachment\n";

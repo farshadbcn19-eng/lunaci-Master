@@ -1,0 +1,3 @@
+about_en story img src: https://lunacibarcelona.com/wp-content/uploads/2026/08/lunaimport-about-story-luna-4.jpg
+about_es story img src: https://lunacibarcelona.com/wp-content/uploads/2026/08/lunaimport-about-story-luna-4.jpg
+done

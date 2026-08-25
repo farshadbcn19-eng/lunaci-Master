@@ -1,0 +1,3050 @@
+{
+  "home_en": {
+    "mobile": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "htmlOverflowX": "visible",
+      "images": [
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "lunaimport-hero-luna.jpg?v=2",
+          "naturalWidth": 1376,
+          "naturalHeight": 768,
+          "rect": {
+            "x": 10,
+            "y": 9,
+            "width": 370,
+            "height": 845
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-collection-face-luna.jpg?v=2",
+          "naturalWidth": 1024,
+          "naturalHeight": 1024,
+          "rect": {
+            "x": 30,
+            "y": 1517,
+            "width": 157,
+            "height": 209
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-collection-eyes-luna.jpg?v=2",
+          "naturalWidth": 1172,
+          "naturalHeight": 896,
+          "rect": {
+            "x": 204,
+            "y": 1517,
+            "width": 157,
+            "height": 209
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-collection-lips-luna.jpg?v=2",
+          "naturalWidth": 1024,
+          "naturalHeight": 1024,
+          "rect": {
+            "x": 30,
+            "y": 1745,
+            "width": 157,
+            "height": 209
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-collection-nails-luna.jpg?v=2",
+          "naturalWidth": 1024,
+          "naturalHeight": 1024,
+          "rect": {
+            "x": 204,
+            "y": 1745,
+            "width": 157,
+            "height": 209
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-why2-luna-replacement.jpg?v=2",
+          "naturalWidth": 1023,
+          "naturalHeight": 1537,
+          "rect": {
+            "x": 10,
+            "y": 2080,
+            "width": 370,
+            "height": 620
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-origin-crafted-barcelona-luna.jpg",
+          "naturalWidth": 1672,
+          "naturalHeight": 941,
+          "rect": {
+            "x": 10,
+            "y": 4830,
+            "width": 370,
+            "height": 320
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "en.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "es.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 20,
+            "y": 14,
+            "width": 160,
+            "height": 90
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "g.gif?v=ext&blog=255818843&post=57&tz=0&srv=lunacibarcelona.com&j=1%3A16.0&host=lunacibarcelona.com&ref=&fcp=3368&rand=0.4650642001451235",
+          "naturalWidth": 6,
+          "naturalHeight": 5,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "none",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        }
+      ]
+    },
+    "tablet": {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "htmlOverflowX": "visible",
+      "images": [
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "lunaimport-hero-luna.jpg?v=2",
+          "naturalWidth": 1376,
+          "naturalHeight": 768,
+          "rect": {
+            "x": 10,
+            "y": 9,
+            "width": 749,
+            "height": 1025
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-collection-face-luna.jpg?v=2",
+          "naturalWidth": 1024,
+          "naturalHeight": 1024,
+          "rect": {
+            "x": 48,
+            "y": 1592,
+            "width": 327,
+            "height": 436
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-collection-eyes-luna.jpg?v=2",
+          "naturalWidth": 1172,
+          "naturalHeight": 896,
+          "rect": {
+            "x": 393,
+            "y": 1592,
+            "width": 327,
+            "height": 436
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-collection-lips-luna.jpg?v=2",
+          "naturalWidth": 1024,
+          "naturalHeight": 1024,
+          "rect": {
+            "x": 48,
+            "y": 2047,
+            "width": 327,
+            "height": 436
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-collection-nails-luna.jpg?v=2",
+          "naturalWidth": 1024,
+          "naturalHeight": 1024,
+          "rect": {
+            "x": 393,
+            "y": 2047,
+            "width": 327,
+            "height": 436
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-why2-luna-replacement.jpg?v=2",
+          "naturalWidth": 1023,
+          "naturalHeight": 1537,
+          "rect": {
+            "x": 10,
+            "y": 2609,
+            "width": 748,
+            "height": 1124
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-origin-crafted-barcelona-luna.jpg",
+          "naturalWidth": 1672,
+          "naturalHeight": 941,
+          "rect": {
+            "x": 10,
+            "y": 5411,
+            "width": 748,
+            "height": 320
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "en.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "es.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 38,
+            "y": 14,
+            "width": 160,
+            "height": 90
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "g.gif?v=ext&blog=255818843&post=57&tz=0&srv=lunacibarcelona.com&j=1%3A16.0&host=lunacibarcelona.com&ref=&fcp=1056&rand=0.9143304790332443",
+          "naturalWidth": 6,
+          "naturalHeight": 5,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "none",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        }
+      ]
+    }
+  },
+  "home_es": {
+    "mobile": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "htmlOverflowX": "visible",
+      "images": [
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "lunaimport-hero-luna.jpg?v=2",
+          "naturalWidth": 1376,
+          "naturalHeight": 768,
+          "rect": {
+            "x": 10,
+            "y": 9,
+            "width": 370,
+            "height": 845
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-collection-face-luna.jpg?v=2",
+          "naturalWidth": 1024,
+          "naturalHeight": 1024,
+          "rect": {
+            "x": 30,
+            "y": 1587,
+            "width": 157,
+            "height": 209
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-collection-eyes-luna.jpg?v=2",
+          "naturalWidth": 1172,
+          "naturalHeight": 896,
+          "rect": {
+            "x": 204,
+            "y": 1587,
+            "width": 157,
+            "height": 209
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-collection-lips-luna.jpg?v=2",
+          "naturalWidth": 1024,
+          "naturalHeight": 1024,
+          "rect": {
+            "x": 30,
+            "y": 1814,
+            "width": 157,
+            "height": 209
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-collection-nails-luna.jpg?v=2",
+          "naturalWidth": 1024,
+          "naturalHeight": 1024,
+          "rect": {
+            "x": 204,
+            "y": 1814,
+            "width": 157,
+            "height": 209
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-why2-luna-replacement.jpg?v=2",
+          "naturalWidth": 1023,
+          "naturalHeight": 1537,
+          "rect": {
+            "x": 10,
+            "y": 2150,
+            "width": 370,
+            "height": 620
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-origin-crafted-barcelona-luna.jpg",
+          "naturalWidth": 1672,
+          "naturalHeight": 941,
+          "rect": {
+            "x": 10,
+            "y": 4919,
+            "width": 370,
+            "height": 320
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "en.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "es.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 20,
+            "y": 14,
+            "width": 160,
+            "height": 90
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "g.gif?v=ext&blog=255818843&post=772&tz=0&srv=lunacibarcelona.com&j=1%3A16.0&host=lunacibarcelona.com&ref=&fcp=1214&rand=0.21006694214429622",
+          "naturalWidth": 6,
+          "naturalHeight": 5,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "none",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        }
+      ]
+    },
+    "tablet": {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "htmlOverflowX": "visible",
+      "images": [
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "lunaimport-hero-luna.jpg?v=2",
+          "naturalWidth": 1376,
+          "naturalHeight": 768,
+          "rect": {
+            "x": 10,
+            "y": 9,
+            "width": 749,
+            "height": 1025
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-collection-face-luna.jpg?v=2",
+          "naturalWidth": 1024,
+          "naturalHeight": 1024,
+          "rect": {
+            "x": 48,
+            "y": 1612,
+            "width": 327,
+            "height": 436
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-collection-eyes-luna.jpg?v=2",
+          "naturalWidth": 1172,
+          "naturalHeight": 896,
+          "rect": {
+            "x": 393,
+            "y": 1612,
+            "width": 327,
+            "height": 436
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-collection-lips-luna.jpg?v=2",
+          "naturalWidth": 1024,
+          "naturalHeight": 1024,
+          "rect": {
+            "x": 48,
+            "y": 2066,
+            "width": 327,
+            "height": 436
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-collection-nails-luna.jpg?v=2",
+          "naturalWidth": 1024,
+          "naturalHeight": 1024,
+          "rect": {
+            "x": 393,
+            "y": 2066,
+            "width": 327,
+            "height": 436
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-why2-luna-replacement.jpg?v=2",
+          "naturalWidth": 1023,
+          "naturalHeight": 1537,
+          "rect": {
+            "x": 10,
+            "y": 2628,
+            "width": 748,
+            "height": 1124
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaimport-origin-crafted-barcelona-luna.jpg",
+          "naturalWidth": 1672,
+          "naturalHeight": 941,
+          "rect": {
+            "x": 10,
+            "y": 5546,
+            "width": 748,
+            "height": 320
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "en.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "es.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 38,
+            "y": 14,
+            "width": 160,
+            "height": 90
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "g.gif?v=ext&blog=255818843&post=772&tz=0&srv=lunacibarcelona.com&j=1%3A16.0&host=lunacibarcelona.com&ref=&fcp=1159&rand=0.8373809476884861",
+          "naturalWidth": 6,
+          "naturalHeight": 5,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "none",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        }
+      ]
+    }
+  },
+  "about_en": {
+    "mobile": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "htmlOverflowX": "visible",
+      "images": [
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "lunaimport-about-hero-luna.jpg",
+          "naturalWidth": 1774,
+          "naturalHeight": 887,
+          "rect": {
+            "x": 10,
+            "y": 140,
+            "width": 370,
+            "height": 844
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-about-story.png",
+          "naturalWidth": 1023,
+          "naturalHeight": 1537,
+          "rect": {
+            "x": 10,
+            "y": 984,
+            "width": 370,
+            "height": 563
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "en.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "es.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 20,
+            "y": 14,
+            "width": 160,
+            "height": 90
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "g.gif?v=ext&blog=255818843&post=59&tz=0&srv=lunacibarcelona.com&j=1%3A16.0&host=lunacibarcelona.com&ref=&fcp=1219&rand=0.5607869851436964",
+          "naturalWidth": 6,
+          "naturalHeight": 5,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "none",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        }
+      ]
+    },
+    "tablet": {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "htmlOverflowX": "visible",
+      "images": [
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "lunaimport-about-hero-luna.jpg",
+          "naturalWidth": 1774,
+          "naturalHeight": 887,
+          "rect": {
+            "x": 10,
+            "y": 140,
+            "width": 748,
+            "height": 1024
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-about-story.png",
+          "naturalWidth": 1023,
+          "naturalHeight": 1537,
+          "rect": {
+            "x": 10,
+            "y": 1164,
+            "width": 748,
+            "height": 1131
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "en.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "es.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 38,
+            "y": 14,
+            "width": 160,
+            "height": 90
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "g.gif?v=ext&blog=255818843&post=59&tz=0&srv=lunacibarcelona.com&j=1%3A16.0&host=lunacibarcelona.com&ref=&fcp=1081&rand=0.3615025255527151",
+          "naturalWidth": 6,
+          "naturalHeight": 5,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "none",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        }
+      ]
+    }
+  },
+  "about_es": {
+    "mobile": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "htmlOverflowX": "visible",
+      "images": [
+        {
+          "src": "en.svg",
+          "naturalWidth": 18,
+          "naturalHeight": 12,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "es.svg",
+          "naturalWidth": 18,
+          "naturalHeight": 12,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 20,
+            "y": 14,
+            "width": 160,
+            "height": 90
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "g.gif?v=ext&blog=255818843&post=0&tz=0&srv=lunacibarcelona.com&arch_err=%2Fes%2Fsobre-nosotros%2F%3Fnocache%3D1787664297210&j=1%3A16.0&host=lunacibarcelona.com&ref=&fcp=1078&rand=0.04136513046814283",
+          "naturalWidth": 6,
+          "naturalHeight": 5,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "none",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        }
+      ]
+    },
+    "tablet": {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "htmlOverflowX": "visible",
+      "images": [
+        {
+          "src": "en.svg",
+          "naturalWidth": 18,
+          "naturalHeight": 12,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "es.svg",
+          "naturalWidth": 18,
+          "naturalHeight": 12,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 38,
+            "y": 14,
+            "width": 160,
+            "height": 90
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "g.gif?v=ext&blog=255818843&post=0&tz=0&srv=lunacibarcelona.com&arch_err=%2Fes%2Fsobre-nosotros%2F%3Fnocache%3D1787664299871&j=1%3A16.0&host=lunacibarcelona.com&ref=&fcp=1096&rand=0.058191578555867096",
+          "naturalWidth": 6,
+          "naturalHeight": 5,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "none",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        }
+      ]
+    }
+  },
+  "products_en": {
+    "mobile": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "htmlOverflowX": "visible",
+      "images": [
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "lunaci-foundation.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 40,
+            "y": 2255,
+            "width": 311,
+            "height": 152
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "contain",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-mascara-volume.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 40,
+            "y": 2490,
+            "width": 311,
+            "height": 152
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "contain",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-lipstick.png",
+          "naturalWidth": 1086,
+          "naturalHeight": 1448,
+          "rect": {
+            "x": 40,
+            "y": 2725,
+            "width": 311,
+            "height": 152
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "contain",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-nail-polish.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 40,
+            "y": 2960,
+            "width": 311,
+            "height": 152
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "contain",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-foundation.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 40,
+            "y": 3633,
+            "width": 311,
+            "height": 414
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-blush.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "rect": {
+            "x": 40,
+            "y": 4230,
+            "width": 311,
+            "height": 311
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-lipstick.png",
+          "naturalWidth": 1086,
+          "naturalHeight": 1448,
+          "rect": {
+            "x": 40,
+            "y": 4828,
+            "width": 311,
+            "height": 414
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-mascara-volume.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 40,
+            "y": 5470,
+            "width": 311,
+            "height": 414
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "en.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "es.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 20,
+            "y": 14,
+            "width": 160,
+            "height": 90
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "g.gif?v=ext&blog=255818843&post=61&tz=0&srv=lunacibarcelona.com&j=1%3A16.0&host=lunacibarcelona.com&ref=&fcp=1235&rand=0.5439040710708445",
+          "naturalWidth": 6,
+          "naturalHeight": 5,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "none",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        }
+      ]
+    },
+    "tablet": {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "htmlOverflowX": "visible",
+      "images": [
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "lunaci-foundation.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 70,
+            "y": 2182,
+            "width": 628,
+            "height": 306
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "contain",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-mascara-volume.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 70,
+            "y": 2656,
+            "width": 628,
+            "height": 306
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "contain",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-lipstick.png",
+          "naturalWidth": 1086,
+          "naturalHeight": 1448,
+          "rect": {
+            "x": 70,
+            "y": 3129,
+            "width": 628,
+            "height": 306
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "contain",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-nail-polish.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 70,
+            "y": 3602,
+            "width": 628,
+            "height": 306
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "contain",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-foundation.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 70,
+            "y": 4513,
+            "width": 628,
+            "height": 837
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-blush.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "rect": {
+            "x": 70,
+            "y": 5534,
+            "width": 628,
+            "height": 628
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-lipstick.png",
+          "naturalWidth": 1086,
+          "naturalHeight": 1448,
+          "rect": {
+            "x": 70,
+            "y": 6555,
+            "width": 628,
+            "height": 838
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-mascara-volume.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 70,
+            "y": 7575,
+            "width": 628,
+            "height": 837
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "en.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "es.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 38,
+            "y": 14,
+            "width": 160,
+            "height": 90
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "g.gif?v=ext&blog=255818843&post=61&tz=0&srv=lunacibarcelona.com&j=1%3A16.0&host=lunacibarcelona.com&ref=&fcp=1128&rand=0.832000321308332",
+          "naturalWidth": 6,
+          "naturalHeight": 5,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "none",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        }
+      ]
+    }
+  },
+  "products_es": {
+    "mobile": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "htmlOverflowX": "visible",
+      "images": [
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "lunaci-foundation.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 40,
+            "y": 2278,
+            "width": 311,
+            "height": 152
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "contain",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-mascara-volume.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 40,
+            "y": 2513,
+            "width": 311,
+            "height": 152
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "contain",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-lipstick.png",
+          "naturalWidth": 1086,
+          "naturalHeight": 1448,
+          "rect": {
+            "x": 40,
+            "y": 2748,
+            "width": 311,
+            "height": 152
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "contain",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-nail-polish.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 40,
+            "y": 2984,
+            "width": 311,
+            "height": 152
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "contain",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-foundation.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 40,
+            "y": 3656,
+            "width": 311,
+            "height": 414
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-blush.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "rect": {
+            "x": 40,
+            "y": 4274,
+            "width": 311,
+            "height": 311
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-lipstick.png",
+          "naturalWidth": 1086,
+          "naturalHeight": 1448,
+          "rect": {
+            "x": 40,
+            "y": 4892,
+            "width": 311,
+            "height": 414
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-mascara-volume.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 40,
+            "y": 5535,
+            "width": 311,
+            "height": 414
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "en.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "es.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 20,
+            "y": 14,
+            "width": 160,
+            "height": 90
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "g.gif?v=ext&blog=255818843&post=771&tz=0&srv=lunacibarcelona.com&j=1%3A16.0&host=lunacibarcelona.com&ref=&fcp=1161&rand=0.8480593622562314",
+          "naturalWidth": 6,
+          "naturalHeight": 5,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "none",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        }
+      ]
+    },
+    "tablet": {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "htmlOverflowX": "visible",
+      "images": [
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "lunaci-foundation.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 70,
+            "y": 2206,
+            "width": 628,
+            "height": 306
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "contain",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-mascara-volume.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 70,
+            "y": 2679,
+            "width": 628,
+            "height": 306
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "contain",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-lipstick.png",
+          "naturalWidth": 1086,
+          "naturalHeight": 1448,
+          "rect": {
+            "x": 70,
+            "y": 3152,
+            "width": 628,
+            "height": 306
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "contain",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-nail-polish.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 70,
+            "y": 3625,
+            "width": 628,
+            "height": 306
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "contain",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-foundation.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 70,
+            "y": 4536,
+            "width": 628,
+            "height": 837
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-blush.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "rect": {
+            "x": 70,
+            "y": 5557,
+            "width": 628,
+            "height": 628
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-lipstick.png",
+          "naturalWidth": 1086,
+          "naturalHeight": 1448,
+          "rect": {
+            "x": 70,
+            "y": 6578,
+            "width": 628,
+            "height": 838
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-mascara-volume.jpg",
+          "naturalWidth": 800,
+          "naturalHeight": 1066,
+          "rect": {
+            "x": 70,
+            "y": 7599,
+            "width": 628,
+            "height": 837
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "en.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "es.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 38,
+            "y": 14,
+            "width": 160,
+            "height": 90
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "g.gif?v=ext&blog=255818843&post=771&tz=0&srv=lunacibarcelona.com&j=1%3A16.0&host=lunacibarcelona.com&ref=&fcp=1163&rand=0.7316154170927038",
+          "naturalWidth": 6,
+          "naturalHeight": 5,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "none",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        }
+      ]
+    }
+  },
+  "shop_en": {
+    "mobile": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "htmlOverflowX": "visible",
+      "images": [
+        {
+          "src": "lunaci-blusher-brushes-300x300.png",
+          "naturalWidth": 300,
+          "naturalHeight": 300,
+          "rect": {
+            "x": 43,
+            "y": 443,
+            "width": 304,
+            "height": 406
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-compact-powder-300x300.jpg",
+          "naturalWidth": 300,
+          "naturalHeight": 300,
+          "rect": {
+            "x": 43,
+            "y": 875,
+            "width": 304,
+            "height": 406
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "LUNACI-EYELINER-300x300.png",
+          "naturalWidth": 300,
+          "naturalHeight": 300,
+          "rect": {
+            "x": 43,
+            "y": 1307,
+            "width": 304,
+            "height": 406
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-eye-pencil-e1781429622606-300x300.jpg",
+          "naturalWidth": 300,
+          "naturalHeight": 300,
+          "rect": {
+            "x": 43,
+            "y": 1739,
+            "width": 304,
+            "height": 406
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-eyebrow-pencil-300x300.jpg",
+          "naturalWidth": 300,
+          "naturalHeight": 300,
+          "rect": {
+            "x": 43,
+            "y": 2171,
+            "width": 304,
+            "height": 406
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-foundation-300x300.jpg",
+          "naturalWidth": 300,
+          "naturalHeight": 300,
+          "rect": {
+            "x": 43,
+            "y": 2603,
+            "width": 304,
+            "height": 406
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-lip-fix-300x300.jpg",
+          "naturalWidth": 300,
+          "naturalHeight": 300,
+          "rect": {
+            "x": 43,
+            "y": 3035,
+            "width": 304,
+            "height": 406
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-lip-pencil-300x300.jpg",
+          "naturalWidth": 300,
+          "naturalHeight": 300,
+          "rect": {
+            "x": 43,
+            "y": 3467,
+            "width": 304,
+            "height": 406
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-lipgloss-velvet-300x300.jpg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 43,
+            "y": 3899,
+            "width": 304,
+            "height": 406
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-lipstick-300x300.png",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 43,
+            "y": 4331,
+            "width": 304,
+            "height": 406
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-mascara-length-300x300.jpg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 43,
+            "y": 4763,
+            "width": 304,
+            "height": 406
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-mascara-volume-300x300.jpg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 43,
+            "y": 5195,
+            "width": 304,
+            "height": 406
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-nail-polish-300x300.jpg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 43,
+            "y": 5627,
+            "width": 304,
+            "height": 406
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-shadow-300x300.jpg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 43,
+            "y": 6059,
+            "width": 304,
+            "height": 406
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "en.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "es.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 20,
+            "y": 14,
+            "width": 160,
+            "height": 90
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "g.gif?v=ext&blog=255818843&post=0&tz=0&srv=lunacibarcelona.com&arch_results=14&j=1%3A16.0&host=lunacibarcelona.com&ref=&fcp=1087&rand=0.16296821672108686",
+          "naturalWidth": 6,
+          "naturalHeight": 5,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "none",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        }
+      ]
+    },
+    "tablet": {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "htmlOverflowX": "visible",
+      "images": [
+        {
+          "src": "lunaci-blusher-brushes-300x300.png",
+          "naturalWidth": 300,
+          "naturalHeight": 300,
+          "rect": {
+            "x": 117,
+            "y": 405,
+            "width": 534,
+            "height": 713
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-compact-powder-300x300.jpg",
+          "naturalWidth": 300,
+          "naturalHeight": 300,
+          "rect": {
+            "x": 117,
+            "y": 1144,
+            "width": 534,
+            "height": 713
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "LUNACI-EYELINER-300x300.png",
+          "naturalWidth": 300,
+          "naturalHeight": 300,
+          "rect": {
+            "x": 117,
+            "y": 1882,
+            "width": 534,
+            "height": 713
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-eye-pencil-e1781429622606-300x300.jpg",
+          "naturalWidth": 300,
+          "naturalHeight": 300,
+          "rect": {
+            "x": 117,
+            "y": 2621,
+            "width": 534,
+            "height": 713
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-eyebrow-pencil-300x300.jpg",
+          "naturalWidth": 300,
+          "naturalHeight": 300,
+          "rect": {
+            "x": 117,
+            "y": 3360,
+            "width": 534,
+            "height": 713
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-foundation-300x300.jpg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 117,
+            "y": 4098,
+            "width": 534,
+            "height": 713
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-lip-fix-300x300.jpg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 117,
+            "y": 4837,
+            "width": 534,
+            "height": 713
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-lip-pencil-300x300.jpg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 117,
+            "y": 5576,
+            "width": 534,
+            "height": 713
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-lipgloss-velvet-300x300.jpg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 117,
+            "y": 6314,
+            "width": 534,
+            "height": 713
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-lipstick-300x300.png",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 117,
+            "y": 7053,
+            "width": 534,
+            "height": 713
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-mascara-length-300x300.jpg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 117,
+            "y": 7792,
+            "width": 534,
+            "height": 713
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-mascara-volume-300x300.jpg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 117,
+            "y": 8530,
+            "width": 534,
+            "height": 713
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-nail-polish-300x300.jpg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 117,
+            "y": 9269,
+            "width": 534,
+            "height": 713
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "lunaci-shadow-300x300.jpg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 117,
+            "y": 10008,
+            "width": 534,
+            "height": 713
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "cover",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "en.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "es.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 38,
+            "y": 14,
+            "width": 160,
+            "height": 90
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "g.gif?v=ext&blog=255818843&post=0&tz=0&srv=lunacibarcelona.com&arch_results=14&j=1%3A16.0&host=lunacibarcelona.com&ref=&fcp=1052&rand=0.5222748646664215",
+          "naturalWidth": 6,
+          "naturalHeight": 5,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "none",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        }
+      ]
+    }
+  },
+  "contact_en": {
+    "mobile": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "htmlOverflowX": "visible",
+      "images": [
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 23,
+            "y": 3,
+            "width": 133,
+            "height": 75
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "en.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "es.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 20,
+            "y": -5,
+            "width": 160,
+            "height": 90
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "g.gif?v=ext&blog=255818843&post=60&tz=0&srv=lunacibarcelona.com&j=1%3A16.0&host=lunacibarcelona.com&ref=&fcp=1153&rand=0.5952102447448366",
+          "naturalWidth": 6,
+          "naturalHeight": 5,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "none",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": true
+        }
+      ]
+    },
+    "tablet": {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "htmlOverflowX": "visible",
+      "images": [
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 46,
+            "y": 3,
+            "width": 133,
+            "height": 75
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "en.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "es.svg",
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "inline",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": false,
+          "offscreenRight": false,
+          "zeroSize": true
+        },
+        {
+          "src": "b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg",
+          "naturalWidth": 1024,
+          "naturalHeight": 576,
+          "rect": {
+            "x": 38,
+            "y": -5,
+            "width": 160,
+            "height": 90
+          },
+          "display": "block",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": false
+        },
+        {
+          "src": "g.gif?v=ext&blog=255818843&post=60&tz=0&srv=lunacibarcelona.com&j=1%3A16.0&host=lunacibarcelona.com&ref=&fcp=1095&rand=0.7100167564031679",
+          "naturalWidth": 6,
+          "naturalHeight": 5,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "display": "none",
+          "visibility": "visible",
+          "objectFit": "fill",
+          "overflowParent": true,
+          "offscreenRight": false,
+          "zeroSize": true
+        }
+      ]
+    }
+  }
+}

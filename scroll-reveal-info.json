@@ -1,0 +1,44 @@
+{
+  "about_en": {
+    "beforeScroll": {
+      "totalRevealElements": 27,
+      "revealedCount": 0,
+      "stillZeroOpacityCount": 27,
+      "stillZeroOpacitySamples": [
+        "lna-lbl lna-rv :: Our Story · Nuestra Historia",
+        "lna-bar lna-rv d1 :: ",
+        "lna-story__h lna-rv d1 :: The Beginning",
+        "lna-story__sub lna-rv d2 :: El Comienzo",
+        "lna-story__p lna-rv d2 :: LUNACI Barcelona was born from a philosophy — a deep appreci"
+      ]
+    },
+    "afterScroll": {
+      "totalRevealElements": 27,
+      "revealedCount": 27,
+      "stillZeroOpacityCount": 0,
+      "stillZeroOpacitySamples": []
+    },
+    "totalHeight": 7437
+  },
+  "home_en": {
+    "beforeScroll": {
+      "totalRevealElements": 21,
+      "revealedCount": 0,
+      "stillZeroOpacityCount": 21,
+      "stillZeroOpacitySamples": [
+        "ln-sec-h ln-rv :: Shop By Category\n    \n    Our Collection\n    Beauty is perso",
+        "ln-collection__i ln-rv :: FaceShop Face →",
+        "ln-collection__i ln-rv d1 :: EyesShop Eyes →",
+        "ln-collection__i ln-rv d2 :: LipsShop Lips →",
+        "ln-collection__i ln-rv d3 :: NailsShop Nails →"
+      ]
+    },
+    "afterScroll": {
+      "totalRevealElements": 21,
+      "revealedCount": 21,
+      "stillZeroOpacityCount": 0,
+      "stillZeroOpacitySamples": []
+    },
+    "totalHeight": 6435
+  }
+}

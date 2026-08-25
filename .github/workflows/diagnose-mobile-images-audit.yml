@@ -1,0 +1,49 @@
+name: Diagnose - mobile/tablet image and banner audit across main pages (read-only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: |
+          npm init -y > /dev/null
+          npm install playwright@1.48.0 > /dev/null
+          npx playwright install --with-deps chromium
+
+      - name: Run mobile audit
+        run: |
+          mkdir -p /tmp/out
+          node assets/luna-import/screenshot-mobile-audit.js
+
+      - name: Commit screenshots + info to diagnostics branch
+        run: |
+          set -e
+          git config user.name "diagnostic-bot"
+          git config user.email "diagnostic-bot@users.noreply.github.com"
+
+          git checkout --orphan diagnostics/mobile-images-audit
+          git rm -rf . > /dev/null 2>&1 || true
+
+          cp /tmp/out/*.png ./
+          cp /tmp/out/mobile-audit-info.json ./mobile-audit-info.json
+
+          git add *.png mobile-audit-info.json
+          git commit -m "Diagnostic: mobile/tablet full-page screenshots + image geometry across main pages"
+          git push --force origin diagnostics/mobile-images-audit
+
+          echo "OK: pushed diagnostics/mobile-images-audit branch"

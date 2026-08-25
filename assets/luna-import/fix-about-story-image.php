@@ -35,6 +35,14 @@ foreach ( $pages as $page_id => $label ) {
 	$old_count = substr_count( $raw, $old_image_url );
 	$new_count = substr_count( $raw, $new_image_url );
 	echo "old image URL occurs {$old_count}x  new image URL already present {$new_count}x\n";
+	echo "DEBUG: strlen(raw)=" . strlen( $raw ) . "\n";
+	echo "DEBUG: contains 'lunaci-about-story' (no ext)=" . ( false !== strpos( $raw, 'lunaci-about-story' ) ? 'yes' : 'no' ) . "\n";
+	echo "DEBUG: contains 'ce307e5' (widget id)=" . ( false !== strpos( $raw, 'ce307e5' ) ? 'yes' : 'no' ) . "\n";
+	echo "DEBUG: contains '2026/06/lunaci-about'=" . ( false !== strpos( $raw, '2026/06/lunaci-about' ) ? 'yes' : 'no' ) . "\n";
+	$pos = strpos( $raw, 'lunaci-about-story' );
+	if ( false !== $pos ) {
+		echo "DEBUG: context around match: " . substr( $raw, max( 0, $pos - 60 ), 140 ) . "\n";
+	}
 
 	if ( 1 !== $old_count ) {
 		echo "ABORT: expected exactly 1 occurrence of the old image URL, found {$old_count} - refusing to proceed\n";

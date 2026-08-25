@@ -1,3 +1,4 @@
+<meta charset="UTF-8">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;}
@@ -94,8 +95,9 @@
   .ln-nav-toggle span{display:block;width:24px;height:2px;background:#D4AF37;}
 }
 </style>
-<nav id="lnNav">
-  <a href="https://lunacibarcelona.com/">
+<div id="ln">
+<nav class="ln-nav" id="lnNav">
+  <a class="ln-nav__logo" href="https://lunacibarcelona.com/">
     <img src="https://lunacibarcelona.com/wp-content/uploads/2026/05/b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg" alt="LUNACI Barcelona" style="height:90px;width:auto;mix-blend-mode:lighten;">
   </a>
   <ul class="ln-nav__links" id="lnNavLinks">
@@ -104,9 +106,11 @@
     <li><a href="https://lunacibarcelona.com/about-us/">About</a></li>
     <li><a href="https://lunacibarcelona.com/contact">Contact</a></li>
   </ul>
-    <a href="https://lunacibarcelona.com/cart">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(247,244,238,.9)" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-    </a>
+    <div class="ln-nav__cart">
+      <a href="https://lunacibarcelona.com/cart">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(247,244,238,.9)" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      </a>
+    </div>
     <button type="button" class="ln-nav-toggle" id="lnNavToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="lnNavLinks">
       <span></span>
       <span></span>
@@ -132,81 +136,124 @@
   }
 })();
 </script>
-<section>
+<section class="ln-hero">
+  <div class="ln-hero__bg">
     <img src="https://lunacibarcelona.com/wp-content/uploads/2026/05/lunaci_hero_retouched-1-scaled.jpg" alt="LUNACI"/>
-    Luxury Beauty · Barcelona
-    <h1>
-      Lunaci
-      Barcelona
-    </h1>
-    <p>Timeless Beauty. Modern Luxury.</p>
-    <p>Luxury cosmetics inspired by Mediterranean elegance,<br>crafted for women of timeless sophistication.</p>
-      <a href="https://lunacibarcelona.com/products/">Shop Collection</a>
-      <a href="https://lunacibarcelona.com/about">Discover Lunaci</a>
+  </div>
+  <div class="ln-hero__ov"></div>
+  <div class="ln-hero__ov2"></div>
+  <div class="ln-hero__content">
+    <span class="ln-hero__eye">Luxury Beauty · Barcelona</span>
+    <div class="ln-hero__bar"></div>
+    <h1 class="ln-hero__h1"><span class="big">Lunaci</span><span class="small">Barcelona</span></h1>
+    <p class="ln-hero__tag">Timeless Beauty. Modern Luxury.</p>
+    <p class="ln-hero__desc">Luxury cosmetics inspired by Mediterranean elegance,<br>crafted for women of timeless sophistication.</p>
+    <div class="ln-hero__btns">
+      <a class="btn-gold" href="https://lunacibarcelona.com/products/">Shop Collection</a>
+      <a class="btn-out" href="https://lunacibarcelona.com/about">Discover Lunaci</a>
+    </div>
+  </div>
 </section>
-    Mediterranean Luxury✦
-    European Craftsmanship✦
-    Sophisticated Femininity✦
-    Timeless Beauty✦
-    Barcelona Elegance✦
-    Premium Formulas✦
-    Mediterranean Luxury✦
-    European Craftsmanship✦
-    Sophisticated Femininity✦
-    Timeless Beauty✦
-    Barcelona Elegance✦
-    Premium Formulas✦
-<section>
+<div class="ln-mq">
+  <div class="ln-mq__t">
+    <span>Mediterranean Luxury <span class="d">✦</span></span>
+    <span>European Craftsmanship <span class="d">✦</span></span>
+    <span>Sophisticated Femininity <span class="d">✦</span></span>
+    <span>Timeless Beauty <span class="d">✦</span></span>
+    <span>Barcelona Elegance <span class="d">✦</span></span>
+    <span>Premium Formulas <span class="d">✦</span></span>
+    <span>Mediterranean Luxury <span class="d">✦</span></span>
+    <span>European Craftsmanship <span class="d">✦</span></span>
+    <span>Sophisticated Femininity <span class="d">✦</span></span>
+    <span>Timeless Beauty <span class="d">✦</span></span>
+    <span>Barcelona Elegance <span class="d">✦</span></span>
+    <span>Premium Formulas <span class="d">✦</span></span>
+  </div>
+</div>
+<section class="ln-story">
+  <div class="ln-story__img">
     <img src="https://lunacibarcelona.com/wp-content/uploads/2026/05/lunaci_3462_retouched-1-scaled.jpg" alt="LUNACI Story"/>
-    Our Story
-    <blockquote>"Born from the <em>golden light</em> of Barcelona, crafted for women who carry elegance in every gesture."</blockquote>
-    <p>LUNACI Barcelona was born from a passion for Mediterranean beauty and European craftsmanship. Every formula is meticulously developed to honour the sophistication of modern femininity — timeless, confident, and unmistakably luxurious.<br><br>From the sun-drenched shores of the Mediterranean to the elegant boulevards of Barcelona, our ingredients are selected with the same precision that defines great European beauty houses.</p>
-    <a href="https://lunacibarcelona.com/about">Discover Our Story</a>
+  </div>
+  <div class="ln-story__txt">
+    <span class="ln-lbl">Our Story</span>
+    <div class="ln-bar"></div>
+    <blockquote class="ln-story__q">"Born from the <em>golden light</em> of Barcelona, crafted for women who carry elegance in every gesture."</blockquote>
+    <p class="ln-story__p">LUNACI Barcelona was born from a passion for Mediterranean beauty and European craftsmanship. Every formula is meticulously developed to honour the sophistication of modern femininity — timeless, confident, and unmistakably luxurious.<br><br>From the sun-drenched shores of the Mediterranean to the elegant boulevards of Barcelona, our ingredients are selected with the same precision that defines great European beauty houses.</p>
+    <a class="btn-out" href="https://lunacibarcelona.com/about">Discover Our Story</a>
+  </div>
 </section>
-<section>
-    Our Promise
-    <h2>Why <em>Lunaci</em></h2>
-      01
-      <h3>Premium Formula</h3>
-      <p>Every product is developed with the finest ingredients, tested to the highest European standards for performance and skin safety.</p>
-      02
-      <h3>Cruelty Free</h3>
-      <p>Beauty without compromise. All LUNACI products are 100% cruelty-free, never tested on animals, certified and verified.</p>
-      03
-      <h3>European Quality</h3>
-      <p>Crafted in Europe with the precision and dedication that defines the continent's greatest luxury beauty houses.</p>
+<section class="ln-why">
+  <div class="ln-sec-h">
+    <span class="ln-lbl">Our Promise</span>
+    <div class="ln-sec-hline"></div>
+    <h2 class="ln-sec-title">Why <em>Lunaci</em></h2>
+  </div>
+  <div class="ln-why__g">
+    <div class="ln-why__i">
+      <span class="ln-why__n">01</span>
+      <h3 class="ln-why__name">Premium Formula</h3>
+      <p class="ln-why__p">Every product is developed with the finest ingredients, tested to the highest European standards for performance and skin safety.</p>
+    </div>
+    <div class="ln-why__i">
+      <span class="ln-why__n">02</span>
+      <h3 class="ln-why__name">Cruelty Free</h3>
+      <p class="ln-why__p">Beauty without compromise. All LUNACI products are 100% cruelty-free, never tested on animals, certified and verified.</p>
+    </div>
+    <div class="ln-why__i">
+      <span class="ln-why__n">03</span>
+      <h3 class="ln-why__name">European Quality</h3>
+      <p class="ln-why__p">Crafted in Europe with the precision and dedication that defines the continent's greatest luxury beauty houses.</p>
+    </div>
+  </div>
 </section>
-<section>
-  Exclusive Access
-  <h2>Join The <em>Lunaci</em> World</h2>
-  <p>Discover new collections, beauty rituals & exclusive offers.</p>
-    <input type="email" placeholder="Your email address">
-    <button>Subscribe</button>
+<section class="ln-news">
+  <span class="ln-lbl">Exclusive Access</span>
+  <h2 class="ln-news__h">Join The <em>Lunaci</em> World</h2>
+  <p class="ln-news__s">Discover new collections, beauty rituals &amp; exclusive offers.</p>
+  <div class="ln-news__f">
+    <input class="ln-news__in" type="email" placeholder="Your email address">
+    <button class="ln-news__btn">Subscribe</button>
+  </div>
 </section>
-<footer>
-      Lunaci
-      Barcelona
-      <p>Luxury cosmetics inspired by Mediterranean elegance. Crafted for women of timeless sophistication.</p>
-      Shop
-      <ul>
+<footer class="ln-foot">
+  <div class="ln-foot__g">
+    <div>
+      <span class="ln-foot__bn">Lunaci</span>
+      <span class="ln-foot__bs">Barcelona</span>
+      <p class="ln-foot__bd">Luxury cosmetics inspired by Mediterranean elegance. Crafted for women of timeless sophistication.</p>
+    </div>
+    <div>
+      <span class="ln-foot__ct">Shop</span>
+      <ul class="ln-foot__l">
         <li><a href="https://lunacibarcelona.com/products/">All Products</a></li>
         <li><a href="https://lunacibarcelona.com/products/">Lip</a></li>
         <li><a href="https://lunacibarcelona.com/products/">Face</a></li>
         <li><a href="https://lunacibarcelona.com/products/">Eye</a></li>
       </ul>
-      Brand
-      <ul>
+    </div>
+    <div>
+      <span class="ln-foot__ct">Brand</span>
+      <ul class="ln-foot__l">
         <li><a href="https://lunacibarcelona.com/about">About Lunaci</a></li>
         <li><a href="https://lunacibarcelona.com/contact">Contact</a></li>
       </ul>
-      Support
-      <ul>
+    </div>
+    <div>
+      <span class="ln-foot__ct">Support</span>
+      <ul class="ln-foot__l">
         <li><a href="https://lunacibarcelona.com/shipping">Shipping</a></li>
         <li><a href="https://lunacibarcelona.com/returns">Returns</a></li>
         <li><a href="https://lunacibarcelona.com/privacy-policy">Privacy Policy</a></li>
       </ul>
-    <p>© 2026 LUNACI Barcelona. All rights reserved.</p>
+    </div>
+  </div>
+  <div class="ln-foot__b">
+    <p class="ln-foot__c">© 2026 LUNACI Barcelona. All rights reserved.</p>
+    <div class="ln-foot__s">
       <a href="#">IG</a>
       <a href="#">TK</a>
       <a href="#">PT</a>
+    </div>
+  </div>
 </footer>
+</div>

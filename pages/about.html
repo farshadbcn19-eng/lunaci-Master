@@ -1,3 +1,4 @@
+<meta charset="UTF-8">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -114,19 +115,22 @@ html,body{margin:0;padding:0;background:#0B0B0B;}
   .lna-nav-toggle span{display:block;width:24px;height:2px;background:#D4AF37;}
 }
 </style>
-<nav id="lnaNav">
-  <a href="https://lunacibarcelona.com/">
+<div id="lna">
+<nav class="lna-nav" id="lnaNav">
+  <a class="lna-nav__logo" href="https://lunacibarcelona.com/">
     <img src="https://lunacibarcelona.com/wp-content/uploads/2026/05/b320427b-bdbd-4220-926d-c2fecce7e9e4.jpeg" alt="LUNACI Barcelona" style="height:90px;width:auto;mix-blend-mode:lighten;">
   </a>
   <ul class="lna-nav__links" id="lnaNavLinks">
     <li><a href="https://lunacibarcelona.com/">Home</a></li>
     <li><a href="https://lunacibarcelona.com/products/">Products</a></li>
-    <li><a href="https://lunacibarcelona.com/about-us/">About</a></li>
+    <li><a class="active" href="https://lunacibarcelona.com/about-us/">About</a></li>
     <li><a href="https://lunacibarcelona.com/contact">Contact</a></li>
   </ul>
-    <a href="https://lunacibarcelona.com/cart">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(247,244,238,.9)" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-    </a>
+    <div class="lna-nav__cart">
+      <a href="https://lunacibarcelona.com/cart">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(247,244,238,.9)" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      </a>
+    </div>
     <button type="button" class="lna-nav-toggle" id="lnaNavToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="lnaNavLinks">
       <span></span>
       <span></span>
@@ -153,108 +157,158 @@ html,body{margin:0;padding:0;background:#0B0B0B;}
 })();
 </script>
 <!-- HERO -->
-<section>
+<section class="lna-hero">
+  <div class="lna-hero__bg">
     <img src="https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-about-hero.png" alt="LUNACI About"/>
-    <h1>Our <em>Story</em></h1>
-    <p>
-      Born from the golden light of Barcelona
-      Nacido de la luz dorada de Barcelona
-    </p>
+  </div>
+  <div class="lna-hero__ov"></div>
+  <div class="lna-hero__ov2"></div>
+  <div class="lna-hero__content">
+    <h1 class="lna-hero__h1">Our <em>Story</em></h1>
+    <p class="lna-hero__sub">Born from the golden light of Barcelona<span>Nacido de la luz dorada de Barcelona</span></p>
+  </div>
 </section>
 <!-- BRAND STORY -->
-<section>
+<section class="lna-story">
+  <div class="lna-story__img">
     <img src="https://lunacibarcelona.com/wp-content/uploads/2026/06/lunaci-about-story.png" alt="LUNACI Story"/>
-    Our Story · Nuestra Historia
-    <h2>The <em>Beginning</em></h2>
-    El Comienzo
-    <p>LUNACI Barcelona was born from a philosophy — a deep appreciation for beauty as an essential element of human experience. From the beginning, our ambition was larger than simply creating another name within the beauty industry.</p>
-    <p>LUNACI Barcelona nació de una filosofía — una profunda apreciación por la belleza como elemento esencial de la experiencia humana.</p>
-    <p>The dream behind LUNACI was to create a complete universe of beauty. A universe where quality, aesthetics, craftsmanship and personal expression coexist within a single coherent philosophy. A universe where beauty is not reduced to appearance but elevated into an experience.</p>
-    <p>El sueño detrás de LUNACI era crear un universo completo de belleza — donde la calidad, la estética y la expresión personal coexisten en una filosofía coherente.</p>
-    <p>Rather than pursuing visibility for its own sake, we focused on creating meaningful experiences. Rather than defining beauty through external standards, we chose to celebrate individuality. Rather than following every passing trend, we built an identity rooted in enduring values — confidence, authenticity, elegance, quality and memorable presence.</p>
-    <p>En lugar de perseguir la visibilidad por sí misma, nos centramos en crear experiencias significativas y celebrar la individualidad de cada mujer.</p>
+  </div>
+  <div class="lna-story__txt">
+    <span class="lna-lbl">Our Story · Nuestra Historia</span>
+    <div class="lna-bar"></div>
+    <h2 class="lna-story__h">The <em>Beginning</em></h2>
+    <span class="lna-story__sub">El Comienzo</span>
+    <p class="lna-story__p">LUNACI Barcelona was born from a philosophy — a deep appreciation for beauty as an essential element of human experience. From the beginning, our ambition was larger than simply creating another name within the beauty industry.</p>
+    <p class="lna-story__p--es">LUNACI Barcelona nació de una filosofía — una profunda apreciación por la belleza como elemento esencial de la experiencia humana.</p>
+    <div class="lna-story__divider"></div>
+    <p class="lna-story__p">The dream behind LUNACI was to create a complete universe of beauty. A universe where quality, aesthetics, craftsmanship and personal expression coexist within a single coherent philosophy. A universe where beauty is not reduced to appearance but elevated into an experience.</p>
+    <p class="lna-story__p--es">El sueño detrás de LUNACI era crear un universo completo de belleza — donde la calidad, la estética y la expresión personal coexisten en una filosofía coherente.</p>
+    <div class="lna-story__divider"></div>
+    <p class="lna-story__p">Rather than pursuing visibility for its own sake, we focused on creating meaningful experiences. Rather than defining beauty through external standards, we chose to celebrate individuality. Rather than following every passing trend, we built an identity rooted in enduring values — confidence, authenticity, elegance, quality and memorable presence.</p>
+    <p class="lna-story__p--es">En lugar de perseguir la visibilidad por sí misma, nos centramos en crear experiencias significativas y celebrar la individualidad de cada mujer.</p>
+  </div>
 </section>
 <!-- PHILOSOPHY -->
-<section>
-      <h2>Why <em>LUNACI Exists</em></h2>
-      <p>Beauty should support self-expression. It should strengthen confidence. It should enhance quality of life. And it should allow individuals to present the most authentic version of themselves. This is not simply a philosophy — it is the reason LUNACI was created.</p>
-      <p>La belleza debe apoyar la autoexpresión, fortalecer la confianza y permitir que cada individuo presente la versión más auténtica de sí mismo. Esta es la razón por la que LUNACI fue creada.</p>
-      01
-      <h3>Confidence</h3>
-      Confianza
-      <p>Every product, campaign and communication should strengthen confidence. True confidence is built from within rather than granted by external approval. LUNACI exists to support the confidence that already lives within every woman.</p>
-      <p>Cada producto y comunicación debe fortalecer la confianza que ya vive dentro de cada mujer.</p>
-      02
-      <h3>Authenticity</h3>
-      Autenticidad
-      <p>The brand must remain genuine, honest and emotionally credible in everything it creates. We celebrate individuality rather than imposing standards. Beauty should never become a source of pressure — it should be a source of freedom.</p>
-      <p>La marca debe permanecer genuina y honesta. Celebramos la individualidad en lugar de imponer estándares.</p>
-      03
-      <h3>Elegance</h3>
-      Elegancia
-      <p>Luxury should be refined, intentional and timeless. True elegance never requires excess — it emerges from thoughtful restraint, careful craftsmanship and the wisdom to know that less, when done perfectly, is always more.</p>
-      <p>El lujo debe ser refinado e intemporal. La verdadera elegancia nunca requiere exceso — emerge de la contención cuidadosa.</p>
+<section class="lna-phil">
+  <div class="lna-phil__intro">
+    <h2 class="lna-phil__intro-h">Why <em>LUNACI Exists</em></h2>
+    <div>
+      <p class="lna-phil__intro-p">Beauty should support self-expression. It should strengthen confidence. It should enhance quality of life. And it should allow individuals to present the most authentic version of themselves. This is not simply a philosophy — it is the reason LUNACI was created.</p>
+      <p class="lna-phil__intro-p--es">La belleza debe apoyar la autoexpresión, fortalecer la confianza y permitir que cada individuo presente la versión más auténtica de sí mismo. Esta es la razón por la que LUNACI fue creada.</p>
+    </div>
+  </div>
+  <div class="lna-phil__grid">
+    <div class="lna-phil__item">
+      <span class="lna-phil__n">01</span>
+      <h3 class="lna-phil__name">Confidence</h3>
+      <span class="lna-phil__name--es">Confianza</span>
+      <p class="lna-phil__p">Every product, campaign and communication should strengthen confidence. True confidence is built from within rather than granted by external approval. LUNACI exists to support the confidence that already lives within every woman.</p>
+      <p class="lna-phil__p--es">Cada producto y comunicación debe fortalecer la confianza que ya vive dentro de cada mujer.</p>
+    </div>
+    <div class="lna-phil__item">
+      <span class="lna-phil__n">02</span>
+      <h3 class="lna-phil__name">Authenticity</h3>
+      <span class="lna-phil__name--es">Autenticidad</span>
+      <p class="lna-phil__p">The brand must remain genuine, honest and emotionally credible in everything it creates. We celebrate individuality rather than imposing standards. Beauty should never become a source of pressure — it should be a source of freedom.</p>
+      <p class="lna-phil__p--es">La marca debe permanecer genuina y honesta. Celebramos la individualidad en lugar de imponer estándares.</p>
+    </div>
+    <div class="lna-phil__item">
+      <span class="lna-phil__n">03</span>
+      <h3 class="lna-phil__name">Elegance</h3>
+      <span class="lna-phil__name--es">Elegancia</span>
+      <p class="lna-phil__p">Luxury should be refined, intentional and timeless. True elegance never requires excess — it emerges from thoughtful restraint, careful craftsmanship and the wisdom to know that less, when done perfectly, is always more.</p>
+      <p class="lna-phil__p--es">El lujo debe ser refinado e intemporal. La verdadera elegancia nunca requiere exceso — emerge de la contención cuidadosa.</p>
+    </div>
+  </div>
 </section>
 <!-- VALUES -->
-<section>
-    <h2>Our <em>Values</em></h2>
-    <p>Nuestros Valores</p>
-      01
-      <h3>Confidence</h3>
-      Confianza
-      <p>Strengthening the inner confidence of every woman who chooses LUNACI</p>
-      02
-      <h3>Authenticity</h3>
-      Autenticidad
-      <p>Remaining genuine, honest and emotionally credible in everything we create</p>
-      03
-      <h3>Elegance</h3>
-      Elegancia
-      <p>Refined, intentional and timeless luxury expressed through every detail</p>
-      04
-      <h3>Quality</h3>
-      Calidad
-      <p>Non-negotiable excellence in products, packaging and customer experience</p>
-      05
-      <h3>Presence</h3>
-      Presencia
-      <p>Creating memorable moments that leave a lasting and meaningful impression</p>
+<section class="lna-vals">
+  <div class="lna-vals__header">
+    <div class="lna-sec-hline"></div>
+    <h2 class="lna-sec-title">Our <em>Values</em></h2>
+    <p class="lna-sec-sub">Nuestros Valores</p>
+  </div>
+  <div class="lna-vals__g">
+    <div class="lna-val">
+      <span class="lna-val__n">01</span>
+      <h3 class="lna-val__name">Confidence</h3>
+      <span class="lna-val__name--es">Confianza</span>
+      <p class="lna-val__p">Strengthening the inner confidence of every woman who chooses LUNACI</p>
+    </div>
+    <div class="lna-val">
+      <span class="lna-val__n">02</span>
+      <h3 class="lna-val__name">Authenticity</h3>
+      <span class="lna-val__name--es">Autenticidad</span>
+      <p class="lna-val__p">Remaining genuine, honest and emotionally credible in everything we create</p>
+    </div>
+    <div class="lna-val">
+      <span class="lna-val__n">03</span>
+      <h3 class="lna-val__name">Elegance</h3>
+      <span class="lna-val__name--es">Elegancia</span>
+      <p class="lna-val__p">Refined, intentional and timeless luxury expressed through every detail</p>
+    </div>
+    <div class="lna-val">
+      <span class="lna-val__n">04</span>
+      <h3 class="lna-val__name">Quality</h3>
+      <span class="lna-val__name--es">Calidad</span>
+      <p class="lna-val__p">Non-negotiable excellence in products, packaging and customer experience</p>
+    </div>
+    <div class="lna-val">
+      <span class="lna-val__n">05</span>
+      <h3 class="lna-val__name">Presence</h3>
+      <span class="lna-val__name--es">Presencia</span>
+      <p class="lna-val__p">Creating memorable moments that leave a lasting and meaningful impression</p>
+    </div>
+  </div>
 </section>
 <!-- PROMISE -->
-<section>
-  <blockquote>
-    "All women are seen.<br><em>Yet your presence is remembered."</em>
-  </blockquote>
-  <blockquote>
-    "Todas las mujeres son vistas.<br><em>Pero tu presencia es recordada."</em>
-  </blockquote>
-  <p>LUNACI Barcelona · Mediterranean Luxury Beauty House</p>
+<section class="lna-promise">
+  <div class="lna-promise__line"></div>
+  <blockquote class="lna-promise__q">"All women are seen.<br><em>Yet your presence is remembered."</em></blockquote>
+  <blockquote class="lna-promise__q--es">"Todas las mujeres son vistas.<br><em>Pero tu presencia es recordada."</em></blockquote>
+  <p class="lna-promise__sub">LUNACI Barcelona · Mediterranean Luxury Beauty House</p>
+  <div class="lna-promise__line2"></div>
 </section>
 <!-- FOOTER -->
-<footer>
-      Lunaci
-      Barcelona
-      <p>Luxury cosmetics inspired by Mediterranean elegance. Crafted for women of timeless sophistication.</p>
-      Shop
-      <ul>
+<footer class="lna-foot">
+  <div class="lna-foot__g">
+    <div>
+      <span class="lna-foot__bn">Lunaci</span>
+      <span class="lna-foot__bs">Barcelona</span>
+      <p class="lna-foot__bd">Luxury cosmetics inspired by Mediterranean elegance. Crafted for women of timeless sophistication.</p>
+    </div>
+    <div>
+      <span class="lna-foot__ct">Shop</span>
+      <ul class="lna-foot__l">
         <li><a href="https://lunacibarcelona.com/products/">All Products</a></li>
         <li><a href="https://lunacibarcelona.com/products/">Lip</a></li>
         <li><a href="https://lunacibarcelona.com/products/">Face</a></li>
         <li><a href="https://lunacibarcelona.com/products/">Eye</a></li>
       </ul>
-      Brand
-      <ul>
+    </div>
+    <div>
+      <span class="lna-foot__ct">Brand</span>
+      <ul class="lna-foot__l">
         <li><a href="https://lunacibarcelona.com/about">About Lunaci</a></li>
         <li><a href="https://lunacibarcelona.com/contact">Contact</a></li>
       </ul>
-      Support
-      <ul>
+    </div>
+    <div>
+      <span class="lna-foot__ct">Support</span>
+      <ul class="lna-foot__l">
         <li><a href="https://lunacibarcelona.com/shipping">Shipping</a></li>
         <li><a href="https://lunacibarcelona.com/returns">Returns</a></li>
         <li><a href="https://lunacibarcelona.com/privacy-policy">Privacy Policy</a></li>
       </ul>
-    <p>© 2026 LUNACI Barcelona. All rights reserved.</p>
+    </div>
+  </div>
+  <div class="lna-foot__b">
+    <p class="lna-foot__c">© 2026 LUNACI Barcelona. All rights reserved.</p>
+    <div class="lna-foot__s">
       <a href="#">IG</a>
       <a href="#">TK</a>
       <a href="#">PT</a>
+    </div>
+  </div>
 </footer>
+</div>

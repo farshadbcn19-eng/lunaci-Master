@@ -32,8 +32,8 @@ echo "STEP A: PREPARE - fresh-read wp_posts row ID={$post_id} and validate\n";
 echo "=====================================================================\n";
 echo "new image URL to write: {$new_image_url}\n";
 
-if ( strpos( $new_image_url, '__NEW_IMAGE_URL__' ) !== false || strpos( $new_image_url, 'https://' ) !== 0 ) {
-	echo "ERROR: new image URL placeholder was not substituted or is not a valid https URL: {$new_image_url}\n";
+if ( 0 !== strpos( $new_image_url, 'https://lunacibarcelona.com/wp-content/uploads/' ) ) {
+	echo "ERROR: new image URL does not look like a valid lunacibarcelona.com uploads URL: {$new_image_url}\n";
 	echo "ABORT\n";
 	exit( 1 );
 }

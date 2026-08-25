@@ -39,8 +39,8 @@ async function countRevealState(page) {
 
   for (const [key, url] of Object.entries(PAGES)) {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
-    await page.goto(url + '?nocache=' + Date.now(), { waitUntil: 'networkidle', timeout: 60000 });
-    await page.waitForTimeout(500);
+    await page.goto(url + '?nocache=' + Date.now(), { waitUntil: 'load', timeout: 45000 });
+    await page.waitForTimeout(1500);
 
     const beforeScroll = await countRevealState(page);
 

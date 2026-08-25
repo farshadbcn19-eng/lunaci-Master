@@ -1,0 +1,49 @@
+name: Verify - About Us story image current state (read-only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: |
+          npm init -y > /dev/null
+          npm install playwright@1.48.0 > /dev/null
+          npx playwright install --with-deps chromium
+
+      - name: Run verification
+        run: |
+          mkdir -p /tmp/out
+          node assets/luna-import/screenshot-story-image-check.js | tee /tmp/out/console.txt
+
+      - name: Commit screenshots to diagnostics branch
+        run: |
+          set -e
+          git config user.name "diagnostic-bot"
+          git config user.email "diagnostic-bot@users.noreply.github.com"
+
+          git checkout --orphan diagnostics/story-image-check
+          git rm -rf . > /dev/null 2>&1 || true
+
+          cp /tmp/out/*.png ./
+          cp /tmp/out/console.txt ./console.txt
+
+          git add *.png console.txt
+          git commit -m "Verification: About Us story image current live state"
+          git push --force origin diagnostics/story-image-check
+
+          echo "OK: pushed diagnostics/story-image-check branch"

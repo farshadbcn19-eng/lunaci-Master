@@ -1,0 +1,56 @@
+{
+  "products_en_desktop": {
+    "naturalWidth": 1122,
+    "naturalHeight": 1402,
+    "imgRect": {
+      "width": 296.703125,
+      "height": 395.59375
+    },
+    "wrapRect": {
+      "width": 296.703125,
+      "height": 395.59375
+    },
+    "imgStyle": {
+      "width": "296.703px",
+      "height": "395.594px",
+      "objectFit": "cover",
+      "objectPosition": "50% 50%",
+      "display": "inline"
+    },
+    "wrapStyle": {
+      "width": "296.703px",
+      "height": "395.594px",
+      "padding": "0px",
+      "display": "block",
+      "aspectRatio": "3 / 4"
+    },
+    "wrapClassName": "prod-img-wrap"
+  },
+  "products_en_mobile": {
+    "naturalWidth": 1122,
+    "naturalHeight": 1402,
+    "imgRect": {
+      "width": 310.8125,
+      "height": 414.40625
+    },
+    "wrapRect": {
+      "width": 310.8125,
+      "height": 414.40625
+    },
+    "imgStyle": {
+      "width": "310.812px",
+      "height": "414.406px",
+      "objectFit": "cover",
+      "objectPosition": "50% 50%",
+      "display": "inline"
+    },
+    "wrapStyle": {
+      "width": "310.812px",
+      "height": "414.406px",
+      "padding": "0px",
+      "display": "block",
+      "aspectRatio": "3 / 4"
+    },
+    "wrapClassName": "prod-img-wrap"
+  }
+}

@@ -1,0 +1,137 @@
+name: Import + Fix - Products ingredients-section image (guarded)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  import-and-fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Upload and import the new image, capture its real GUID
+        id: import
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+          F="products-ingredients-luna.jpg"
+
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+            -P "$SSH_PORT" "assets/luna-import/$F" "$SSH_USER@$SSH_HOST:/tmp/lunaimport-$F"
+          echo "uploaded: $F"
+
+          OUTPUT=$(sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            "WP_PATH=\"\";
+             for candidate in \"\$HOME/public_html\" \"\$HOME\" \"\$(pwd)\"; do
+               if [ -f \"\$candidate/wp-config.php\" ]; then WP_PATH=\"\$candidate\"; break; fi;
+             done;
+             if [ -z \"\$WP_PATH\" ]; then
+               FOUND=\$(find -L \"\$HOME\" -maxdepth 8 -name \"wp-config.php\" -not -path \"*/wp-content/*\" -not -path \"*/node_modules/*\" 2>/dev/null | head -1);
+               if [ -n \"\$FOUND\" ]; then WP_PATH=\$(dirname \"\$FOUND\"); fi;
+             fi;
+             if [ -z \"\$WP_PATH\" ]; then echo \"ERROR: could not locate wp-config.php\"; exit 1; fi;
+             echo \"WordPress found at: \$WP_PATH\" >&2;
+
+             ATTACH_ID=\$(wp media import \"/tmp/lunaimport-$F\" --path=\"\$WP_PATH\" --title=\"$F\" --porcelain);
+             if [ -z \"\$ATTACH_ID\" ]; then echo \"ABORT: wp media import returned no attachment ID\" >&2; exit 1; fi;
+             GUID=\$(wp post get \"\$ATTACH_ID\" --field=guid --path=\"\$WP_PATH\");
+             echo \"RESULT_ATTACHMENT_ID=\$ATTACH_ID\" >&2;
+             echo \"RESULT_URL=\$GUID\";
+             rm -f \"/tmp/lunaimport-$F\"")
+
+          echo "$OUTPUT"
+          NEW_URL=$(echo "$OUTPUT" | grep '^RESULT_URL=' | cut -d= -f2-)
+          if [ -z "$NEW_URL" ]; then
+            echo "ABORT: could not determine the imported image's URL"
+            exit 1
+          fi
+          echo "Imported image URL: $NEW_URL"
+          echo "new_url=$NEW_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Verify the new image URL resolves
+        env:
+          NEW_URL: ${{ steps.import.outputs.new_url }}
+        run: |
+          set -e
+          STATUS=$(curl -sg -o /dev/null -w "%{http_code}" -I "$NEW_URL")
+          echo "$NEW_URL -> HTTP $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "ABORT: new image URL does not return HTTP 200 (got $STATUS)"
+            exit 1
+          fi
+          echo "OK: new image URL resolves"
+
+      - name: Substitute the real URL into the guarded fix script
+        env:
+          NEW_URL: ${{ steps.import.outputs.new_url }}
+        run: |
+          set -e
+          sed "s|__NEW_IMAGE_URL__|${NEW_URL}|" \
+            assets/luna-import/fix-products-ingredients-image-url.php \
+            > /tmp/fix-products-ingredients-image-url-resolved.php
+          grep -c "__NEW_IMAGE_URL__" /tmp/fix-products-ingredients-image-url-resolved.php && \
+            { echo "ABORT: placeholder still present after substitution"; exit 1; } || true
+          echo "OK: placeholder substituted"
+
+      - name: Transfer resolved fix script and run guarded fix (STEP A/B/C/D)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+            -P "$SSH_PORT" "/tmp/fix-products-ingredients-image-url-resolved.php" \
+            "$SSH_USER@$SSH_HOST:/tmp/lunaimport-fix-products-ingredients-image-url.php"
+
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "WordPress found at: $WP_PATH";
+
+             php -l /tmp/lunaimport-fix-products-ingredients-image-url.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed";
+               rm -f /tmp/lunaimport-fix-products-ingredients-image-url.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/lunaimport-fix-products-ingredients-image-url.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/lunaimport-fix-products-ingredients-image-url.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+
+             echo "-- Purging LiteSpeed cache --";
+             wp litespeed-purge all --path="$WP_PATH" || echo "WARNING: litespeed-purge command failed or not available";
+
+             echo "OK: fix-products-ingredients-image-url step completed"'
+
+          echo "OK: workflow completed successfully"

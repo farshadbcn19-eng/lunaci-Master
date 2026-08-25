@@ -78,12 +78,18 @@ jobs:
           NEW_URL: ${{ steps.import.outputs.new_url }}
         run: |
           set -e
-          sed "s|__NEW_IMAGE_URL__|${NEW_URL}|" \
+          sed "s|^\\\$new_image_url = '__NEW_IMAGE_URL__';\$|\\\$new_image_url = '${NEW_URL}';|" \
             assets/luna-import/fix-products-ingredients-image-url.php \
             > /tmp/fix-products-ingredients-image-url-resolved.php
-          grep -c "__NEW_IMAGE_URL__" /tmp/fix-products-ingredients-image-url-resolved.php && \
-            { echo "ABORT: placeholder still present after substitution"; exit 1; } || true
-          echo "OK: placeholder substituted"
+          if ! grep -qF "\$new_image_url = '${NEW_URL}';" /tmp/fix-products-ingredients-image-url-resolved.php; then
+            echo "ABORT: the assignment line was not substituted as expected"
+            exit 1
+          fi
+          if grep -qF "__NEW_IMAGE_URL__" /tmp/fix-products-ingredients-image-url-resolved.php; then
+            echo "ABORT: placeholder still present elsewhere after substitution"
+            exit 1
+          fi
+          echo "OK: placeholder substituted (line-anchored, targeted only the assignment)"
 
       - name: Transfer resolved fix script and run guarded fix (STEP A/B/C/D)
         env:

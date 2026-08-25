@@ -5,14 +5,18 @@
  * clean up the old attachment if nothing else references its physical
  * files - same pattern as fix-about-hero-banner.php (PR #195).
  *
- * IMPORTANT: _elementor_data is stored JSON-encoded, and PHP's json_encode
- * (which Elementor/wp_json_encode uses) escapes forward slashes as `\/` by
- * default. Searching the RAW postmeta string for a plain-slash URL will
- * never match - this must operate on the DECODED widget HTML (where
- * json_decode has already turned `\/` back into `/`), then re-encode via
- * wp_json_encode() before writing back. An earlier version of this script
- * searched the raw string directly and always found 0 occurrences - fixed
- * here after diagnosing via debug output on two failed live runs.
+ * IMPORTANT (two related gotchas found live, both fixed here):
+ * 1) _elementor_data is stored JSON-encoded, and PHP's json_encode escapes
+ *    forward slashes as `\/` by default. Searching the RAW postmeta string
+ *    for a plain-slash URL will never match - must operate on the DECODED
+ *    widget HTML (json_decode turns `\/` back into `/`), then re-encode via
+ *    wp_json_encode() before writing back.
+ * 2) wp_json_encode() itself ALSO escapes slashes by default when
+ *    re-encoding, so a same-widget verification check for a plain-slash
+ *    URL against the freshly re-encoded string fails too, even though the
+ *    write itself is correct - must pass JSON_UNESCAPED_SLASHES so the
+ *    re-encoded output (and this script's own post-write checks) stay in
+ *    plain-slash form.
  */
 
 global $wpdb;
@@ -143,7 +147,7 @@ foreach ( $page_data as $page_id => $data ) {
 		exit( 1 );
 	}
 
-	$new_raw = wp_json_encode( $decoded_fresh );
+	$new_raw = wp_json_encode( $decoded_fresh, JSON_UNESCAPED_SLASHES );
 	if ( false === $new_raw || substr_count( $new_raw, $new_image_url ) < 1 ) {
 		echo "ABORT: re-encoding verification failed for page {$page_id}\n";
 		exit( 1 );

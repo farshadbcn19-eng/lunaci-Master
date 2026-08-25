@@ -1,0 +1,204 @@
+{
+  "es": {
+    "desktop": {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "documentWidth": 1920,
+      "bodyWidth": 1920,
+      "htmlOverflowX": "visible",
+      "target": {
+        "rect": {
+          "x": 0,
+          "width": 1920
+        },
+        "maxWidth": "100%",
+        "width": "1920px"
+      },
+      "innerChild": {
+        "rect": {
+          "x": 10,
+          "width": 1900
+        },
+        "maxWidth": "none",
+        "width": "1900px"
+      },
+      "hasFixRuleInAnyInlineStyle": true,
+      "nav": {
+        "rect": {
+          "x": 0,
+          "width": 0
+        },
+        "position": "static"
+      }
+    },
+    "tablet": {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "htmlOverflowX": "visible",
+      "target": {
+        "rect": {
+          "x": 0,
+          "width": 768
+        },
+        "maxWidth": "100%",
+        "width": "768px"
+      },
+      "innerChild": {
+        "rect": {
+          "x": 10,
+          "width": 748
+        },
+        "maxWidth": "none",
+        "width": "748px"
+      },
+      "hasFixRuleInAnyInlineStyle": true,
+      "nav": {
+        "rect": {
+          "x": 0,
+          "width": 0
+        },
+        "position": "static"
+      }
+    },
+    "mobile": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "htmlOverflowX": "visible",
+      "target": {
+        "rect": {
+          "x": 0,
+          "width": 390
+        },
+        "maxWidth": "100%",
+        "width": "390px"
+      },
+      "innerChild": {
+        "rect": {
+          "x": 10,
+          "width": 370
+        },
+        "maxWidth": "none",
+        "width": "370px"
+      },
+      "hasFixRuleInAnyInlineStyle": true,
+      "nav": {
+        "rect": {
+          "x": 0,
+          "width": 0
+        },
+        "position": "static"
+      }
+    }
+  },
+  "en": {
+    "desktop": {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "documentWidth": 1920,
+      "bodyWidth": 1920,
+      "htmlOverflowX": "visible",
+      "target": {
+        "rect": {
+          "x": 0,
+          "width": 1920
+        },
+        "maxWidth": "100%",
+        "width": "1920px"
+      },
+      "innerChild": {
+        "rect": {
+          "x": 10,
+          "width": 1900
+        },
+        "maxWidth": "none",
+        "width": "1900px"
+      },
+      "hasFixRuleInAnyInlineStyle": true,
+      "nav": {
+        "rect": {
+          "x": 0,
+          "width": 0
+        },
+        "position": "static"
+      }
+    },
+    "tablet": {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "htmlOverflowX": "visible",
+      "target": {
+        "rect": {
+          "x": 0,
+          "width": 768
+        },
+        "maxWidth": "100%",
+        "width": "768px"
+      },
+      "innerChild": {
+        "rect": {
+          "x": 10,
+          "width": 748
+        },
+        "maxWidth": "none",
+        "width": "748px"
+      },
+      "hasFixRuleInAnyInlineStyle": true,
+      "nav": {
+        "rect": {
+          "x": 0,
+          "width": 0
+        },
+        "position": "static"
+      }
+    },
+    "mobile": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "htmlOverflowX": "visible",
+      "target": {
+        "rect": {
+          "x": 0,
+          "width": 390
+        },
+        "maxWidth": "100%",
+        "width": "390px"
+      },
+      "innerChild": {
+        "rect": {
+          "x": 10,
+          "width": 370
+        },
+        "maxWidth": "none",
+        "width": "370px"
+      },
+      "hasFixRuleInAnyInlineStyle": true,
+      "nav": {
+        "rect": {
+          "x": 0,
+          "width": 0
+        },
+        "position": "static"
+      }
+    }
+  }
+}

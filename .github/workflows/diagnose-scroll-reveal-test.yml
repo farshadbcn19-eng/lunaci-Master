@@ -1,0 +1,49 @@
+name: Diagnose - scroll-reveal real-scroll test on About Us mobile (read-only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: |
+          npm init -y > /dev/null
+          npm install playwright@1.48.0 > /dev/null
+          npx playwright install --with-deps chromium
+
+      - name: Run scroll-reveal test
+        run: |
+          mkdir -p /tmp/out
+          node assets/luna-import/screenshot-scroll-reveal-test.js
+
+      - name: Commit screenshots + info to diagnostics branch
+        run: |
+          set -e
+          git config user.name "diagnostic-bot"
+          git config user.email "diagnostic-bot@users.noreply.github.com"
+
+          git checkout --orphan diagnostics/scroll-reveal-test
+          git rm -rf . > /dev/null 2>&1 || true
+
+          cp /tmp/out/*.png ./ 2>/dev/null || true
+          cp /tmp/out/scroll-reveal-info.json ./scroll-reveal-info.json
+
+          git add *.png scroll-reveal-info.json 2>/dev/null || git add scroll-reveal-info.json
+          git commit -m "Diagnostic: real incremental-scroll test of scroll-reveal content on About Us mobile"
+          git push --force origin diagnostics/scroll-reveal-test
+
+          echo "OK: pushed diagnostics/scroll-reveal-test branch"

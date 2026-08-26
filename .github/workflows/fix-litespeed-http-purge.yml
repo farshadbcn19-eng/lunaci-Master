@@ -1,0 +1,45 @@
+name: Fix - LiteSpeed HTTP-level purge for post 59/680 (cache-only, no data writes)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Send X-LiteSpeed-Purge headers via HTTP (from the server itself)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'echo "--- purge all via X-LiteSpeed-Purge: * header ---";
+             curl -sk -o /dev/null -D - -H "X-LiteSpeed-Purge: *" "https://127.0.0.1/about-us/" -H "Host: lunacibarcelona.com" --max-time 15;
+
+             echo "";
+             echo "--- purge specific tag for post 59 ---";
+             curl -sk -o /dev/null -D - -H "X-LiteSpeed-Purge: tag=dfe_Po.59" "https://127.0.0.1/about-us/" -H "Host: lunacibarcelona.com" --max-time 15;
+
+             echo "";
+             echo "--- wait a moment, then fetch fresh and check content ---";
+             sleep 2;
+             curl -sk -H "Host: lunacibarcelona.com" "https://127.0.0.1/about-us/?postpurgecheck=1" -o /tmp/postpurge.html -D /tmp/postpurge-headers.txt --max-time 20;
+             cat /tmp/postpurge-headers.txt;
+             echo "";
+             echo -n "contains new width:100vw: "; grep -c "lna{width:100vw" /tmp/postpurge.html || echo 0;
+             echo -n "contains old width:100%;background: "; grep -c "lna{width:100%;background:#0B0B0B;overflow:hidden;}" /tmp/postpurge.html || echo 0;
+             rm -f /tmp/postpurge.html /tmp/postpurge-headers.txt'

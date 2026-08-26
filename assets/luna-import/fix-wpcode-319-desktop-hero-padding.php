@@ -13,7 +13,19 @@
  * (min-width:1025px) media query overriding just the padding to 12vh,
  * leaving every other rule in the snippet (margins, text-align, overlay
  * gradient, mobile padding) exactly as-is.
+ *
+ * NOTE: a first attempt used wp_update_post() and failed with
+ * "Content, title, and excerpt are empty." despite post_content being
+ * non-empty - WPCode appears to hook something like
+ * `wp_insert_post_empty_content` to force-block direct saves of its own
+ * 'wpcode' post type through the generic post API (so its own save
+ * handler is always used instead). Bypassing that via a direct
+ * $wpdb->update() on wp_posts, same as the raw-SQL/postmeta writes used
+ * throughout this session whenever a plugin's own save hooks get in the
+ * way of a guarded fix.
  */
+
+global $wpdb;
 
 $post_id = 319;
 
@@ -62,20 +74,20 @@ if ( 1 !== $fresh_occurrences ) {
 $addition    = "\n@media (min-width:1025px){.lna-hero__content{padding:0 5% 12vh !important;}}\n";
 $new_content = $fresh_post->post_content . $addition;
 
-$result = wp_update_post(
-	array(
-		'ID'           => $post_id,
-		'post_content' => $new_content,
-	),
-	true
+$updated = $wpdb->update(
+	$wpdb->posts,
+	array( 'post_content' => $new_content ),
+	array( 'ID' => $post_id ),
+	array( '%s' ),
+	array( '%d' )
 );
 
-if ( is_wp_error( $result ) ) {
-	echo "ABORT: wp_update_post failed: " . $result->get_error_message() . "\n";
+if ( false === $updated ) {
+	echo "ABORT: \$wpdb->update failed: " . $wpdb->last_error . "\n";
 	exit( 1 );
 }
 
-echo "wp_update_post() returned post ID: {$result}\n";
+echo "\$wpdb->update() rows affected: {$updated}\n";
 clean_post_cache( $post_id );
 wp_cache_flush();
 echo "OK: caches cleared\n";

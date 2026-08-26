@@ -1,0 +1,38 @@
+name: Diagnose - proper direct-origin test via curl --resolve (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: SSH in and curl with --resolve (correct SNI + Host)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'echo "--- curl with --resolve (correct SNI + Host, forces connection to 127.0.0.1) ---";
+             curl -s --resolve lunacibarcelona.com:443:127.0.0.1 "https://lunacibarcelona.com/about-us/?resolvetest=1" -o /tmp/resolve-response.html -D /tmp/resolve-headers.txt --max-time 20;
+             echo "--- headers ---";
+             cat /tmp/resolve-headers.txt;
+             echo "";
+             echo "response length: $(wc -c < /tmp/resolve-response.html)";
+             echo -n "contains new width:100vw: "; grep -c "lna{width:100vw" /tmp/resolve-response.html || echo 0;
+             echo -n "contains old width:100%;background: "; grep -c "lna{width:100%;background:#0B0B0B;overflow:hidden;}" /tmp/resolve-response.html || echo 0;
+             rm -f /tmp/resolve-response.html /tmp/resolve-headers.txt'

@@ -1,0 +1,27 @@
+{
+  "status": 200,
+  "headers": {
+    "alt-svc": "h3=\":443\"; ma=2592000, h3-29=\":443\"; ma=2592000",
+    "content-encoding": "br",
+    "content-security-policy": "upgrade-insecure-requests",
+    "content-type": "text/html; charset=UTF-8",
+    "date": "Wed, 26 Aug 2026 07:56:08 GMT",
+    "etag": "\"469-1787730968;br\"",
+    "link": "<https://lunacibarcelona.com/wp-json/>; rel=\"https://api.w.org/\"\n<https://lunacibarcelona.com/wp-json/wp/v2/pages/59>; rel=\"alternate\"; title=\"JSON\"; type=\"application/json\"\n<https://lunacibarcelona.com/?p=59>; rel=shortlink",
+    "panel": "hpanel",
+    "permissions-policy": "private-state-token-redemption=(self \"https://www.google.com\" \"https://www.gstatic.com\" \"https://recaptcha.net\" \"https://challenges.cloudflare.com\" \"https://hcaptcha.com\"), private-state-token-issuance=(self \"https://www.google.com\" \"https://www.gstatic.com\" \"https://recaptcha.net\" \"https://challenges.cloudflare.com\" \"https://hcaptcha.com\")",
+    "platform": "hostinger",
+    "server": "LiteSpeed",
+    "vary": "accept, content-type,Accept-Encoding",
+    "x-litespeed-cache": "miss",
+    "x-litespeed-cache-control": "public,max-age=604800",
+    "x-litespeed-tag": "dfe_page,dfe_URL.2d6adebb0d0c70b2a6c6730196555a85,dfe_Po.59,dfe_PGS,dfe_",
+    "x-powered-by": "PHP/8.3.30"
+  },
+  "htmlLength": 96241,
+  "contains_new_lna_width": false,
+  "contains_old_lna_width": true,
+  "contains_new_hero_padding": false,
+  "contains_old_hero_padding": true,
+  "contains_overflow_x_hidden": false
+}

@@ -1,0 +1,48 @@
+name: Diagnose - check raw About Us HTML for new hero CSS (read-only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: |
+          npm init -y > /dev/null
+          npm install playwright@1.48.0 > /dev/null
+          npx playwright install --with-deps chromium
+
+      - name: Run diagnostic
+        run: |
+          mkdir -p /tmp/out
+          node assets/luna-import/diagnose-about-hero-raw-html-check.js
+
+      - name: Commit results to diagnostics branch
+        run: |
+          set -e
+          git config user.name "diagnostic-bot"
+          git config user.email "diagnostic-bot@users.noreply.github.com"
+
+          git checkout --orphan diagnostics/about-hero-raw-html-check
+          git rm -rf . > /dev/null 2>&1 || true
+
+          cp /tmp/out/about-hero-raw-html-check.json ./about-hero-raw-html-check.json
+
+          git add about-hero-raw-html-check.json
+          git commit -m "Diagnostic: raw HTML response check for new hero CSS"
+          git push --force origin diagnostics/about-hero-raw-html-check
+
+          echo "OK: pushed diagnostics/about-hero-raw-html-check branch"

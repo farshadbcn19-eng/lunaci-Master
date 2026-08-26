@@ -1,0 +1,24 @@
+name: Fix - LiteSpeed HTTP purge sent to the real public domain (cache-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Send purge header to the real public domain and re-check
+        run: |
+          echo "--- sending X-LiteSpeed-Purge: * to the real public domain (through real DNS) ---"
+          curl -s -o /dev/null -D - -H "X-LiteSpeed-Purge: *" "https://lunacibarcelona.com/about-us/" --max-time 20
+
+          echo ""
+          echo "--- waiting a moment, then fetching fresh ---"
+          sleep 3
+          curl -s "https://lunacibarcelona.com/about-us/?publicpurgecheck=$(date +%s)" -o /tmp/pub-response.html -D /tmp/pub-headers.txt --max-time 20
+          cat /tmp/pub-headers.txt
+          echo ""
+          echo "response length: $(wc -c < /tmp/pub-response.html)"
+          echo -n "contains new width:100vw: "; grep -c "lna{width:100vw" /tmp/pub-response.html || echo 0
+          echo -n "contains old width:100%;background: "; grep -c "lna{width:100%;background:#0B0B0B;overflow:hidden;}" /tmp/pub-response.html || echo 0

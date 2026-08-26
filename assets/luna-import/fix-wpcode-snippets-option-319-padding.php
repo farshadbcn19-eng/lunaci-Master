@@ -48,8 +48,8 @@ $entry = $snippets[ $location ][ $found_index ];
 
 $fields_to_patch = array();
 foreach ( array( 'code', 'compiled_code' ) as $field ) {
-	if ( ! isset( $entry[ $field ] ) || ! is_string( $entry[ $field ] ) ) {
-		echo "  field '{$field}': not present or not a string, skipping\n";
+	if ( ! isset( $entry[ $field ] ) || ! is_string( $entry[ $field ] ) || '' === $entry[ $field ] ) {
+		echo "  field '{$field}': not present, not a string, or empty, skipping\n";
 		continue;
 	}
 	$occurrences     = substr_count( $entry[ $field ], $needle );

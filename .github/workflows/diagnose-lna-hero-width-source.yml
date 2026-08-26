@@ -1,0 +1,48 @@
+name: Diagnose - find source of .lna-hero fixed width (read-only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: |
+          npm init -y > /dev/null
+          npm install playwright@1.48.0 > /dev/null
+          npx playwright install --with-deps chromium
+
+      - name: Run diagnostic
+        run: |
+          mkdir -p /tmp/out
+          node assets/luna-import/diagnose-lna-hero-width-source.js
+
+      - name: Commit results to diagnostics branch
+        run: |
+          set -e
+          git config user.name "diagnostic-bot"
+          git config user.email "diagnostic-bot@users.noreply.github.com"
+
+          git checkout --orphan diagnostics/lna-hero-width-source
+          git rm -rf . > /dev/null 2>&1 || true
+
+          cp /tmp/out/lna-hero-width-source.json ./lna-hero-width-source.json
+
+          git add lna-hero-width-source.json
+          git commit -m "Diagnostic: source of .lna-hero fixed width constraint"
+          git push --force origin diagnostics/lna-hero-width-source
+
+          echo "OK: pushed diagnostics/lna-hero-width-source branch"

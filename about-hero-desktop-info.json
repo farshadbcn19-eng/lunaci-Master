@@ -1,0 +1,162 @@
+{
+  "desktop_1440": {
+    "bgWrapRect": {
+      "x": 150,
+      "y": 158,
+      "width": 1140,
+      "height": 900,
+      "top": 158,
+      "right": 1290,
+      "bottom": 1058,
+      "left": 150
+    },
+    "bgWrapStyle": {
+      "width": "1140px",
+      "height": "900px",
+      "objectFit": "fill",
+      "objectPosition": "50% 50%",
+      "position": "absolute",
+      "top": "0px",
+      "left": "0px",
+      "transform": "none"
+    },
+    "imgRect": {
+      "x": 150,
+      "y": 158,
+      "width": 1140,
+      "height": 900,
+      "top": 158,
+      "right": 1290,
+      "bottom": 1058,
+      "left": 150
+    },
+    "imgStyle": {
+      "width": "1140px",
+      "height": "900px",
+      "objectFit": "cover",
+      "objectPosition": "50% 0%",
+      "position": "static",
+      "top": "auto",
+      "left": "auto",
+      "transform": "none"
+    },
+    "imgNatural": {
+      "naturalWidth": 1774,
+      "naturalHeight": 887,
+      "src": "https://lunacibarcelona.com/wp-content/uploads/2026/08/lunaimport-about-hero-luna.jpg"
+    },
+    "heroSectionRect": {
+      "x": 150,
+      "y": 158,
+      "width": 1140,
+      "height": 900,
+      "top": 158,
+      "right": 1290,
+      "bottom": 1058,
+      "left": 150
+    },
+    "heroSectionClass": "lna-hero",
+    "textElRect": {
+      "x": 207,
+      "y": 631.4072875976562,
+      "width": 386,
+      "height": 220,
+      "top": 631.4072875976562,
+      "right": 593,
+      "bottom": 851.4072875976562,
+      "left": 207
+    },
+    "textElStyle": {
+      "width": "386px",
+      "height": "220px",
+      "objectFit": "fill",
+      "objectPosition": "50% 50%",
+      "position": "static",
+      "top": "auto",
+      "left": "auto",
+      "transform": "matrix(1, 0, 0, 1, 0, 0.297909)"
+    },
+    "textElText": "Our Story",
+    "textElClass": "lna-hero__h1"
+  },
+  "desktop_1920": {
+    "bgWrapRect": {
+      "x": 390,
+      "y": 158,
+      "width": 1140,
+      "height": 1000,
+      "top": 158,
+      "right": 1530,
+      "bottom": 1158,
+      "left": 390
+    },
+    "bgWrapStyle": {
+      "width": "1140px",
+      "height": "1000px",
+      "objectFit": "fill",
+      "objectPosition": "50% 50%",
+      "position": "absolute",
+      "top": "0px",
+      "left": "0px",
+      "transform": "none"
+    },
+    "imgRect": {
+      "x": 390,
+      "y": 158,
+      "width": 1140,
+      "height": 1000,
+      "top": 158,
+      "right": 1530,
+      "bottom": 1158,
+      "left": 390
+    },
+    "imgStyle": {
+      "width": "1140px",
+      "height": "1000px",
+      "objectFit": "cover",
+      "objectPosition": "50% 0%",
+      "position": "static",
+      "top": "auto",
+      "left": "auto",
+      "transform": "none"
+    },
+    "imgNatural": {
+      "naturalWidth": 1774,
+      "naturalHeight": 887,
+      "src": "https://lunacibarcelona.com/wp-content/uploads/2026/08/lunaimport-about-hero-luna.jpg"
+    },
+    "heroSectionRect": {
+      "x": 390,
+      "y": 158,
+      "width": 1140,
+      "height": 1000,
+      "top": 158,
+      "right": 1530,
+      "bottom": 1158,
+      "left": 390
+    },
+    "heroSectionClass": "lna-hero",
+    "textElRect": {
+      "x": 447,
+      "y": 723.1538696289062,
+      "width": 386,
+      "height": 220,
+      "top": 723.1538696289062,
+      "right": 833,
+      "bottom": 943.1538696289062,
+      "left": 447
+    },
+    "textElStyle": {
+      "width": "386px",
+      "height": "220px",
+      "objectFit": "fill",
+      "objectPosition": "50% 50%",
+      "position": "static",
+      "top": "auto",
+      "left": "auto",
+      "transform": "matrix(1, 0, 0, 1, 0, 0.0444859)"
+    },
+    "textElText": "Our Story",
+    "textElClass": "lna-hero__h1"
+  }
+}

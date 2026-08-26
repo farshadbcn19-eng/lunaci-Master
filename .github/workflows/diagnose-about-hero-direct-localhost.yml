@@ -1,0 +1,58 @@
+name: Diagnose - curl localhost directly, bypassing DNS/CDN (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: SSH in and curl 127.0.0.1 with Host header (read-only)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'echo "--- curl https://127.0.0.1/about-us/ with Host header, insecure (bypass DNS) ---";
+             curl -sk -H "Host: lunacibarcelona.com" "https://127.0.0.1/about-us/?directtest=1" -o /tmp/direct-response.html -D /tmp/direct-headers.txt --max-time 20 || echo "curl to 127.0.0.1:443 failed";
+             echo "--- response headers ---";
+             cat /tmp/direct-headers.txt 2>/dev/null || echo "no headers file";
+             echo "--- checks ---";
+             if [ -f /tmp/direct-response.html ]; then
+               echo "response length: $(wc -c < /tmp/direct-response.html)";
+               echo -n "contains new width:100vw: "; grep -c "lna{width:100vw" /tmp/direct-response.html || echo 0;
+               echo -n "contains old width:100%;background: "; grep -c "lna{width:100%;background:#0B0B0B;overflow:hidden;}" /tmp/direct-response.html || echo 0;
+             fi;
+             rm -f /tmp/direct-response.html /tmp/direct-headers.txt;
+
+             echo "";
+             echo "--- also try port 80 plain http ---";
+             curl -s -H "Host: lunacibarcelona.com" "http://127.0.0.1/about-us/?directtest=2" -o /tmp/direct-response2.html -D /tmp/direct-headers2.txt --max-time 20 || echo "curl to 127.0.0.1:80 failed";
+             cat /tmp/direct-headers2.txt 2>/dev/null || echo "no headers file";
+             if [ -f /tmp/direct-response2.html ]; then
+               echo "response length: $(wc -c < /tmp/direct-response2.html)";
+               echo -n "contains new width:100vw: "; grep -c "lna{width:100vw" /tmp/direct-response2.html || echo 0;
+               echo -n "contains old width:100%;background: "; grep -c "lna{width:100%;background:#0B0B0B;overflow:hidden;}" /tmp/direct-response2.html || echo 0;
+             fi;
+             rm -f /tmp/direct-response2.html /tmp/direct-headers2.txt;
+
+             echo "";
+             echo "--- what IP does the domain actually resolve to, from this server? ---";
+             getent hosts lunacibarcelona.com || nslookup lunacibarcelona.com || echo "dns lookup tools unavailable";
+             echo "--- this server own public-facing IP(s) ---";
+             hostname -I 2>/dev/null || echo "hostname -I unavailable";
+             curl -s https://ifconfig.me --max-time 10 || echo "ifconfig.me unavailable"'

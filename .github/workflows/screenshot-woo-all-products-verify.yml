@@ -1,0 +1,48 @@
+name: Verify - WooCommerce All Products page after Blusher image fix (read-only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: |
+          npm init -y > /dev/null
+          npm install playwright@1.48.0 > /dev/null
+          npx playwright install --with-deps chromium
+
+      - name: Run screenshot script
+        run: |
+          mkdir -p /tmp/out
+          node assets/luna-import/screenshot-woo-all-products-verify.js
+
+      - name: Commit screenshot to diagnostics branch
+        run: |
+          set -e
+          git config user.name "diagnostic-bot"
+          git config user.email "diagnostic-bot@users.noreply.github.com"
+
+          git checkout --orphan diagnostics/woo-all-products-verify
+          git rm -rf . > /dev/null 2>&1 || true
+
+          cp /tmp/out/shop-all-products.png ./shop-all-products.png
+
+          git add shop-all-products.png
+          git commit -m "Verify: All Products page after Blusher featured-image fix"
+          git push --force origin diagnostics/woo-all-products-verify
+
+          echo "OK: pushed diagnostics/woo-all-products-verify branch"

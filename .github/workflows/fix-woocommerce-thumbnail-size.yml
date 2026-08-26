@@ -1,0 +1,71 @@
+name: Fix - WooCommerce thumbnail size (guarded, blur fix)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Transfer fix script, run it, then regenerate thumbnails (guarded)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+            -P "$SSH_PORT" "assets/luna-import/fix-woocommerce-thumbnail-size.php" \
+            "$SSH_USER@$SSH_HOST:/tmp/lunaimport-fix-woocommerce-thumbnail-size.php"
+
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "WordPress found at: $WP_PATH";
+
+             php -l /tmp/lunaimport-fix-woocommerce-thumbnail-size.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed";
+               rm -f /tmp/lunaimport-fix-woocommerce-thumbnail-size.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/lunaimport-fix-woocommerce-thumbnail-size.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/lunaimport-fix-woocommerce-thumbnail-size.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+             echo "OK: option fix step completed";
+
+             echo "--- regenerating woocommerce_thumbnail size for all product images ---";
+             wp media regenerate --image_size=woocommerce_thumbnail --yes --path="$WP_PATH";
+             REGEN_STATUS=$?;
+             if [ "$REGEN_STATUS" -ne 0 ]; then
+               echo "WARNING: targeted regenerate failed (exit $REGEN_STATUS), retrying without --image_size filter";
+               wp media regenerate --yes --path="$WP_PATH";
+             fi;
+             echo "OK: thumbnail regeneration completed";
+
+             wp litespeed-purge all --path="$WP_PATH" || echo "WARNING: litespeed-purge command failed or not available"'

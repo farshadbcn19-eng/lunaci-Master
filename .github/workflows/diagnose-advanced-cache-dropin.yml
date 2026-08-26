@@ -1,0 +1,63 @@
+name: Diagnose - check for advanced-cache.php PHP-level cache (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Check for advanced-cache.php and WP_CACHE (read-only)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "--- advanced-cache.php ---";
+             ls -la "$WP_PATH/wp-content/advanced-cache.php" 2>/dev/null || echo "no advanced-cache.php";
+
+             echo "";
+             echo "--- WP_CACHE in wp-config.php ---";
+             grep -i "WP_CACHE" "$WP_PATH/wp-config.php" 2>/dev/null || echo "no WP_CACHE constant found";
+
+             echo "";
+             echo "--- full recursive search for any litespeed cache storage dirs (unrestricted name match) ---";
+             find "$WP_PATH/wp-content" -maxdepth 2 -type d 2>/dev/null | sort;
+
+             echo "";
+             echo "--- litespeed-cache plugin own data dir contents ---";
+             find "$WP_PATH/wp-content/plugins/litespeed-cache" -maxdepth 1 -type d 2>/dev/null;
+
+             echo "";
+             echo "--- check for any .lscache marker files anywhere under wp-content (limited depth) ---";
+             find "$WP_PATH/wp-content" -maxdepth 4 -iname "*.lscache*" 2>/dev/null | head -20;
+
+             echo "";
+             echo "--- check litespeed cache plugin settings for tier/cache-storage mode via wp-cli ---";
+             wp litespeed-option get object 2>/dev/null || echo "object cache option query failed/unavailable";
+             wp litespeed-option get cache 2>/dev/null || echo "cache option query failed/unavailable";
+             wp litespeed-option get cache-priv 2>/dev/null || true'

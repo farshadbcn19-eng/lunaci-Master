@@ -1,0 +1,33 @@
+name: Diagnose - Contact hero full-bleed/overlay live curl check (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch both Contact pages and check for the full-bleed CSS and lighter gradient
+        run: |
+          for path in "contact" "es/contacto"; do
+            echo "===================================================================="
+            echo "--- fetching https://lunacibarcelona.com/$path/ (plain, no query string) ---"
+            curl -s "https://lunacibarcelona.com/$path/" -o /tmp/plain.html -D /tmp/plain-headers.txt --max-time 20
+            echo "--- response headers ---"
+            cat /tmp/plain-headers.txt
+            echo ""
+            echo -n "contains new full-bleed width:100vw on .contact-hero: "; grep -c "width: 100vw;" /tmp/plain.html || echo 0
+            echo -n "contains new lighter gradient (.35): "; grep -c "rgba(15,15,16,.35) 0%, rgba(15,15,16,.75) 100%" /tmp/plain.html || echo 0
+            echo -n "contains OLD heavy gradient (.7 / 1): "; grep -c "rgba(15,15,16,.7) 0%, rgba(15,15,16,1) 100%" /tmp/plain.html || echo 0
+
+            echo ""
+            echo "--- second fetch a few seconds later, to check cache-hit state ---"
+            sleep 3
+            curl -s "https://lunacibarcelona.com/$path/" -o /tmp/plain2.html -D /tmp/plain2-headers.txt --max-time 20
+            cat /tmp/plain2-headers.txt
+            echo -n "contains new full-bleed on second fetch: "; grep -c "width: 100vw;" /tmp/plain2.html || echo 0
+            echo -n "contains new lighter gradient on second fetch: "; grep -c "rgba(15,15,16,.35) 0%, rgba(15,15,16,.75) 100%" /tmp/plain2.html || echo 0
+            echo -n "contains OLD heavy gradient on second fetch: "; grep -c "rgba(15,15,16,.7) 0%, rgba(15,15,16,1) 100%" /tmp/plain2.html || echo 0
+            echo ""
+          done

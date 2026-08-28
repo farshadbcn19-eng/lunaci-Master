@@ -1,0 +1,55 @@
+name: Diagnose - theme CSS for content-area/breadcrumb spacing (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: SSH in and inspect theme CSS + head style/link tags on live page
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "--- theme directories under wp-content/themes ---";
+             ls "$WP_PATH/wp-content/themes/";
+
+             echo "";
+             echo "--- grep child theme CSS files for #primary / .content-area / .site-main / .woocommerce-breadcrumb / .woocommerce-products-header ---";
+             for f in $(find "$WP_PATH/wp-content/themes" -maxdepth 2 -iname "*.css" 2>/dev/null); do
+               if grep -qE "(#primary|\.content-area|\.site-main\b|woocommerce-breadcrumb|woocommerce-products-header)" "$f" 2>/dev/null; then
+                 echo "===== $f =====";
+                 grep -nE "(#primary|\.content-area|\.site-main\b|woocommerce-breadcrumb|woocommerce-products-header)" "$f" | head -20;
+                 echo "";
+               fi;
+             done;
+
+             echo "";
+             echo "--- live page <head>: linked CSS files (href) ---";
+             curl -s "https://lunacibarcelona.com/product-category/face/" -o /tmp/lunaimport-face-head.html --max-time 20;
+             grep -oE "<link[^>]*rel=.stylesheet.[^>]*href=\"[^\"]*\"[^>]*>" /tmp/lunaimport-face-head.html | grep -oE "href=\"[^\"]*\"" | sed "s/href=//;s/\"//g";
+             rm -f /tmp/lunaimport-face-head.html;
+             echo "OK: diagnostic completed successfully"'

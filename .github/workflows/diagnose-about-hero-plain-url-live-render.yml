@@ -26,6 +26,7 @@ jobs:
           npx playwright install --with-deps chromium
 
       - name: Run diagnostic
+        timeout-minutes: 3
         run: |
           mkdir -p /tmp/out
           node assets/luna-import/diagnose-about-hero-plain-url-live-render.js

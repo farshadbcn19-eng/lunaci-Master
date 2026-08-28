@@ -1,0 +1,34 @@
+name: Diagnose - Contact container full-width live check via SSH (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: SSH in and curl both Contact pages from the server itself
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'for path in "https://lunacibarcelona.com/contact/" "https://lunacibarcelona.com/es/contacto/"; do
+               echo "====================================================================";
+               echo "--- fetching $path ---";
+               curl -s "$path" -o /tmp/lunaimport-check.html --max-time 20;
+               echo "response length: $(wc -c < /tmp/lunaimport-check.html)";
+               echo -n "contains new max-width:100% !important override: "; grep -c "max-width: 100% !important" /tmp/lunaimport-check.html || echo 0;
+               echo -n "contains fa1bfa7.e-con-boxed selector: "; grep -c "elementor-element-fa1bfa7.e-con-boxed" /tmp/lunaimport-check.html || echo 0;
+               rm -f /tmp/lunaimport-check.html;
+             done'

@@ -25,15 +25,21 @@ jobs:
             'curl -s "https://lunacibarcelona.com/contact/" -o /tmp/lunaimport-page.html --max-time 20;
              echo "response length: $(wc -c < /tmp/lunaimport-page.html)";
              echo "";
-             echo "--- context around fa1bfa7 ---";
-             grep -o ".\{300\}fa1bfa7.\{300\}" /tmp/lunaimport-page.html | head -10 || echo "(no match)";
+             echo "--- fa1bfa7 count ---";
+             grep -c "fa1bfa7" /tmp/lunaimport-page.html || echo 0;
+             echo "--- context around fa1bfa7 (bounded quantifiers, safe near file edges) ---";
+             grep -oE ".{0,300}fa1bfa7.{0,300}" /tmp/lunaimport-page.html | head -10 || echo "(no match)";
              echo "";
              echo "--- e-con-full count ---";
              grep -c "e-con-full" /tmp/lunaimport-page.html || echo 0;
              echo "";
-             echo "--- e-con-boxed full context (each occurrence) ---";
-             grep -o ".\{400\}e-con-boxed.\{200\}" /tmp/lunaimport-page.html || echo "(no match)";
+             echo "--- e-con-boxed count ---";
+             grep -c "e-con-boxed" /tmp/lunaimport-page.html || echo 0;
+             echo "--- e-con-boxed context (bounded quantifiers) ---";
+             grep -oE ".{0,400}e-con-boxed.{0,200}" /tmp/lunaimport-page.html || echo "(no match)";
              echo "";
+             echo "--- --con-max-width count ---";
+             grep -c -- "--con-max-width" /tmp/lunaimport-page.html || echo 0;
              echo "--- --con-max-width context ---";
-             grep -o ".\{100\}--con-max-width.\{100\}" /tmp/lunaimport-page.html | head -10 || echo "(no match)";
+             grep -oE ".{0,100}--con-max-width.{0,100}" /tmp/lunaimport-page.html | head -10 || echo "(no match)";
              rm -f /tmp/lunaimport-page.html'

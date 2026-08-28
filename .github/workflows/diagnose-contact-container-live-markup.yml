@@ -24,3 +24,9 @@ jobs:
           echo ""
           echo "--- context around 'eca166b' (the html widget id) ---"
           grep -o '.\{300\}elementor-element-eca166b.\{100\}' /tmp/page.html | head -5
+          echo ""
+          echo "--- full context around EACH 'e-con-boxed' occurrence ---"
+          grep -o '.\{400\}e-con-boxed.\{200\}' /tmp/page.html
+          echo ""
+          echo "--- CSS custom property --con-max-width if present ---"
+          grep -o '.\{100\}--con-max-width.\{100\}' /tmp/page.html | head -10

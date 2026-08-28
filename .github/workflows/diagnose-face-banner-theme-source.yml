@@ -1,0 +1,52 @@
+name: Diagnose - Face category banner theme source (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: SSH in and grep theme/plugin files for the category banner markup
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "--- grep theme files for lunaci-category-banner ---";
+             grep -rl "lunaci-category-banner" "$WP_PATH/wp-content/themes" 2>/dev/null || echo "(no theme file matches)";
+             echo "";
+             echo "--- grep plugins (mu-plugins + plugins) for lunaci-category-banner ---";
+             grep -rl "lunaci-category-banner" "$WP_PATH/wp-content/plugins" "$WP_PATH/wp-content/mu-plugins" 2>/dev/null || echo "(no plugin file matches)";
+             echo "";
+             echo "--- grep entire wp-content for lunaci-category-banner (excluding uploads/cache) ---";
+             grep -rl "lunaci-category-banner" "$WP_PATH/wp-content" --exclude-dir=uploads --exclude-dir=cache --exclude-dir=upgrade --exclude-dir=litespeed 2>/dev/null || echo "(no wp-content matches)";
+             echo "";
+             echo "--- show matching lines with context, for each matched file ---";
+             for f in $(grep -rl "lunaci-category-banner" "$WP_PATH/wp-content" --exclude-dir=uploads --exclude-dir=cache --exclude-dir=upgrade --exclude-dir=litespeed 2>/dev/null); do
+               echo "===== $f =====";
+               grep -n -B3 -A15 "lunaci-category-banner" "$f";
+               echo "";
+             done;
+             echo "OK: theme/plugin scan complete"'

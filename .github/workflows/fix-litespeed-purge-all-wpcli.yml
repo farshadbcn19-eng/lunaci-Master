@@ -1,0 +1,44 @@
+name: Fix - full LiteSpeed cache purge via wp-cli (cache-only, no data writes)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Purge full LiteSpeed cache via wp-cli
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+          sudo apt-get install -y sshpass > /dev/null
+
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "--- running wp litespeed-purge all ---";
+             wp litespeed-purge all --path="$WP_PATH";
+
+             echo "";
+             echo "--- also explicitly purging the About Us EN/ES pages by tag ---";
+             wp litespeed-purge post 59 --path="$WP_PATH" 2>/dev/null || echo "purge post 59 not supported/failed, continuing";
+             wp litespeed-purge post 680 --path="$WP_PATH" 2>/dev/null || echo "purge post 680 not supported/failed, continuing";
+
+             echo "OK: purge commands issued"'

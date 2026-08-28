@@ -1,0 +1,32 @@
+name: Diagnose - ES shop product URL pattern (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: SSH in and inspect ES shop page product links
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'curl -s "https://lunacibarcelona.com/es/tienda/" -o /tmp/lunaimport-es-shop.html --max-time 20;
+             echo "response length: $(wc -c < /tmp/lunaimport-es-shop.html)";
+             echo "--- any href containing product-related ES path segments ---";
+             grep -oE "href=\"[^\"]*lunacibarcelona.com/es/[a-z-]+/[a-z0-9-]+/\"" /tmp/lunaimport-es-shop.html | sort -u | head -20;
+             echo "--- broader: any /es/ path with 2+ segments ---";
+             grep -oE "/es/[a-z-]+/[a-z0-9-]+/" /tmp/lunaimport-es-shop.html | sort -u | head -30;
+             rm -f /tmp/lunaimport-es-shop.html'

@@ -22,14 +22,15 @@
  * to any page).
  */
 
-global $wpdb, $args;
+global $wpdb;
 
-if ( empty( $args[0] ) || ! is_numeric( $args[0] ) ) {
-	echo "ABORT: expected attachment ID as first argument\n";
+$env_id = getenv( 'LUNACI_MEDIA_ID' );
+if ( false === $env_id || '' === $env_id || ! is_numeric( $env_id ) ) {
+	echo "ABORT: expected attachment ID via LUNACI_MEDIA_ID env var\n";
 	exit( 1 );
 }
 
-$attachment_id = (int) $args[0];
+$attachment_id = (int) $env_id;
 $attachment_url = wp_get_attachment_url( $attachment_id );
 if ( ! $attachment_url ) {
 	echo "ABORT: could not resolve URL for attachment ID {$attachment_id}\n";

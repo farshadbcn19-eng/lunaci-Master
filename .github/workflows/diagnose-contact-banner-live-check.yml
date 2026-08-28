@@ -1,0 +1,32 @@
+name: Diagnose - Contact banner live curl check (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch both Contact pages and check for the new banner
+        run: |
+          for path in "contact" "es/contacto"; do
+            echo "===================================================================="
+            echo "--- fetching https://lunacibarcelona.com/$path/ (plain, no query string) ---"
+            curl -s "https://lunacibarcelona.com/$path/" -o /tmp/plain.html -D /tmp/plain-headers.txt --max-time 20
+            echo "--- response headers ---"
+            cat /tmp/plain-headers.txt
+            echo ""
+            echo "response length: $(wc -c < /tmp/plain.html)"
+            echo -n "contains new banner URL: "; grep -c "lunaimport-contact-hero-banner.png?v=1" /tmp/plain.html || echo 0
+            echo -n "contains OLD unsplash banner fragment (photo-1555396273): "; grep -c "photo-1555396273" /tmp/plain.html || echo 0
+
+            echo ""
+            echo "--- second fetch a few seconds later, to see if x-litespeed-cache flips to hit while still showing new content ---"
+            sleep 3
+            curl -s "https://lunacibarcelona.com/$path/" -o /tmp/plain2.html -D /tmp/plain2-headers.txt --max-time 20
+            cat /tmp/plain2-headers.txt
+            echo -n "contains new banner URL on second fetch: "; grep -c "lunaimport-contact-hero-banner.png?v=1" /tmp/plain2.html || echo 0
+            echo -n "contains OLD unsplash banner fragment on second fetch: "; grep -c "photo-1555396273" /tmp/plain2.html || echo 0
+            echo ""
+          done

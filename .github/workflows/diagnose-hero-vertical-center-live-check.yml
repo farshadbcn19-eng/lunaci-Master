@@ -1,0 +1,29 @@
+name: Diagnose - verify hero vertical-center fix live (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch plain canonical URL and check for the fix markers
+        run: |
+          echo "--- fetching https://lunacibarcelona.com/about-us/ (plain, no query string) ---"
+          curl -s "https://lunacibarcelona.com/about-us/" -o /tmp/plain.html -D /tmp/plain-headers.txt --max-time 20
+          echo "--- response headers ---"
+          cat /tmp/plain-headers.txt
+          echo ""
+          echo -n "x-litespeed-cache: "; grep -i "^x-litespeed-cache:" /tmp/plain-headers.txt || echo "not set"
+          echo -n "contains new align-items:center desktop media query: "; grep -c "@media(min-width:1025px){.lna-hero{align-items:center;}}" /tmp/plain.html || echo 0
+          echo -n "contains OLD desktop padding override (12vh, should be GONE): "; grep -c "@media (min-width:1025px){.lna-hero__content{padding:0 5% 12vh" /tmp/plain.html || echo 0
+          echo -n "contains NEW desktop padding override (no extra vh, should be PRESENT): "; grep -c "@media (min-width:1025px){.lna-hero__content{padding:0 5% !important;}}" /tmp/plain.html || echo 0
+          echo -n "base .lna-hero rule (align-items:flex-end) still present as base: "; grep -c "align-items:flex-end" /tmp/plain.html || echo 0
+          echo ""
+          echo "--- second fetch to see cached state ---"
+          sleep 3
+          curl -s "https://lunacibarcelona.com/about-us/" -o /tmp/plain2.html -D /tmp/plain2-headers.txt --max-time 20
+          grep -i "^x-litespeed-cache:" /tmp/plain2-headers.txt || echo "not set"
+          echo -n "contains new align-items:center on second fetch: "; grep -c "@media(min-width:1025px){.lna-hero{align-items:center;}}" /tmp/plain2.html || echo 0
+          echo -n "contains NEW desktop padding override on second fetch: "; grep -c "@media (min-width:1025px){.lna-hero__content{padding:0 5% !important;}}" /tmp/plain2.html || echo 0

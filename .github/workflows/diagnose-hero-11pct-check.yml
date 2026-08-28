@@ -1,0 +1,16 @@
+name: Diagnose - verify hero 11% horizontal shift live (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch plain canonical URL and check for the 11% marker
+        run: |
+          curl -s "https://lunacibarcelona.com/about-us/" -o /tmp/plain.html -D /tmp/plain-headers.txt --max-time 20
+          grep -i "^x-litespeed-cache:" /tmp/plain-headers.txt || echo "not set"
+          echo -n "contains 11% left inset marker: "; grep -c "padding:0 5% 0 11% !important" /tmp/plain.html || echo 0
+          echo -n "contains OLD 20% marker (should be gone): "; grep -c "padding:0 5% 0 20% !important" /tmp/plain.html || echo 0

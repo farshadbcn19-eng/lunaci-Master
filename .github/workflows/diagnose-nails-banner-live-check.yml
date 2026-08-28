@@ -1,0 +1,30 @@
+name: Diagnose - Nails category banner live check (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: SSH in and curl EN Nails category page banner img
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'echo "--- EN /product-category/nails/ banner img ---";
+             curl -s "https://lunacibarcelona.com/product-category/nails/" -o /tmp/lunaimport-nails-en.html --max-time 20;
+             grep -oE "<img[^>]*lunaci-category-banner__img[^>]*>" /tmp/lunaimport-nails-en.html || echo "(banner img not found)";
+             rm -f /tmp/lunaimport-nails-en.html;
+             echo "OK: live check complete"'

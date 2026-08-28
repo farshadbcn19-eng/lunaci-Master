@@ -1,0 +1,100 @@
+name: Fix - upload real Eyebrow/Eye Pencil product photos
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Upload images, import to Media Library, then run guarded fix
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+            -P "$SSH_PORT" "assets/luna-import/uploads/lunaci-eyebrow-pencil-real.png" \
+            "$SSH_USER@$SSH_HOST:/tmp/lunaimport-eyebrow-pencil-real.png"
+
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+            -P "$SSH_PORT" "assets/luna-import/uploads/lunaci-eye-pencil-real.png" \
+            "$SSH_USER@$SSH_HOST:/tmp/lunaimport-eye-pencil-real.png"
+
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+            -P "$SSH_PORT" "assets/luna-import/fix-eyebrow-eye-pencil-real-photos.php" \
+            "$SSH_USER@$SSH_HOST:/tmp/lunaimport-fix-eyebrow-eye-pencil-real-photos.php"
+
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "--- checking for already-imported copies (idempotent re-run) ---";
+             EXISTING_EYEBROW=$(wp post list --post_type=attachment --title="LUNACI Eyebrow Pencil (real photo)" --field=ID --path="$WP_PATH" | head -1);
+             if [ -n "$EXISTING_EYEBROW" ]; then
+               EYEBROW_MEDIA_ID="$EXISTING_EYEBROW";
+               echo "reusing existing eyebrow media ID: $EYEBROW_MEDIA_ID";
+               rm -f /tmp/lunaimport-eyebrow-pencil-real.png;
+             else
+               EYEBROW_MEDIA_ID=$(wp media import /tmp/lunaimport-eyebrow-pencil-real.png --title="LUNACI Eyebrow Pencil (real photo)" --alt="LUNACI Eyebrow Pencil - Brown, Dark Brown, Grey" --porcelain --path="$WP_PATH");
+               echo "imported eyebrow media ID: $EYEBROW_MEDIA_ID";
+               rm -f /tmp/lunaimport-eyebrow-pencil-real.png;
+             fi;
+             if [ -z "$EYEBROW_MEDIA_ID" ]; then echo "ABORT: eyebrow media import failed"; exit 1; fi;
+             wp media regenerate "$EYEBROW_MEDIA_ID" --yes --path="$WP_PATH";
+
+             EXISTING_EYE=$(wp post list --post_type=attachment --title="LUNACI Eye Pencil (real photo)" --field=ID --path="$WP_PATH" | head -1);
+             if [ -n "$EXISTING_EYE" ]; then
+               EYE_MEDIA_ID="$EXISTING_EYE";
+               echo "reusing existing eye media ID: $EYE_MEDIA_ID";
+               rm -f /tmp/lunaimport-eye-pencil-real.png;
+             else
+               EYE_MEDIA_ID=$(wp media import /tmp/lunaimport-eye-pencil-real.png --title="LUNACI Eye Pencil (real photo)" --alt="LUNACI Eye Pencil - Black longlasting gel pencil" --porcelain --path="$WP_PATH");
+               echo "imported eye media ID: $EYE_MEDIA_ID";
+               rm -f /tmp/lunaimport-eye-pencil-real.png;
+             fi;
+             if [ -z "$EYE_MEDIA_ID" ]; then echo "ABORT: eye media import failed"; exit 1; fi;
+             wp media regenerate "$EYE_MEDIA_ID" --yes --path="$WP_PATH";
+
+             php -l /tmp/lunaimport-fix-eyebrow-eye-pencil-real-photos.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed";
+               rm -f /tmp/lunaimport-fix-eyebrow-eye-pencil-real-photos.php;
+               exit 1;
+             fi;
+
+             LUNACI_EYEBROW_MEDIA_ID="$EYEBROW_MEDIA_ID" LUNACI_EYE_MEDIA_ID="$EYE_MEDIA_ID" wp eval-file /tmp/lunaimport-fix-eyebrow-eye-pencil-real-photos.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/lunaimport-fix-eyebrow-eye-pencil-real-photos.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+
+             echo "";
+             echo "--- purging LiteSpeed cache (visible output) ---";
+             wp litespeed-purge all --path="$WP_PATH";
+
+             echo "OK: fix completed successfully"'

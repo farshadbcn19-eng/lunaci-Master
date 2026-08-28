@@ -46,10 +46,18 @@ jobs:
              if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
              echo "WordPress found at: $WP_PATH";
 
-             echo "--- importing image into Media Library ---";
-             MEDIA_ID=$(wp media import /tmp/lunaimport-contact-hero-banner.png --title="LUNACI Contact Banner" --alt="LUNACI Barcelona atelier - contact page banner" --porcelain --path="$WP_PATH");
-             echo "imported media ID: $MEDIA_ID";
-             rm -f /tmp/lunaimport-contact-hero-banner.png;
+             echo "--- checking for an already-imported copy (idempotent re-run) ---";
+             EXISTING_ID=$(wp post list --post_type=attachment --title="LUNACI Contact Banner" --field=ID --path="$WP_PATH" | head -1);
+             if [ -n "$EXISTING_ID" ]; then
+               MEDIA_ID="$EXISTING_ID";
+               echo "reusing existing media ID: $MEDIA_ID";
+               rm -f /tmp/lunaimport-contact-hero-banner.png;
+             else
+               echo "--- importing image into Media Library ---";
+               MEDIA_ID=$(wp media import /tmp/lunaimport-contact-hero-banner.png --title="LUNACI Contact Banner" --alt="LUNACI Barcelona atelier - contact page banner" --porcelain --path="$WP_PATH");
+               echo "imported media ID: $MEDIA_ID";
+               rm -f /tmp/lunaimport-contact-hero-banner.png;
+             fi;
 
              if [ -z "$MEDIA_ID" ]; then echo "ABORT: media import failed, no ID returned"; exit 1; fi;
 
@@ -61,7 +69,7 @@ jobs:
                exit 1;
              fi;
 
-             wp eval-file /tmp/lunaimport-fix-contact-hero-banner-image.php "$MEDIA_ID" --path="$WP_PATH";
+             LUNACI_MEDIA_ID="$MEDIA_ID" wp eval-file /tmp/lunaimport-fix-contact-hero-banner-image.php --path="$WP_PATH";
              EVAL_STATUS=$?;
              rm -f /tmp/lunaimport-fix-contact-hero-banner-image.php;
              if [ "$EVAL_STATUS" -ne 0 ]; then

@@ -1,0 +1,30 @@
+name: Diagnose - plain canonical About Us URL curl check (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch the exact canonical URL (no cache-busting query param)
+        run: |
+          echo "--- fetching https://lunacibarcelona.com/about-us/ (plain, no query string - exactly what a browser requests) ---"
+          curl -s "https://lunacibarcelona.com/about-us/" -o /tmp/plain.html -D /tmp/plain-headers.txt --max-time 20
+          echo "--- response headers ---"
+          cat /tmp/plain-headers.txt
+          echo ""
+          echo "response length: $(wc -c < /tmp/plain.html)"
+          echo -n "contains new full-bleed #lna width:100vw: "; grep -c "#lna{width:100vw" /tmp/plain.html || echo 0
+          echo -n "contains OLD #lna width:100% (without 100vw also present): "; grep -c "#lna{width:100%;background:#0B0B0B;overflow:hidden;}" /tmp/plain.html || echo 0
+          echo -n "contains new desktop 12vh media query: "; grep -c "@media (min-width:1025px){.lna-hero__content{padding:0 5% 12vh" /tmp/plain.html || echo 0
+          echo -n "count of .lna-hero__content{ rule occurrences: "; grep -o "\.lna-hero__content{" /tmp/plain.html | wc -l
+
+          echo ""
+          echo "--- second fetch a few seconds later, to see if x-litespeed-cache flips from miss to hit (confirming a fresh cache write is now serving the SAME fixed content) ---"
+          sleep 3
+          curl -s "https://lunacibarcelona.com/about-us/" -o /tmp/plain2.html -D /tmp/plain2-headers.txt --max-time 20
+          cat /tmp/plain2-headers.txt
+          echo -n "contains new full-bleed on second fetch: "; grep -c "#lna{width:100vw" /tmp/plain2.html || echo 0
+          echo -n "contains new desktop 12vh media query on second fetch: "; grep -c "@media (min-width:1025px){.lna-hero__content{padding:0 5% 12vh" /tmp/plain2.html || echo 0

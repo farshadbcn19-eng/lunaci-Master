@@ -1,0 +1,26 @@
+name: Diagnose - Contact page live rendered container markup (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch live page and inspect the Elementor container wrapping the widget
+        run: |
+          curl -s "https://lunacibarcelona.com/contact/" -o /tmp/page.html --max-time 20
+          echo "response length: $(wc -c < /tmp/page.html)"
+          echo ""
+          echo "--- context around 'fa1bfa7' (the container element id) ---"
+          grep -o '.\{300\}fa1bfa7.\{300\}' /tmp/page.html | head -20
+          echo ""
+          echo "--- any e-con-full occurrences (full-width flag) ---"
+          grep -c "e-con-full" /tmp/page.html || echo 0
+          echo ""
+          echo "--- any e-con-boxed occurrences ---"
+          grep -c "e-con-boxed" /tmp/page.html || echo 0
+          echo ""
+          echo "--- context around 'eca166b' (the html widget id) ---"
+          grep -o '.\{300\}elementor-element-eca166b.\{100\}' /tmp/page.html | head -5

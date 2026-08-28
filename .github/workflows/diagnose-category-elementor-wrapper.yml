@@ -1,0 +1,51 @@
+name: Diagnose - elementor wrapper around category archive content (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: SSH in and dump markup + CSS around the elementor wrapper on the Face category page
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'echo "--- fetching /product-category/face/ ---";
+             curl -s "https://lunacibarcelona.com/product-category/face/" -o /tmp/lunaimport-face-el.html --max-time 20;
+
+             echo "--- everything from </header> through the woocommerce-breadcrumb nav (raw, first match window) ---";
+             LINE=$(grep -n "</header>" /tmp/lunaimport-face-el.html | head -1 | cut -d: -f1);
+             if [ -n "$LINE" ]; then
+               sed -n "${LINE},$((LINE+2))p" /tmp/lunaimport-face-el.html;
+             else
+               echo "(</header> not found)";
+             fi;
+
+             echo "";
+             echo "--- any element with class containing just elementor (not elementor-kit, not elementor-default) right after header, opening divs only ---";
+             grep -oE "<div[^>]*class=\"[^\"]*\belementor\b[^\"]*\"[^>]*>" /tmp/lunaimport-face-el.html | head -5;
+
+             echo "";
+             echo "--- fetch elementor post-5 CSS (the page-specific elementor kit/template CSS) ---";
+             curl -s "https://lunacibarcelona.com/wp-content/uploads/elementor/css/post-5.css" -o /tmp/lunaimport-post5.css --max-time 20;
+             echo "post-5.css length: $(wc -c < /tmp/lunaimport-post5.css)";
+             echo "--- rules mentioning flex/align-items/justify-content/min-height near any .elementor selector ---";
+             grep -oE "\.elementor[a-zA-Z0-9_-]*\{[^}]*\}" /tmp/lunaimport-post5.css | grep -E "(flex|align-items|justify-content|min-height)" | head -20;
+             echo "--- rules mentioning our target selectors directly (#primary/.content-area/.site-main/woocommerce-breadcrumb/woocommerce-products-header) ---";
+             grep -oE "(#primary|\.content-area|\.site-main|woocommerce-breadcrumb|woocommerce-products-header)[a-zA-Z0-9_.,: >-]*\{[^}]*\}" /tmp/lunaimport-post5.css | head -20;
+
+             rm -f /tmp/lunaimport-face-el.html /tmp/lunaimport-post5.css;
+             echo "OK: diagnostic completed successfully"'

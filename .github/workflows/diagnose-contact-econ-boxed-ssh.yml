@@ -1,0 +1,39 @@
+name: Diagnose - Contact e-con-boxed context via SSH (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: SSH in and curl the live page from the server itself
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+          sudo apt-get install -y sshpass > /dev/null
+
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'curl -s "https://lunacibarcelona.com/contact/" -o /tmp/lunaimport-page.html --max-time 20;
+             echo "response length: $(wc -c < /tmp/lunaimport-page.html)";
+             echo "";
+             echo "--- context around fa1bfa7 ---";
+             grep -o ".\{300\}fa1bfa7.\{300\}" /tmp/lunaimport-page.html | head -10 || echo "(no match)";
+             echo "";
+             echo "--- e-con-full count ---";
+             grep -c "e-con-full" /tmp/lunaimport-page.html || echo 0;
+             echo "";
+             echo "--- e-con-boxed full context (each occurrence) ---";
+             grep -o ".\{400\}e-con-boxed.\{200\}" /tmp/lunaimport-page.html || echo "(no match)";
+             echo "";
+             echo "--- --con-max-width context ---";
+             grep -o ".\{100\}--con-max-width.\{100\}" /tmp/lunaimport-page.html | head -10 || echo "(no match)";
+             rm -f /tmp/lunaimport-page.html'

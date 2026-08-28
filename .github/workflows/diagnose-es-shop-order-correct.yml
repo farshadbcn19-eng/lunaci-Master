@@ -1,0 +1,30 @@
+name: Diagnose - ES shop product order with correct slug (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: SSH in and curl ES shop page, extract product order with correct slug
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'curl -s "https://lunacibarcelona.com/es/tienda/" -o /tmp/lunaimport-es-shop.html --max-time 20;
+             echo "response length: $(wc -c < /tmp/lunaimport-es-shop.html)";
+             echo "--- ES product order (first-seen, deduped) ---";
+             grep -oE "/es/producto/[a-z0-9-]+/" /tmp/lunaimport-es-shop.html | awk "!seen[\$0]++";
+             rm -f /tmp/lunaimport-es-shop.html'

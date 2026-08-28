@@ -1,0 +1,49 @@
+name: Diagnose - plain canonical About Us URL live render (read-only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: |
+          npm init -y > /dev/null
+          npm install playwright@1.48.0 > /dev/null
+          npx playwright install --with-deps chromium
+
+      - name: Run diagnostic
+        run: |
+          mkdir -p /tmp/out
+          node assets/luna-import/diagnose-about-hero-plain-url-live-render.js
+
+      - name: Commit results to diagnostics branch
+        run: |
+          set -e
+          git config user.name "diagnostic-bot"
+          git config user.email "diagnostic-bot@users.noreply.github.com"
+
+          git checkout --orphan diagnostics/about-hero-plain-url-live-render
+          git rm -rf . > /dev/null 2>&1 || true
+
+          cp /tmp/out/about-hero-plain-url-live-render.json ./about-hero-plain-url-live-render.json
+          cp /tmp/out/about-hero-plain-url-1920.png ./about-hero-plain-url-1920.png
+
+          git add about-hero-plain-url-live-render.json about-hero-plain-url-1920.png
+          git commit -m "Diagnostic: plain canonical URL live render check"
+          git push --force origin diagnostics/about-hero-plain-url-live-render
+
+          echo "OK: pushed diagnostics/about-hero-plain-url-live-render branch"

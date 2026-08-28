@@ -1,0 +1,59 @@
+name: Diagnose - category banner boxing across all 4 pages (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: SSH in and compare banner markup structure across face/eyes/lips/nails
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'for slug in face eyes lips nails; do
+               echo "========================================================";
+               echo "=== /product-category/$slug/ ===";
+               echo "========================================================";
+               curl -s "https://lunacibarcelona.com/product-category/$slug/" -o /tmp/lunaimport-$slug.html --max-time 20;
+               echo "response length: $(wc -c < /tmp/lunaimport-$slug.html)";
+
+               echo "--- body class ---";
+               grep -oE "<body[^>]*class=\"[^\"]*\"" /tmp/lunaimport-$slug.html | head -1;
+
+               echo "--- pretty-print via xmllint (if available), else raw ---";
+               if command -v xmllint >/dev/null 2>&1; then
+                 xmllint --html --format /tmp/lunaimport-$slug.html > /tmp/lunaimport-$slug-pretty.html 2>/dev/null || cp /tmp/lunaimport-$slug.html /tmp/lunaimport-$slug-pretty.html;
+               else
+                 cp /tmp/lunaimport-$slug.html /tmp/lunaimport-$slug-pretty.html;
+               fi;
+
+               echo "--- ancestor chain leading up to lunaci-category-banner (30 lines before) ---";
+               grep -n "lunaci-category-banner\"" /tmp/lunaimport-$slug-pretty.html | head -1;
+               LINE=$(grep -n "lunaci-category-banner\"" /tmp/lunaimport-$slug-pretty.html | head -1 | cut -d: -f1);
+               if [ -n "$LINE" ]; then
+                 START=$((LINE > 40 ? LINE - 40 : 1));
+                 sed -n "${START},${LINE}p" /tmp/lunaimport-$slug-pretty.html | grep -E "<(div|section|main|body|header)[^>]*>" ;
+               else
+                 echo "(banner div not found in pretty output)";
+               fi;
+
+               echo "--- any inline style= near the banner (raw grep) ---";
+               grep -oE "<div class=\"lunaci-category-banner\"[^>]*>" /tmp/lunaimport-$slug.html || echo "(banner opening div not found)";
+
+               rm -f /tmp/lunaimport-$slug.html /tmp/lunaimport-$slug-pretty.html;
+               echo "";
+             done;
+             echo "OK: comparison complete"'

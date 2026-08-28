@@ -1,0 +1,35 @@
+name: Diagnose - shop grid reorder live check via SSH (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: SSH in and curl EN + ES shop pages, extract product order
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'for path in "https://lunacibarcelona.com/shop/" "https://lunacibarcelona.com/es/tienda/"; do
+               echo "====================================================================";
+               echo "--- fetching $path ---";
+               curl -s "$path" -o /tmp/lunaimport-shop.html --max-time 20;
+               echo "response length: $(wc -c < /tmp/lunaimport-shop.html)";
+               echo "--- product order (first-seen, deduped) ---";
+               grep -oE "/product/[a-z0-9-]+/" /tmp/lunaimport-shop.html | awk "!seen[\$0]++";
+               rm -f /tmp/lunaimport-shop.html;
+               echo "";
+             done'

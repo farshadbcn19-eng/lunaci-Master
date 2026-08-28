@@ -1,19 +1,18 @@
 <?php
 /**
- * Guarded fix: user confirmed the vertical centering worked, but the hero
- * text block is still hugging the far-left edge (only 5% left inset) and
- * asked to bring it ~20% toward center. Shift the desktop-only padding
- * override's LEFT inset from 5% to 20% (right side stays 5%, so the
- * block moves right without changing its max-width:500px cap), same two
- * locations as the previous WPCode padding fix: post 319's own
- * post_content and the mirrored wpcode_snippets option copy. Desktop
- * only (min-width:1025px) - mobile stays untouched.
+ * Guarded fix, second pass: the first pass moved the desktop left inset
+ * from 5% to 20%, which the user confirmed was too far ("خیلی اومد
+ * وسط" - moved too much toward center). Dial back to 11% (a moderate
+ * middle ground between the original 5% and the overshot 20%), same
+ * two locations as before: post 319's own post_content and the
+ * mirrored wpcode_snippets option copy. Desktop only
+ * (min-width:1025px) - mobile stays untouched.
  */
 
 global $wpdb;
 
-$wpcode_old = '@media (min-width:1025px){.lna-hero__content{padding:0 5% !important;}}';
-$wpcode_new = '@media (min-width:1025px){.lna-hero__content{padding:0 5% 0 20% !important;}}';
+$wpcode_old = '@media (min-width:1025px){.lna-hero__content{padding:0 5% 0 20% !important;}}';
+$wpcode_new = '@media (min-width:1025px){.lna-hero__content{padding:0 5% 0 11% !important;}}';
 
 echo "=====================================================================\n";
 echo "PART 1: WPCode post 319 post_content\n";

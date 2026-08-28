@@ -38,8 +38,8 @@ jobs:
              ls "$WP_PATH/wp-content/themes/";
 
              echo "";
-             echo "--- grep child theme CSS files for #primary / .content-area / .site-main / .woocommerce-breadcrumb / .woocommerce-products-header ---";
-             for f in $(find "$WP_PATH/wp-content/themes" -maxdepth 2 -iname "*.css" 2>/dev/null); do
+             echo "--- grep ALL theme CSS files (any depth) for #primary / .content-area / .site-main / .woocommerce-breadcrumb / .woocommerce-products-header ---";
+             for f in $(find "$WP_PATH/wp-content/themes/hello-elementor" "$WP_PATH/wp-content/themes/hello-elementor-child" -iname "*.css" 2>/dev/null); do
                if grep -qE "(#primary|\.content-area|\.site-main\b|woocommerce-breadcrumb|woocommerce-products-header)" "$f" 2>/dev/null; then
                  echo "===== $f =====";
                  grep -nE "(#primary|\.content-area|\.site-main\b|woocommerce-breadcrumb|woocommerce-products-header)" "$f" | head -20;
@@ -50,6 +50,8 @@ jobs:
              echo "";
              echo "--- live page <head>: linked CSS files (href) ---";
              curl -s "https://lunacibarcelona.com/product-category/face/" -o /tmp/lunaimport-face-head.html --max-time 20;
-             grep -oE "<link[^>]*rel=.stylesheet.[^>]*href=\"[^\"]*\"[^>]*>" /tmp/lunaimport-face-head.html | grep -oE "href=\"[^\"]*\"" | sed "s/href=//;s/\"//g";
-             rm -f /tmp/lunaimport-face-head.html;
+             grep -oE "<link[^>]*stylesheet[^>]*>" /tmp/lunaimport-face-head.html > /tmp/lunaimport-links.txt;
+             echo "link tag count: $(wc -l < /tmp/lunaimport-links.txt)";
+             cat /tmp/lunaimport-links.txt;
+             rm -f /tmp/lunaimport-face-head.html /tmp/lunaimport-links.txt;
              echo "OK: diagnostic completed successfully"'

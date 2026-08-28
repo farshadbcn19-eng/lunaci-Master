@@ -1,0 +1,46 @@
+name: Diagnose - Face category banner live check (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: SSH in and curl EN Face category page + check ES equivalent
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'echo "--- EN /product-category/face/ banner img ---";
+             curl -s "https://lunacibarcelona.com/product-category/face/" -o /tmp/lunaimport-face-en.html --max-time 20;
+             grep -oE "<img[^>]*lunaci-category-banner__img[^>]*>" /tmp/lunaimport-face-en.html || echo "(banner img not found)";
+             rm -f /tmp/lunaimport-face-en.html;
+
+             echo "";
+             echo "--- ES /es/tienda/ page: any category-related hrefs ---";
+             curl -s "https://lunacibarcelona.com/es/tienda/" -o /tmp/lunaimport-es-shop.html --max-time 20;
+             grep -oiE "href=\"[^\"]*categoria[^\"]*\"" /tmp/lunaimport-es-shop.html | sort -u || echo "(no categoria hrefs)";
+             grep -oiE "href=\"[^\"]*product-category[^\"]*\"" /tmp/lunaimport-es-shop.html | sort -u || echo "(no product-category hrefs)";
+             rm -f /tmp/lunaimport-es-shop.html;
+
+             echo "";
+             echo "--- try ES category URL guess: /es/categoria-producto/face/ ---";
+             HTTP_CODE=$(curl -s -o /tmp/lunaimport-face-es.html -w "%{http_code}" "https://lunacibarcelona.com/es/categoria-producto/face/" --max-time 20);
+             echo "HTTP status: $HTTP_CODE";
+             if [ "$HTTP_CODE" = "200" ]; then
+               grep -oE "<img[^>]*lunaci-category-banner__img[^>]*>" /tmp/lunaimport-face-es.html || echo "(banner img not found on ES page)";
+             fi;
+             rm -f /tmp/lunaimport-face-es.html;
+             echo "OK: live check complete"'

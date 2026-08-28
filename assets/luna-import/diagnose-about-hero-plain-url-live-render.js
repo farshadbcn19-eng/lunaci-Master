@@ -10,9 +10,10 @@ const { chromium } = require('playwright');
   // will show it, whereas cache-busted fetches used in earlier verification
   // would have masked it.
   const response = await page.goto('https://lunacibarcelona.com/about-us/', {
-    waitUntil: 'networkidle',
+    waitUntil: 'load',
     timeout: 45000,
   });
+  await page.waitForTimeout(1500);
 
   const status = response.status();
   const headers = response.headers();

@@ -36,12 +36,10 @@ jobs:
              echo "--- h1 tags ---";
              grep -oE "<h1[^>]*>.{0,120}" /tmp/shipping-page.html || true;
              echo "";
-             echo "--- first 3000 chars of <body> onward ---";
-             python3 -c "
-import re
-html = open(\"/tmp/shipping-page.html\", encoding=\"utf-8\", errors=\"replace\").read()
-m = re.search(r\"<body[^>]*>\", html)
-start = m.start() if m else 0
-print(html[start:start+3000])
-";
+             echo "--- bytes from <body> onward (first 3000) ---";
+             BODY_OFFSET=$(grep -bo "<body" /tmp/shipping-page.html | head -1 | cut -d: -f1);
+             if [ -n "$BODY_OFFSET" ]; then
+               tail -c +$((BODY_OFFSET+1)) /tmp/shipping-page.html | head -c 3000;
+             fi;
+             echo "";
              rm -f /tmp/shipping-page.html'

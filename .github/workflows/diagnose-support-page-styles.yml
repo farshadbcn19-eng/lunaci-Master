@@ -1,0 +1,20 @@
+name: Diagnose - computed styles of Shipping support page (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Playwright + Chromium
+        run: |
+          npm install playwright
+          npx playwright install --with-deps chromium
+
+      - name: Run diagnostic against the live Shipping page
+        run: node assets/luna-import/diagnose-support-page-styles.js

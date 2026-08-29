@@ -1,0 +1,83 @@
+name: Fix - Nails category banner with pre-cropped image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Upload image, import to Media Library, then run guarded fix
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+            -P "$SSH_PORT" "assets/luna-import/uploads/lunaci-nails-category-banner-cropped.png" \
+            "$SSH_USER@$SSH_HOST:/tmp/lunaimport-nails-category-banner-cropped.png"
+
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+            -P "$SSH_PORT" "assets/luna-import/fix-nails-banner-precropped.php" \
+            "$SSH_USER@$SSH_HOST:/tmp/lunaimport-fix-nails-banner-precropped.php"
+
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "--- checking for an already-imported copy (idempotent re-run) ---";
+             EXISTING_ID=$(wp post list --post_type=attachment --title="LUNACI Nails Category Banner (cropped)" --field=ID --path="$WP_PATH" | head -1);
+             if [ -n "$EXISTING_ID" ]; then
+               MEDIA_ID="$EXISTING_ID";
+               echo "reusing existing media ID: $MEDIA_ID";
+               rm -f /tmp/lunaimport-nails-category-banner-cropped.png;
+             else
+               MEDIA_ID=$(wp media import /tmp/lunaimport-nails-category-banner-cropped.png --title="LUNACI Nails Category Banner (cropped)" --alt="LUNACI Nails" --porcelain --path="$WP_PATH");
+               echo "imported media ID: $MEDIA_ID";
+               rm -f /tmp/lunaimport-nails-category-banner-cropped.png;
+             fi;
+             if [ -z "$MEDIA_ID" ]; then echo "ABORT: media import failed"; exit 1; fi;
+             wp media regenerate "$MEDIA_ID" --yes --path="$WP_PATH";
+
+             php -l /tmp/lunaimport-fix-nails-banner-precropped.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed";
+               rm -f /tmp/lunaimport-fix-nails-banner-precropped.php;
+               exit 1;
+             fi;
+
+             LUNACI_NAILS_BANNER_CROPPED_MEDIA_ID="$MEDIA_ID" wp eval-file /tmp/lunaimport-fix-nails-banner-precropped.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/lunaimport-fix-nails-banner-precropped.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+
+             echo "";
+             echo "--- purging LiteSpeed cache (visible output) ---";
+             wp litespeed-purge all --path="$WP_PATH";
+
+             echo "OK: fix completed successfully"'

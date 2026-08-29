@@ -3,11 +3,8 @@ const { chromium } = require('playwright');
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
-  await page.route('**/*', route => {
-    const headers = { ...route.request().headers(), 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' };
-    route.continue({ headers });
-  });
-  await page.goto('https://lunacibarcelona.com/product-category/eyes/?nocache=' + Date.now(), { waitUntil: 'networkidle', timeout: 30000 });
+  await page.goto('https://lunacibarcelona.com/product-category/eyes/?nocache=' + Date.now(), { waitUntil: 'load', timeout: 45000 });
+  await page.waitForTimeout(1500);
 
   const result = await page.evaluate(() => {
     const ul = document.querySelector('ul.products');

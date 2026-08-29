@@ -1,0 +1,20 @@
+name: Diagnose - measure product card rendering via Playwright (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Playwright + Chromium
+        run: |
+          npm install playwright
+          npx playwright install --with-deps chromium
+
+      - name: Run measurement script against the live Eyes category page
+        run: node assets/luna-import/measure-product-cards.js

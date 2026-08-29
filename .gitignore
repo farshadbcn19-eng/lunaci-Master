@@ -1,0 +1,11 @@
+# Python environments
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Frame interpolation: pretrained models and generated output are large
+# binaries that should never be committed to this repo.
+tools/frame-interpolation-models/
+tools/frame-interpolation/photos/interpolated_frames/
+tools/frame-interpolation/photos/interpolated.mp4

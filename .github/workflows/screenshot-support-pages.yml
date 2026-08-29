@@ -1,0 +1,29 @@
+name: Diagnose - screenshot Shipping + Privacy Policy support pages (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Playwright + Chromium
+        run: |
+          npm install playwright
+          npx playwright install --with-deps chromium
+
+      - name: Run screenshot script against live pages (cache-busted)
+        run: node assets/luna-import/screenshot-support-pages.js
+
+      - name: Upload screenshots as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: support-page-screenshots
+          path: |
+            shipping-fullpage.png
+            privacy-policy-fullpage.png
+          retention-days: 1

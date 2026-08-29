@@ -1,0 +1,76 @@
+name: Diagnose - product grid card CSS and broken cards (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Transfer diagnostic script, run it, then dump live product card markup for eyes/lips/face
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+            -P "$SSH_PORT" "assets/luna-import/diagnose-product-grid-cards.php" \
+            "$SSH_USER@$SSH_HOST:/tmp/lunaimport-diagnose-product-grid-cards.php"
+
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "WordPress found at: $WP_PATH";
+
+             php -l /tmp/lunaimport-diagnose-product-grid-cards.php;
+             LINT_STATUS=$?;
+             if [ "$LINT_STATUS" -ne 0 ]; then
+               echo "ABORT: php -l failed";
+               rm -f /tmp/lunaimport-diagnose-product-grid-cards.php;
+               exit 1;
+             fi;
+
+             wp eval-file /tmp/lunaimport-diagnose-product-grid-cards.php --path="$WP_PATH";
+             EVAL_STATUS=$?;
+             rm -f /tmp/lunaimport-diagnose-product-grid-cards.php;
+             if [ "$EVAL_STATUS" -ne 0 ]; then
+               echo "ABORT: wp eval-file failed (exit code $EVAL_STATUS)";
+               exit 1;
+             fi;
+
+             echo "";
+             for slug in eyes lips face; do
+               echo "========================================================";
+               echo "=== /product-category/$slug/ product cards ===";
+               echo "========================================================";
+               curl -s "https://lunacibarcelona.com/product-category/$slug/" -o /tmp/lunaimport-$slug-grid.html --max-time 20;
+               echo "--- product titles found (in DOM order) ---";
+               grep -oE "woocommerce-loop-product__title\">[^<]*" /tmp/lunaimport-$slug-grid.html;
+               echo "--- count of <li class=\"product ---";
+               grep -oE "<li class=\"product " /tmp/lunaimport-$slug-grid.html | wc -l;
+               echo "--- all product image src attributes (in DOM order) ---";
+               grep -oE "<img[^>]*wp-post-image[^>]*src=\"[^\"]*\"" /tmp/lunaimport-$slug-grid.html | grep -oE "src=\"[^\"]*\"";
+               rm -f /tmp/lunaimport-$slug-grid.html;
+               echo "";
+             done;
+             echo "OK: diagnostic completed successfully"'

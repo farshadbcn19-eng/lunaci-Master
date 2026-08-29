@@ -1,0 +1,3 @@
+[submodule "tools/project-professional-portfolio"]
+	path = tools/project-professional-portfolio
+	url = https://github.com/adrianhajdin/project_professional_portfolio.git

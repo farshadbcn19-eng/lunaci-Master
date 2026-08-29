@@ -1,9 +1,9 @@
 <?php
 global $wpdb;
 $table = $wpdb->prefix . 'snippets';
-$row = $wpdb->get_row( $wpdb->prepare( "SELECT id, name, description, type, scope, code, LENGTH(code) AS code_len FROM {$table} WHERE id = %d", 6 ), ARRAY_A );
+$row = $wpdb->get_row( $wpdb->prepare( "SELECT id, name, type, scope, code, LENGTH(code) AS code_len FROM {$table} WHERE id = %d", 6 ), ARRAY_A );
 if ( ! $row ) {
-	echo "ABORT: snippet id=6 not found\n";
+	echo 'ABORT: snippet id=6 not found. last_error: ' . ( $wpdb->last_error ? $wpdb->last_error : '(none)' ) . "\n";
 	exit( 1 );
 }
 echo "id: {$row['id']}\n";

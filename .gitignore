@@ -1,3 +1,6 @@
+# Local agent memory-plugin indexes (not brand assets, machine-specific)
+.memsearch/
+
 # Python environments
 .venv/
 venv/

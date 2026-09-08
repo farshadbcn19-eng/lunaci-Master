@@ -21,6 +21,7 @@
 global $wpdb;
 
 function lunaci_describe_url( string $path ) {
+	global $wpdb;
 	$url = home_url( $path );
 	$post_id = url_to_postid( $url );
 	echo "  url_to_postid('{$path}') = " . var_export( $post_id, true ) . "\n";

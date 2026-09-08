@@ -18,6 +18,16 @@
  *    (was a 301 redirect for the missing trailing slash).
  * 3. ES homepage: the "Ver Más Vendidos" button linked to the English
  *    /products/ catalog instead of /es/productos/.
+ *
+ * Second attempt (2026-09-08). The first attempt used update_post_meta()
+ * with wp_slash(), which turned out to run into an unwanted
+ * stripslashes-equivalent on this specific meta key and corrupted the
+ * homepage's _elementor_data (recovered via restore-post57-elementor-
+ * data.php from a database backup). This version writes via
+ * $wpdb->update() directly instead - proven safe by that recovery - and
+ * adds an explicit check that the in-memory mutation actually took
+ * effect before writing anything, on top of the existing occurrence-
+ * count guard and the post-write readback comparison.
  */
 
 $changed = array();
@@ -42,9 +52,24 @@ function lunaci_find_html_widgets( array &$elements, array &$out ) {
  * Apply a guarded str_replace across every html widget's content for one
  * post: only commits if the anchor's total occurrence count across all
  * html widgets exactly matches $expected_count before the edit.
+ *
+ * Writes via $wpdb->update() directly on wp_postmeta, NOT
+ * update_post_meta(). The incident on 2026-09-08 (see
+ * restore-post57-elementor-data.php) found that update_post_meta() on
+ * this specific meta key runs the value through an unwanted
+ * stripslashes-equivalent that mangles every \n and \" in the stored
+ * JSON. $wpdb->update() uses parameterized SQL with no PHP-level
+ * slashing layer, so the string handed to it is exactly what gets
+ * stored - confirmed safe by that recovery (readback matched byte-for-
+ * byte).
  */
 function lunaci_guarded_replace( int $post_id, string $label, string $search, string $replace, int $expected_count, array &$changed, array &$skipped ) {
-	$raw = get_post_meta( $post_id, '_elementor_data', true );
+	global $wpdb;
+
+	$raw = $wpdb->get_var( $wpdb->prepare(
+		"SELECT meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s",
+		$post_id, '_elementor_data'
+	) );
 	if ( ! $raw ) {
 		$skipped[] = "{$label} (post {$post_id}: no _elementor_data)";
 		return false;
@@ -75,15 +100,36 @@ function lunaci_guarded_replace( int $post_id, string $label, string $search, st
 	unset( $settings );
 
 	$new_raw = wp_json_encode( $decoded );
-	$updated = update_post_meta( $post_id, '_elementor_data', wp_slash( $new_raw ) );
 
-	// update_post_meta returns false both on failure and on "value unchanged" -
-	// re-read to confirm the write actually landed.
-	$readback = get_post_meta( $post_id, '_elementor_data', true );
-	if ( strpos( $readback, $replace ) === false ) {
-		$skipped[] = "{$label} (post {$post_id}: update_post_meta did not persist - left as-is, needs manual check)";
+	// Confirm the in-memory mutation actually took effect (guards against a
+	// reference-propagation bug silently producing an unchanged $decoded)
+	// before writing anything.
+	if ( $new_raw === $raw || substr_count( $new_raw, $replace ) < $expected_count || strpos( $new_raw, $search ) !== false ) {
+		$skipped[] = "{$label} (post {$post_id}: in-memory mutation did not take effect as expected - refusing to write)";
 		return false;
 	}
+
+	$result = $wpdb->update(
+		$wpdb->postmeta,
+		array( 'meta_value' => $new_raw ),
+		array( 'post_id' => $post_id, 'meta_key' => '_elementor_data' )
+	);
+	if ( $result === false ) {
+		$skipped[] = "{$label} (post {$post_id}: \$wpdb->update failed: {$wpdb->last_error})";
+		return false;
+	}
+
+	// Re-read straight from the DB and compare structurally (decoded, not
+	// a raw string search) to confirm the write actually landed correctly.
+	$readback = $wpdb->get_var( $wpdb->prepare(
+		"SELECT meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s",
+		$post_id, '_elementor_data'
+	) );
+	if ( $readback !== $new_raw ) {
+		$skipped[] = "{$label} (post {$post_id}: readback does not exactly match what was written - left as-is, needs manual check)";
+		return false;
+	}
+	clean_post_cache( $post_id );
 
 	$changed[] = "{$label} (post {$post_id}: {$expected_count}x)";
 	return true;

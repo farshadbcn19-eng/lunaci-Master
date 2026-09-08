@@ -86,7 +86,11 @@ if ( ! is_array( $decoded ) ) {
 	}
 
 	// 4. Organization schema logo - import the real logo file provided by the brand
-	if ( isset( $decoded['schema']['organizationLogo'] ) && $decoded['schema']['organizationLogo'] === '' ) {
+	// Lives at searchAppearance.global.schema.organizationLogo, confirmed by
+	// diagnose-seo-audit-followups.php (which checks that path before falling
+	// back to a top-level 'schema' key - the fallback is what actually matched).
+	if ( array_key_exists( 'organizationLogo', $decoded['searchAppearance']['global']['schema'] ?? array() )
+		&& $decoded['searchAppearance']['global']['schema']['organizationLogo'] === '' ) {
 		$logo_url = null;
 
 		// Reuse a prior import if this script already ran once (idempotent).
@@ -123,21 +127,27 @@ if ( ! is_array( $decoded ) ) {
 		}
 
 		if ( $logo_url ) {
-			$decoded['schema']['organizationLogo'] = $logo_url;
-			$changed[] = "schema.organizationLogo -> {$logo_url} (brand-provided logo, imported into media library)";
+			$decoded['searchAppearance']['global']['schema']['organizationLogo'] = $logo_url;
+			$changed[] = "searchAppearance.global.schema.organizationLogo -> {$logo_url} (brand-provided logo, imported into media library)";
 		} else {
-			$skipped[] = 'schema.organizationLogo (staged logo file not found / upload failed - left untouched)';
+			$skipped[] = 'searchAppearance.global.schema.organizationLogo (staged logo file not found / upload failed - left untouched)';
 		}
 	} else {
-		$skipped[] = 'schema.organizationLogo (not empty - left untouched)';
+		$skipped[] = 'searchAppearance.global.schema.organizationLogo (not empty, or path missing - left untouched)';
 	}
 
 	// 5. Organization schema sameAs (social profiles)
+	// Use array_key_exists (not ??/isset) - the live value is explicit JSON
+	// null for every one of these fields, and isset()/?? both treat an
+	// existing null the same as a missing key, which would wrongly skip it.
 	foreach ( $same_as as $field => $url ) {
-		$current = $decoded['social']['profiles']['urls'][ $field ] ?? '__missing__';
-		if ( $current === '__missing__' ) {
+		$urls_path_exists = array_key_exists( 'urls', $decoded['social']['profiles'] ?? array() );
+		if ( ! $urls_path_exists || ! array_key_exists( $field, $decoded['social']['profiles']['urls'] ) ) {
 			$skipped[] = "social.profiles.urls.{$field} (field not found in current aioseo_options shape - left untouched)";
-		} elseif ( $current === null || $current === '' ) {
+			continue;
+		}
+		$current = $decoded['social']['profiles']['urls'][ $field ];
+		if ( $current === null || $current === '' ) {
 			$decoded['social']['profiles']['urls'][ $field ] = $url;
 			$changed[] = "social.profiles.urls.{$field} -> {$url}";
 		} else {
@@ -163,11 +173,15 @@ $descriptions = array(
 );
 
 foreach ( $descriptions as $post_id => $desc ) {
-	$current = $wpdb->get_var( $wpdb->prepare( "SELECT description FROM `{$aioseo_table}` WHERE post_id = %d", $post_id ) );
-	if ( $current === null ) {
+	// get_var() returns null both for "no matching row" and for "row exists
+	// but the column is SQL NULL" - check row existence separately so a
+	// NULL/empty description isn't mistaken for a missing row.
+	$row_exists = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$aioseo_table}` WHERE post_id = %d", $post_id ) );
+	if ( ! $row_exists ) {
 		$skipped[] = "shop meta description for post_id={$post_id} (no aioseo_posts row found)";
 		continue;
 	}
+	$current = $wpdb->get_var( $wpdb->prepare( "SELECT description FROM `{$aioseo_table}` WHERE post_id = %d", $post_id ) );
 	if ( trim( (string) $current ) === '' ) {
 		$result = $wpdb->update( $aioseo_table, array( 'description' => $desc ), array( 'post_id' => $post_id ) );
 		if ( $result !== false ) {

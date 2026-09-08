@@ -1,4 +1,4 @@
-name: Fix - SEO audit: og:image, og:site_name, shop meta desc, org logo (guarded)
+name: "Fix - SEO audit: og:image, og:site_name, shop meta desc, org logo (guarded)"
 
 on:
   workflow_dispatch:

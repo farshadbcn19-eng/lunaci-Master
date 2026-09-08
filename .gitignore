@@ -9,3 +9,9 @@ __pycache__/
 tools/frame-interpolation-models/
 tools/frame-interpolation/photos/interpolated_frames/
 tools/frame-interpolation/photos/interpolated.mp4
+
+# Claude SEO: local runtime state and the downloaded Chromium binary
+# (~650MB) from `claude-seo setup`. Machine-specific, never committed —
+# re-run `bash .agents/skills/seo/bin/claude-seo setup` to recreate.
+.agents/skills/seo/runtime-state.json
+.agents/skills/seo/ms-playwright/

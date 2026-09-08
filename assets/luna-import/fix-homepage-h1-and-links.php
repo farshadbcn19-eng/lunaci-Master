@@ -102,9 +102,16 @@ function lunaci_guarded_replace( int $post_id, string $label, string $search, st
 
 	$new_raw = wp_json_encode( $mutated );
 
-	// Confirm the mutation actually took effect before writing anything.
-	if ( $new_raw === $raw || substr_count( $new_raw, $replace ) < $expected_count || strpos( $new_raw, $search ) !== false ) {
-		$skipped[] = "{$label} (post {$post_id}: mutation did not take effect as expected in the re-encoded JSON - refusing to write)";
+	// Sanity check: the re-encoded JSON must actually differ from the
+	// original. (Deliberately NOT comparing $search/$replace against
+	// $new_raw here - that string is JSON-encoded, so its quotes/slashes
+	// are escaped as \" and \/, while $search/$replace are plain HTML text;
+	// comparing across that escaping mismatch can never match and isn't a
+	// meaningful check. $replacements_made, computed above via substr_count
+	// on the actual plain-text widget HTML before any encoding, is the
+	// real guard that the mutation happened as expected.)
+	if ( $new_raw === $raw ) {
+		$skipped[] = "{$label} (post {$post_id}: re-encoded JSON is identical to the original despite {$replacements_made} counted replacements - refusing to write, needs manual check)";
 		return false;
 	}
 

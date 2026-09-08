@@ -34,18 +34,30 @@ $changed = array();
 $skipped = array();
 
 /**
- * Recursively find every 'html' widget's settings array (by reference) in
- * an Elementor element tree, so str_replace can be applied in place.
+ * Recursively rebuild an Elementor element tree, applying str_replace to
+ * every 'html' widget's content and counting how many replacements were
+ * made. Pure value semantics (no PHP references) - returns a new array
+ * rather than mutating in place, which sidesteps the reference-chain bug
+ * an earlier version of this script hit (occurrence counting worked, but
+ * &$el['settings'] references taken inside a recursive foreach-by-
+ * reference did not reliably propagate mutations back to the caller's
+ * $decoded array, so the whole edit silently no-op'd).
  */
-function lunaci_find_html_widgets( array &$elements, array &$out ) {
-	foreach ( $elements as &$el ) {
+function lunaci_replace_in_html_widgets( array $elements, string $search, string $replace, int &$replacements_made ) {
+	foreach ( $elements as $i => $el ) {
 		if ( isset( $el['widgetType'], $el['settings']['html'] ) && $el['widgetType'] === 'html' ) {
-			$out[] = &$el['settings'];
+			$count = substr_count( $el['settings']['html'], $search );
+			if ( $count > 0 ) {
+				$el['settings']['html'] = str_replace( $search, $replace, $el['settings']['html'] );
+				$replacements_made += $count;
+			}
 		}
 		if ( ! empty( $el['elements'] ) ) {
-			lunaci_find_html_widgets( $el['elements'], $out );
+			$el['elements'] = lunaci_replace_in_html_widgets( $el['elements'], $search, $replace, $replacements_made );
 		}
+		$elements[ $i ] = $el;
 	}
+	return $elements;
 }
 
 /**
@@ -80,32 +92,19 @@ function lunaci_guarded_replace( int $post_id, string $label, string $search, st
 		return false;
 	}
 
-	$widgets = array();
-	lunaci_find_html_widgets( $decoded, $widgets );
+	$replacements_made = 0;
+	$mutated = lunaci_replace_in_html_widgets( $decoded, $search, $replace, $replacements_made );
 
-	$total_before = 0;
-	foreach ( $widgets as &$settings ) {
-		$total_before += substr_count( $settings['html'], $search );
-	}
-	unset( $settings );
-
-	if ( $total_before !== $expected_count ) {
-		$skipped[] = "{$label} (post {$post_id}: found {$total_before} occurrences of the anchor, expected {$expected_count} - left untouched)";
+	if ( $replacements_made !== $expected_count ) {
+		$skipped[] = "{$label} (post {$post_id}: found {$replacements_made} occurrences of the anchor, expected {$expected_count} - left untouched)";
 		return false;
 	}
 
-	foreach ( $widgets as &$settings ) {
-		$settings['html'] = str_replace( $search, $replace, $settings['html'] );
-	}
-	unset( $settings );
+	$new_raw = wp_json_encode( $mutated );
 
-	$new_raw = wp_json_encode( $decoded );
-
-	// Confirm the in-memory mutation actually took effect (guards against a
-	// reference-propagation bug silently producing an unchanged $decoded)
-	// before writing anything.
+	// Confirm the mutation actually took effect before writing anything.
 	if ( $new_raw === $raw || substr_count( $new_raw, $replace ) < $expected_count || strpos( $new_raw, $search ) !== false ) {
-		$skipped[] = "{$label} (post {$post_id}: in-memory mutation did not take effect as expected - refusing to write)";
+		$skipped[] = "{$label} (post {$post_id}: mutation did not take effect as expected in the re-encoded JSON - refusing to write)";
 		return false;
 	}
 
@@ -135,35 +134,38 @@ function lunaci_guarded_replace( int $post_id, string $label, string $search, st
 	return true;
 }
 
-// 1. Hero wordmark -> H1, EN (post 57) and ES (post 772). Single atomic
-// replace of the whole element (open tag through close tag) so there's no
-// intermediate mismatched-tag state if the anchor doesn't match exactly.
-foreach ( array( 57 => 'EN', 772 => 'ES' ) as $post_id => $lang ) {
-	lunaci_guarded_replace(
-		$post_id,
-		"hero wordmark div -> h1 ({$lang})",
-		"<div class=\"ln-hero__wordmark\">\n      <span class=\"big\">Lunaci</span>\n      <span class=\"small\">Barcelona</span>\n    </div>",
-		"<h1 class=\"ln-hero__wordmark\">\n      <span class=\"big\">Lunaci</span>\n      <span class=\"small\">Barcelona</span>\n    </h1>",
-		1,
-		$changed,
-		$skipped
-	);
-}
-
-// 2. EN homepage: /about -> /about-us/, /contact -> /contact/ (redirect-hop cleanup)
-lunaci_guarded_replace( 57, 'nav+teaser+footer /about links -> /about-us/', 'href="https://lunacibarcelona.com/about"', 'href="https://lunacibarcelona.com/about-us/"', 3, $changed, $skipped );
-lunaci_guarded_replace( 57, 'nav+teaser+footer /contact links -> /contact/', 'href="https://lunacibarcelona.com/contact"', 'href="https://lunacibarcelona.com/contact/"', 3, $changed, $skipped );
-
-// 3. ES homepage: "Ver Más Vendidos" -> ES catalog
+// 1. Hero wordmark -> H1, EN only (post 57). ES (post 772) no longer has
+// a <div class="ln-hero__wordmark"> element at all - only the CSS rule
+// remains, meaning the ES hero section's markup has diverged from EN
+// since the original audit (confirmed via diagnose-es-wordmark-block.php:
+// no exact-tag match found, only the .ln-hero__wordmark{...} CSS
+// selector). That needs its own fresh look, not a copy of the EN fix -
+// scoping this run to EN only. Single atomic replace of the whole
+// element (open tag through close tag) so there's no intermediate
+// mismatched-tag state if the anchor doesn't match exactly.
 lunaci_guarded_replace(
-	772,
-	'"Ver Más Vendidos" button -> /es/productos/',
-	'href="https://lunacibarcelona.com/products/" class="btn-out ln-rv">Ver Más Vendidos</a>',
-	'href="https://lunacibarcelona.com/es/productos/" class="btn-out ln-rv">Ver Más Vendidos</a>',
+	57,
+	'hero wordmark div -> h1 (EN)',
+	"<div class=\"ln-hero__wordmark\">\n      <span class=\"big\">Lunaci</span>\n      <span class=\"small\">Barcelona</span>\n    </div>",
+	"<h1 class=\"ln-hero__wordmark\">\n      <span class=\"big\">Lunaci</span>\n      <span class=\"small\">Barcelona</span>\n    </h1>",
 	1,
 	$changed,
 	$skipped
 );
+
+// 2. EN homepage: /about -> /about-us/, /contact -> /contact/ (redirect-hop
+// cleanup). Counts re-verified directly against the live page after
+// recovery via diagnose-exact-link-text.php: /about is 3x (nav, mid-page
+// teaser, footer); /contact is 2x within this document's html widget
+// (nav, footer) - the live-rendered page's earlier "3x" count for
+// /contact included something outside this widget entirely (not
+// present in the stored source), so 2 is the correct target here.
+lunaci_guarded_replace( 57, 'nav+teaser+footer /about links -> /about-us/', 'href="https://lunacibarcelona.com/about"', 'href="https://lunacibarcelona.com/about-us/"', 3, $changed, $skipped );
+lunaci_guarded_replace( 57, 'nav+footer /contact links -> /contact/', 'href="https://lunacibarcelona.com/contact"', 'href="https://lunacibarcelona.com/contact/"', 2, $changed, $skipped );
+
+// 3. ES homepage "Ver Más Vendidos" button: already fixed (points to
+// /es/productos/ already, confirmed via diagnose-exact-link-text.php) -
+// likely edited by someone else since the original audit. Nothing to do.
 
 echo "\n--- CHANGED (" . count( $changed ) . ") ---\n";
 foreach ( $changed as $c ) {

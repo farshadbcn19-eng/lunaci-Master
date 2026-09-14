@@ -15,3 +15,9 @@ tools/frame-interpolation/photos/interpolated.mp4
 # re-run `bash .agents/skills/seo/bin/claude-seo setup` to recreate.
 .agents/skills/seo/runtime-state.json
 .agents/skills/seo/ms-playwright/
+
+# Google Flow API credentials — set via GitHub Actions secrets instead,
+# never commit real values here.
+tools/google-flow/.env
+tools/google-flow/output/
+output/

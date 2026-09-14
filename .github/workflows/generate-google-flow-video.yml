@@ -1,0 +1,34 @@
+name: Generate Google Flow video
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: "Text prompt for the video"
+        required: true
+        type: string
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r tools/google-flow/requirements.txt
+
+      - name: Generate video
+        env:
+          GOOGLE_FLOW_API_KEY: ${{ secrets.GOOGLE_FLOW_API_KEY }}
+          GOOGLE_FLOW_API_BASE_URL: ${{ secrets.GOOGLE_FLOW_API_BASE_URL }}
+        run: python tools/google-flow/generate_video.py "${{ inputs.prompt }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: google-flow-output
+          path: output/

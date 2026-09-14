@@ -1,24 +1,27 @@
-# Google Flow video generation
+# Google Flow (Veo) video generation
 
-Generates LUNASI product/brand videos through the Google Flow API. Runs
-as a GitHub Actions workflow so the API key never touches this
-repository or the chat history — it lives only as a GitHub Actions
-secret.
+Generates LUNASI product/brand videos with Veo, the model behind Google
+Flow, through the Gemini API. Runs as a GitHub Actions workflow so the
+API key never touches this repository or the chat history — it lives
+only as a GitHub Actions secret.
+
+Docs: https://ai.google.dev/gemini-api/docs/video
 
 ## One-time setup
 
-1. In the repo on GitHub: **Settings → Secrets and variables → Actions →
+1. Get a Gemini API key from Google AI Studio: https://aistudio.google.com/api-keys
+2. In the repo on GitHub: **Settings → Secrets and variables → Actions →
    New repository secret**, add:
-   - `GOOGLE_FLOW_API_KEY` — your Google Flow API key
-   - `GOOGLE_FLOW_API_BASE_URL` — the API's base URL (from Google Flow's
-     API reference)
-2. That's it — no key is ever pasted into code or committed.
+   - `GOOGLE_FLOW_API_KEY` — the API key from step 1
+   - `GOOGLE_FLOW_API_BASE_URL` — `https://generativelanguage.googleapis.com`
+3. That's it — no key is ever pasted into code or committed.
 
 ## Running it
 
 GitHub → **Actions** tab → **Generate Google Flow video** → **Run
 workflow** → enter a prompt → run. Download the result from the run's
-**Artifacts** section when it finishes.
+**Artifacts** section when it finishes (Veo generation typically takes
+a few minutes).
 
 ## Local testing (optional)
 
@@ -30,12 +33,13 @@ set -a && source .env && set +a
 python generate_video.py "a 6-second close-up of LUNASI lip gloss catching light"
 ```
 
-## Note on the API contract
+## Configuration
 
-`generate_video.py` currently assumes bearer-token auth and a single
-`POST {base_url}/generate` endpoint returning JSON. That's a
-placeholder — confirm the real request/response shape against Google
-Flow's API reference and adjust `GoogleFlowClient` in
-`generate_video.py` accordingly (auth header, endpoint path, payload
-fields, and how the generated video is retrieved once rendering
-completes).
+| Variable | Purpose | Default |
+|---|---|---|
+| `GOOGLE_FLOW_API_KEY` | Gemini API key (required) | — |
+| `GOOGLE_FLOW_API_BASE_URL` | Gemini API base URL (required) | — |
+| `GOOGLE_FLOW_MODEL` | Veo model to call | `veo-3.0-generate-001` |
+
+If the Gemini API's request/response shape changes, adjust
+`GoogleFlowClient` in `generate_video.py` against the docs link above.

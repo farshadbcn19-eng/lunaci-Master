@@ -128,3 +128,134 @@ cd ../..
 git add tools/frame-interpolation
 git commit -m "Bump frame-interpolation submodule"
 ```
+
+## longcat-video
+
+[meituan-longcat/LongCat-Video](https://github.com/meituan-longcat/LongCat-Video)
+is a 13.6B-parameter foundational video generation model unifying
+*Text-to-Video*, *Image-to-Video*, and *Video-Continuation* in one model, plus
+an *Avatar* variant for audio-driven character animation. Intended use here:
+turning product stills, mood-board prompts, and brand copy into short-form
+video content (ads, social, and character/cinematography work referenced in
+`brand-docs/LUNACI_LUNA001_Character_Bible_V4.2_Cinematography.docx`) without
+depending on a proprietary video-gen vendor. Model weights and code are
+**MIT-licensed** — safe for commercial LUNACI use.
+
+It's wired in as a git submodule, so this repo tracks which upstream commit we
+use without carrying its (large, frequently-updated) code or model weights in
+our own history — same rationale as `frame-interpolation` above.
+
+**Status: added, not run-verified.** Unlike `frame-interpolation`, this has
+*not* been run end-to-end in the dev container — the container has no GPU and
+only ~30GB free disk, and this model needs both (see reality check below).
+Before relying on it for production content, run at least one generation
+end-to-end on real GPU hardware and update this status.
+
+### First-time clone
+
+```bash
+git submodule update --init --recursive
+```
+
+### Environment setup
+
+```bash
+cd tools/longcat-video
+
+# create conda environment
+conda create -n longcat-video python=3.10
+conda activate longcat-video
+
+# install torch (pick the wheel matching your CUDA version)
+pip install torch==2.6.0+cu124 torchvision==0.21.0+cu124 torchaudio==2.6.0 \
+  --index-url https://download.pytorch.org/whl/cu124
+
+# install flash-attn-2
+pip install ninja psutil packaging
+pip install flash_attn==2.7.4.post1
+
+# core requirements
+pip install -r requirements.txt
+
+# only needed for the Avatar (audio-driven) variant
+conda install -c conda-forge librosa ffmpeg
+pip install -r requirements_avatar.txt
+```
+
+FlashAttention-2 is the default; swap to FlashAttention-3 or xformers via
+`./weights/LongCat-Video/dit/config.json` if you've installed one of those
+instead.
+
+### GPU / VRAM reality check
+
+This is a 13.6B-parameter dense diffusion transformer, not a small model:
+
+- **Single-GPU inference works** (`torchrun run_demo_*.py --checkpoint_dir=...`)
+  but needs a high-VRAM card (24GB+; more at 720p). Multi-GPU
+  (`--context_parallel_size=N`) is what upstream benchmarks against and is
+  recommended for 720p/30fps generation "within minutes."
+- **CPU inference is not a supported path** for this model (unlike
+  frame-interpolation) — don't attempt it.
+- **Model weights alone run tens of GB** per checkpoint (foundational +
+  Avatar + Avatar-1.5 together are triple that) — download only the
+  checkpoint(s) you need, and expect to need real disk headroom, not the
+  ~30GB this dev container has free.
+
+Run this on a CUDA box (local GPU workstation or a cloud GPU instance), not
+in this sandboxed dev container.
+
+### Model download
+
+Weights aren't bundled with the source — download via `huggingface-cli` into
+a directory *outside* this repo (e.g. `tools/longcat-video-weights/`, already
+git-ignored):
+
+```bash
+pip install "huggingface_hub[cli]"
+huggingface-cli download meituan-longcat/LongCat-Video \
+  --local-dir ./weights/LongCat-Video
+```
+
+Only pull `LongCat-Video-Avatar` / `LongCat-Video-Avatar-1.5` as well if you
+need audio-driven character animation — each is a separate, similarly large
+download.
+
+### Generating a brand video clip
+
+```bash
+cd tools/longcat-video
+
+# Text-to-Video, single GPU
+torchrun run_demo_text_to_video.py \
+  --checkpoint_dir=./weights/LongCat-Video --enable_compile
+
+# Image-to-Video, single GPU (turn a product still into motion)
+torchrun run_demo_image_to_video.py \
+  --checkpoint_dir=./weights/LongCat-Video --enable_compile
+
+# Multi-GPU (recommended for 720p) — add --context_parallel_size=N
+torchrun --nproc_per_node=2 run_demo_image_to_video.py \
+  --context_parallel_size=2 --checkpoint_dir=./weights/LongCat-Video \
+  --enable_compile
+```
+
+A Streamlit UI is also available for interactive iteration:
+
+```bash
+streamlit run ./run_streamlit.py --server.fileWatcherType none --server.headless=false
+```
+
+See the [upstream README](https://github.com/meituan-longcat/LongCat-Video)
+for Video-Continuation, Long-Video, Interactive-Video, and Avatar (audio-driven)
+run commands and flags.
+
+### Updating the submodule
+
+```bash
+cd tools/longcat-video
+git fetch origin
+git checkout origin/main   # or a specific pinned commit
+cd ../..
+git add tools/longcat-video
+git commit -m "Bump longcat-video submodule"
+```

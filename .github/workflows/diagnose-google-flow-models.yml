@@ -1,0 +1,24 @@
+name: Diagnose Google Flow (Gemini) model access
+
+on:
+  workflow_dispatch:
+
+jobs:
+  list-models:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r tools/google-flow/requirements.txt
+
+      - name: List accessible models
+        env:
+          GOOGLE_FLOW_API_KEY: ${{ secrets.GOOGLE_FLOW_API_KEY }}
+          GOOGLE_FLOW_API_BASE_URL: ${{ secrets.GOOGLE_FLOW_API_BASE_URL }}
+        run: python tools/google-flow/list_models.py

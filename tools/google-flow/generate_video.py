@@ -46,13 +46,15 @@ class GoogleFlowClient:
             },
             timeout=60,
         )
-        start.raise_for_status()
+        if not start.ok:
+            raise RuntimeError(f"{start.status_code} error starting generation: {start.text}")
         operation_name = start.json()["name"]
 
         for _ in range(MAX_POLLS):
             time.sleep(POLL_SECONDS)
             poll = self.session.get(f"{self.base_url}/v1beta/{operation_name}", timeout=30)
-            poll.raise_for_status()
+            if not poll.ok:
+                raise RuntimeError(f"{poll.status_code} error polling operation: {poll.text}")
             status = poll.json()
             if status.get("done"):
                 if "error" in status:

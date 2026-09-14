@@ -39,7 +39,7 @@ python generate_video.py "a 6-second close-up of LUNASI lip gloss catching light
 |---|---|---|
 | `GOOGLE_FLOW_API_KEY` | Gemini API key (required) | — |
 | `GOOGLE_FLOW_API_BASE_URL` | Gemini API base URL (required) | — |
-| `GOOGLE_FLOW_MODEL` | Veo model to call | `veo-3.0-generate-001` |
+| `GOOGLE_FLOW_MODEL` | Veo model to call | `veo-3.1-generate-preview` (also available: `veo-3.1-fast-generate-preview`, `veo-3.1-lite-generate-preview`) |
 
 If the Gemini API's request/response shape changes, adjust
 `GoogleFlowClient` in `generate_video.py` against the docs link above.

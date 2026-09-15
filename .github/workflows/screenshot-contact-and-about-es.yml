@@ -1,0 +1,33 @@
+name: Screenshot Contact hero and About Us ES (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Playwright + Chromium
+        run: |
+          npm install playwright
+          npx playwright install --with-deps chromium
+
+      - name: Run screenshot script against live pages (cache-busted)
+        run: node assets/luna-import/screenshot-contact-and-about-es.js
+
+      - name: Upload screenshots as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: contact-and-about-es-screenshots
+          path: |
+            contact-mobile-top.png
+            contact-desktop-top.png
+            contact-mobile-fullpage.png
+            about-es-mobile-fullpage.png
+            about-es-desktop-fullpage.png
+            about-en-desktop-top.png
+          retention-days: 1

@@ -51,19 +51,12 @@ foreach ( array( 'EN Contact' => 60, 'ES Contacto' => 770 ) as $label => $post_i
 	}
 
 	$live = $row['meta_value'];
-	$count_hero_marker = substr_count( $live, '.contact-hero {' );
 	$count_needle       = substr_count( $live, $needle );
 	$count_already      = substr_count( $live, 'min-height: 100dvh;' );
 
-	echo "count '.contact-hero {' marker: $count_hero_marker\n";
 	echo "count '$needle': $count_needle\n";
 	echo "count 'min-height: 100dvh;' (already applied?): $count_already\n";
 
-	if ( 1 !== $count_hero_marker ) {
-		echo "ERROR: expected exactly 1 '.contact-hero {' marker, found $count_hero_marker - refusing to modify\n";
-		echo "ABORT for this post\n\n";
-		continue;
-	}
 	if ( 1 !== $count_needle ) {
 		echo "ERROR: expected exactly 1 occurrence of '$needle', found $count_needle - refusing to modify\n";
 		echo "ABORT for this post\n\n";

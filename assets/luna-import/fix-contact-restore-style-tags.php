@@ -36,6 +36,21 @@ $before_nav_anchor   = "\n\n\n\n\n\n<!-- NAV -->";
 $corrupted_gt = '.elementor-element-fa1bfa7.e-con-boxed &gt; .e-con-inner';
 $restored_gt  = '.elementor-element-fa1bfa7.e-con-boxed > .e-con-inner';
 
+function lunaci_frst_set_widget_html( &$node, $target_id, $new_html ) {
+	if ( is_array( $node ) ) {
+		if ( isset( $node['id'] ) && $node['id'] === $target_id && isset( $node['settings']['html'] ) ) {
+			$node['settings']['html'] = $new_html;
+			return true;
+		}
+		foreach ( $node as $key => &$child ) {
+			if ( lunaci_frst_set_widget_html( $child, $target_id, $new_html ) ) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 $overall_success = true;
 
 foreach ( $pages as $page_id => $label ) {
@@ -141,21 +156,6 @@ foreach ( $pages as $page_id => $label ) {
 		continue;
 	}
 	echo "computed new widget html length: " . strlen( $new_html ) . " (was " . strlen( $widget_html ) . ")\n";
-
-	function lunaci_frst_set_widget_html( &$node, $target_id, $new_html ) {
-		if ( is_array( $node ) ) {
-			if ( isset( $node['id'] ) && $node['id'] === $target_id && isset( $node['settings']['html'] ) ) {
-				$node['settings']['html'] = $new_html;
-				return true;
-			}
-			foreach ( $node as $key => &$child ) {
-				if ( lunaci_frst_set_widget_html( $child, $target_id, $new_html ) ) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
 
 	$decoded_fresh = json_decode( $fresh_raw, true );
 	$updated_ok    = lunaci_frst_set_widget_html( $decoded_fresh, $widget_id, $new_html );

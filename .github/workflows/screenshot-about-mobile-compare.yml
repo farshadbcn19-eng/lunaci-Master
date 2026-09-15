@@ -1,0 +1,29 @@
+name: Screenshot About Us EN vs ES mobile height compare (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Playwright + Chromium
+        run: |
+          npm install playwright
+          npx playwright install --with-deps chromium
+
+      - name: Run screenshot script against live EN and ES About Us pages
+        run: node assets/luna-import/screenshot-about-mobile-compare.js
+
+      - name: Upload screenshots as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: about-mobile-compare-screenshots
+          path: |
+            about-en-mobile-fullpage.png
+            about-es-mobile-fullpage-2.png
+          retention-days: 1

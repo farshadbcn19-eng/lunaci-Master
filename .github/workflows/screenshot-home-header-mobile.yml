@@ -1,0 +1,30 @@
+name: Screenshot Home header (mobile + desktop, read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Playwright + Chromium
+        run: |
+          npm install playwright
+          npx playwright install --with-deps chromium
+
+      - name: Run screenshot script against live homepage (cache-busted)
+        run: node assets/luna-import/screenshot-home-header-mobile.js
+
+      - name: Upload screenshots as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: home-header-screenshots
+          path: |
+            home-mobile-top.png
+            home-mobile-nav-crop.png
+            home-desktop-top.png
+          retention-days: 1

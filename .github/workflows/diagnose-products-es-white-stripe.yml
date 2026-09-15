@@ -1,0 +1,29 @@
+name: Diagnose Products ES white stripe layout (read-only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Playwright + Chromium
+        run: |
+          npm install playwright
+          npx playwright install --with-deps chromium
+
+      - name: Run layout diagnostic against live ES Products page
+        run: node assets/luna-import/diagnose-products-es-white-stripe.js
+
+      - name: Upload screenshots as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: products-es-white-stripe-screenshots
+          path: |
+            products-es-mobile-top.png
+            products-es-mobile-left-edge.png
+          retention-days: 1

@@ -16,12 +16,16 @@ const { chromium, devices } = require('playwright');
   await page.screenshot({ path: 'home-mobile-top.png' });
   console.log('Saved home-mobile-top.png');
 
-  const navEl = await page.$('.ln-nav, #lnNav, #lunaciGlobalNav');
-  if (navEl) {
-    await navEl.screenshot({ path: 'home-mobile-nav-crop.png' });
-    console.log('Saved home-mobile-nav-crop.png');
-  } else {
-    console.log('WARNING: nav element not found on home page');
+  try {
+    const navEl = await page.$('#lunaciGlobalNav');
+    if (navEl) {
+      await navEl.screenshot({ path: 'home-mobile-nav-crop.png', timeout: 5000 });
+      console.log('Saved home-mobile-nav-crop.png');
+    } else {
+      console.log('WARNING: #lunaciGlobalNav not found on home page');
+    }
+  } catch (err) {
+    console.log('WARNING: nav crop screenshot failed, continuing: ' + err.message);
   }
 
   const desktopContext = await browser.newContext({ viewport: { width: 1400, height: 1000 } });

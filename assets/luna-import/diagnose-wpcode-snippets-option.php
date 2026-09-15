@@ -1,69 +1,58 @@
 <?php
 /**
- * Read-only diagnostic: check whether WPCode caches/mirrors snippet
- * content in the `wpcode_snippets` wp_options row (found in an earlier
- * search alongside post 483), and whether that cached copy still holds
- * the OLD (pre-!important) .prod-img CSS even though post 483's own
- * post_content was confirmed updated in the database. Also dumps
- * post 483's post_modified/post_modified_gmt, since a raw $wpdb->update()
- * does not bump those the way wp_update_post() would - if WPCode keys any
- * cache-busting logic off modified time, that would explain stale output.
+ * Read-only: inspect the structure of the 'wpcode_snippets' option (found
+ * via diagnose-wpcode-caching.php), which is almost certainly WPCode's own
+ * front-end performance cache/mirror of all active snippets, separate from
+ * wp_posts. This is the missing piece explaining why our raw
+ * $wpdb->update() writes to wp_posts (483 etc.) are correct in the database
+ * but never appear on the live front-end.
+ *
+ * Purely read-only. Does NOT modify the option.
  */
 
-global $wpdb;
+$data = get_option( 'wpcode_snippets' );
 
-echo "=== post 483 post_content (fresh read) ===\n";
-$row = $wpdb->get_row(
-	$wpdb->prepare( "SELECT post_content, post_modified, post_modified_gmt, post_status FROM {$wpdb->posts} WHERE ID = %d", 483 ),
-	ARRAY_A
-);
-if ( ! $row ) {
-	echo "ERROR: post 483 not found\n";
+echo "type: " . gettype( $data ) . "\n";
+if ( is_array( $data ) ) {
+	echo "top-level array count: " . count( $data ) . "\n";
+	echo "top-level keys: " . implode( ', ', array_slice( array_keys( $data ), 0, 20 ) ) . "\n\n";
+
+	// Try to find the entry for post 483 by looking at structure.
+	foreach ( $data as $key => $value ) {
+		if ( (string) $key === '483' || ( is_array( $value ) && isset( $value['id'] ) && 483 == $value['id'] ) ) {
+			echo "--- Found entry keyed/id-matching 483 ---\n";
+			echo "key: $key\n";
+			echo "value type: " . gettype( $value ) . "\n";
+			if ( is_array( $value ) ) {
+				foreach ( $value as $k => $v ) {
+					$preview = is_string( $v ) ? substr( $v, 0, 200 ) : json_encode( $v );
+					echo "  [$k] (" . gettype( $v ) . ", len=" . ( is_string( $v ) ? strlen( $v ) : '-' ) . "): " . $preview . "\n";
+				}
+			}
+			echo "\n";
+		}
+	}
+
+	// Also dump first entry structure generically, to understand shape if 483 lookup above found nothing.
+	echo "--- First array entry (structure sample) ---\n";
+	$first_key = array_key_first( $data );
+	echo "first_key: $first_key\n";
+	$first_val = $data[ $first_key ];
+	echo "first_val type: " . gettype( $first_val ) . "\n";
+	if ( is_array( $first_val ) ) {
+		foreach ( $first_val as $k => $v ) {
+			$preview = is_string( $v ) ? substr( $v, 0, 150 ) : json_encode( $v );
+			echo "  [$k]: $preview\n";
+		}
+	}
 } else {
-	echo "post_modified: {$row['post_modified']}   post_modified_gmt: {$row['post_modified_gmt']}   status: {$row['post_status']}\n";
-	$has_important = false !== strpos( $row['post_content'], 'height: 100% !important' );
-	echo "post_content contains 'height: 100% !important': " . ( $has_important ? 'YES' : 'no' ) . "\n";
-	$pos = strpos( $row['post_content'], '.prod-img {' );
-	if ( false !== $pos ) {
-		echo "fragment: " . substr( $row['post_content'], $pos, 200 ) . "\n";
-	}
+	echo "raw value (first 2000 chars): " . substr( (string) $data, 0, 2000 ) . "\n";
 }
 
-echo "\n=== wp_options rows with option_name LIKE '%wpcode%' ===\n";
-$options = $wpdb->get_results(
-	"SELECT option_name, LENGTH(option_value) AS len FROM {$wpdb->options} WHERE option_name LIKE '%wpcode%'",
-	ARRAY_A
-);
-foreach ( $options as $opt ) {
-	echo "{$opt['option_name']}  (length {$opt['len']})\n";
-}
-
-echo "\n=== searching each wpcode-related option's value for '.prod-img' ===\n";
-foreach ( $options as $opt ) {
-	$val = $wpdb->get_var(
-		$wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $opt['option_name'] )
-	);
-	if ( null === $val ) continue;
-	$count = substr_count( $val, '.prod-img' );
-	if ( $count > 0 ) {
-		echo "--- {$opt['option_name']}: {$count} occurrence(s) of '.prod-img' ---\n";
-		$pos = strpos( $val, '.prod-img' );
-		// dump a window, and specifically check for !important nearby
-		$window = substr( $val, max( 0, $pos - 50 ), 500 );
-		echo "window: " . $window . "\n";
-		echo "contains 'height: 100% !important' in this option: " . ( false !== strpos( $val, 'height: 100% !important' ) ? 'YES' : 'no' ) . "\n\n";
-	} else {
-		echo "{$opt['option_name']}: no occurrence of '.prod-img'\n";
-	}
-}
-
-echo "\n=== searching for ANY other wp_posts rows (post_type='wpcode') containing '.prod-img' besides 483 ===\n";
-$other = $wpdb->get_results(
-	"SELECT ID, post_title, post_status, post_modified FROM {$wpdb->posts} WHERE post_type = 'wpcode' AND post_content LIKE '%.prod-img%'",
-	ARRAY_A
-);
-foreach ( $other as $o ) {
-	echo "post {$o['ID']} '{$o['post_title']}' status={$o['post_status']} modified={$o['post_modified']}\n";
-}
+echo "\n--- Does the option contain our new rule strings at all? ---\n";
+$serialized = maybe_serialize( $data );
+echo "count 'page-id-771': " . substr_count( $serialized, 'page-id-771' ) . "\n";
+echo "count 'page-id-60 header': " . substr_count( $serialized, 'page-id-60 header' ) . "\n";
+echo "count 'page-id-61': " . substr_count( $serialized, 'page-id-61' ) . "\n";
 
 echo "\nOK: read-only diagnostic complete, no writes performed\n";

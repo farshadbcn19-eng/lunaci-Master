@@ -1,56 +1,42 @@
 <?php
 /**
- * Read-only: fresh live snapshot of WPCode snippet 8 ("LUNACI Global Header
- * (unified nav)"), a custom post whose post_content holds JS/CSS injected via
- * wp_footer on every page. It already hides the OLD theme header via
- * '.site-header, header.site-header, .elementor-location-header, #masthead
- * { display: none !important; }' but that rule does not match the page-local
- * <header> (Contact, bare) or <header class="lp-header"> (Products) blocks
- * confirmed this session. This diagnostic locates that exact rule and its
- * surrounding context so a safe, scoped CSS-only extension can be written
- * (hiding the redundant local headers by page ID, instead of editing the
- * large embedded HTML documents directly).
+ * Read-only: locate the WPCode "LUNACI Global Header (unified nav)" snippet
+ * by content/title search instead of assuming a specific wp_posts ID (the
+ * prior assumption of ID=8 was wrong - no such wp_posts row exists).
+ * WPCode Lite stores snippets as post_type 'wpcode' in wp_posts.
  */
 
 global $wpdb;
-$post_id = 8;
 
-$row = $wpdb->get_row(
-	$wpdb->prepare( "SELECT ID, post_status, post_type, post_content FROM {$wpdb->posts} WHERE ID = %d", $post_id ),
+echo "--- All wp_posts rows with post_type='wpcode' ---\n";
+$rows = $wpdb->get_results(
+	"SELECT ID, post_title, post_status, LENGTH(post_content) AS content_len FROM {$wpdb->posts} WHERE post_type = 'wpcode' ORDER BY ID",
 	ARRAY_A
 );
-
-if ( ! $row ) {
-	echo "ERROR: no wp_posts row found with ID=$post_id\n";
-	exit( 1 );
-}
-
-$content = $row['post_content'];
-echo "post_type: {$row['post_type']}\n";
-echo "post_status: {$row['post_status']}\n";
-echo "content length: " . strlen( $content ) . "\n";
-echo "contains CRLF line endings: " . ( false !== strpos( $content, "\r\n" ) ? 'YES' : 'NO' ) . "\n\n";
-
-$needle = 'display: none !important';
-echo "count 'display: none !important': " . substr_count( $content, $needle ) . "\n\n";
-
-$marker = '.site-header';
-$pos = strpos( $content, $marker );
-if ( false !== $pos ) {
-	echo "--- 60 bytes BEFORE '.site-header' ---\n";
-	echo substr( $content, max( 0, $pos - 60 ), 60 ) . "\n";
-	echo "--- end ---\n\n";
-
-	echo "--- 400 bytes FROM '.site-header' ---\n";
-	echo substr( $content, $pos, 400 ) . "\n";
-	echo "--- end ---\n\n";
+if ( ! $rows ) {
+	echo "no rows with post_type='wpcode' found\n";
 } else {
-	echo "'.site-header' not found in this snippet's content\n\n";
+	foreach ( $rows as $r ) {
+		echo "ID={$r['ID']}  status={$r['post_status']}  len={$r['content_len']}  title=\"{$r['post_title']}\"\n";
+	}
 }
 
-echo "count 'page-id-': " . substr_count( $content, 'page-id-' ) . "\n";
-echo "count '.lp-header': " . substr_count( $content, '.lp-header' ) . "\n\n";
+echo "\n--- Search ALL post types for '.site-header' AND 'nav-cta'/'lp-header' markers ---\n";
+$candidates = $wpdb->get_results(
+	"SELECT ID, post_type, post_title, post_status, LENGTH(post_content) AS content_len
+	 FROM {$wpdb->posts}
+	 WHERE post_content LIKE '%.site-header%'
+	    OR post_content LIKE '%lunaciGlobalNav%'
+	    OR post_content LIKE '%ln-nav%'
+	 ORDER BY ID",
+	ARRAY_A
+);
+if ( ! $candidates ) {
+	echo "no candidates found\n";
+} else {
+	foreach ( $candidates as $r ) {
+		echo "ID={$r['ID']}  type={$r['post_type']}  status={$r['post_status']}  len={$r['content_len']}  title=\"{$r['post_title']}\"\n";
+	}
+}
 
-echo "md5 of full content: " . md5( $content ) . "\n";
-
-echo "OK: read-only diagnostic complete, no writes performed\n";
+echo "\nOK: read-only diagnostic complete, no writes performed\n";

@@ -59,13 +59,13 @@ if ( 1 !== $count_anchor ) {
 	exit( 1 );
 }
 
-$count_lp_header  = substr_count( $live, '.lp-header' );
-$count_page60hdr  = substr_count( $live, 'page-id-60 header' );
-echo "count '.lp-header': $count_lp_header\n";
-echo "count 'page-id-60 header': $count_page60hdr\n";
+$new_rule = 'body.page-id-60 header, body.page-id-770 header, body.page-id-61 .lp-header, body.page-id-771 .lp-header { display: none !important; }';
 
-if ( 0 !== $count_lp_header || 0 !== $count_page60hdr ) {
-	echo "ERROR: header-hiding rule appears to already exist - refusing to modify\n";
+$count_new_rule = substr_count( $live, $new_rule );
+echo "count of exact new rule (already applied?): $count_new_rule\n";
+
+if ( 0 !== $count_new_rule ) {
+	echo "ERROR: header-hiding rule appears to already exist verbatim - refusing to modify\n";
 	echo "ABORT\n";
 	exit( 1 );
 }
@@ -74,8 +74,6 @@ echo "OK: preconditions match exactly (fix not yet applied)\n";
 echo "\n==========================================================================\n";
 echo "STEP B: COMMIT - append duplicate-header-hiding rule after the ES background rule\n";
 echo "==========================================================================\n";
-
-$new_rule = 'body.page-id-60 header, body.page-id-770 header, body.page-id-61 .lp-header, body.page-id-771 .lp-header { display: none !important; }';
 
 $needle      = $anchor;
 $replacement = $anchor . "\r\n\r\n" . $new_rule;

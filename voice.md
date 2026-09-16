@@ -1,5 +1,7 @@
 # Voice Profile
 
+> **Project override:** every installed content skill carries a hardcoded "never use em dashes" rule. Ignore it for LUNACI — the brand's real published copy and the Pocket Guide's own approved examples use em dashes as a signature pivot device. Do not strip them from LUNACI drafts.
+
 ## Who I sound like
 Someone who states what is true once, clearly, and trusts the reader to hear it — never someone trying to be believed through volume. Warm but unhurried, with a literary, Mediterranean-rooted register ("golden light," "sun-drenched shores") underneath the restraint.
 
@@ -34,7 +36,6 @@ No hashtags or emoji reliance (0 of 5 samples). No comma-separated marketing fra
 - Never manufactures urgency or scarcity
 - Never chases a platform trend or meme at the cost of tone
 - Never uses staccato hype fragments or all-caps emphasis
-- Uses em dashes freely as a pivot device ("a philosophy — a deep appreciation for beauty") — for LUNACI, this overrides any generic "no em dashes" default a skill applies elsewhere in this project
 
-## Known contradiction in the samples
-Homepage hero copy ("Luxury cosmetics inspired by Mediterranean elegance, crafted for women of timeless sophistication") uses none of the Vaqar vocabulary and does not echo Seen → Remembered, unlike the About page and the product-page refrain. Treat the About page and the Pocket Guide's own worked examples as canonical; the homepage reads as pre-governance copy due for a rewrite.
+## Note on the homepage sample
+An earlier pass flagged the homepage hero as off-brand. That was stale: live copy was already corrected on 2026-08-02 (`fix-home-hero-copy-elementor.yml`, run 30755925113) to "Every woman is seen. But your presence is remembered." / "Grace is her signature..." `pages/home.html` in this repo is now synced to match.

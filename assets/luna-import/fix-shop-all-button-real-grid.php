@@ -125,7 +125,7 @@ if ( $reusing_page ) {
 		array(
 			'id'       => 'a11f001',
 			'elType'   => 'container',
-			'settings' => array(),
+			'settings' => new stdClass(), // empty object, not [] - Elementor expects {}
 			'elements' => array(
 				array(
 					'id'       => 'a11f002',
@@ -152,7 +152,19 @@ if ( $reusing_page ) {
 		),
 	);
 
-	update_post_meta( $new_post_id, '_elementor_data', wp_json_encode( $elementor_data ) );
+	// update_post_meta() runs wp_unslash() on the value before storing, which
+	// strips the backslashes out of wp_json_encode()'s \" escapes (the
+	// shortcode's own quoted attributes) and leaves invalid JSON in the DB.
+	// $wpdb->insert()/->update() bypass that entirely, so use that instead
+	// (same reasoning as fix-shop-collection-links.php's postmeta write).
+	$wpdb->insert(
+		$wpdb->postmeta,
+		array(
+			'post_id'    => $new_post_id,
+			'meta_key'   => '_elementor_data',
+			'meta_value' => wp_json_encode( $elementor_data ),
+		)
+	);
 	update_post_meta( $new_post_id, '_elementor_edit_mode', $post56_meta['_elementor_edit_mode'] ?: 'builder' );
 	update_post_meta( $new_post_id, '_elementor_template_type', $post56_meta['_elementor_template_type'] ?: 'wp-page' );
 	update_post_meta( $new_post_id, '_elementor_version', $post56_meta['_elementor_version'] ?: '4.0.9' );

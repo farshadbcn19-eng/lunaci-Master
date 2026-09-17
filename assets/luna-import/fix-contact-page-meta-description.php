@@ -32,7 +32,7 @@ echo var_export( $current, true ) . "\n";
 echo "--- end backup ---\n";
 
 $expected_broken_markers = array( 'arehere', 'Products Shop Contact Shop Now' );
-$looks_broken = false;
+$looks_broken = ( $current === null || $current === '' );
 foreach ( $expected_broken_markers as $marker ) {
 	if ( $current && stripos( $current, $marker ) !== false ) {
 		$looks_broken = true;
@@ -41,9 +41,13 @@ foreach ( $expected_broken_markers as $marker ) {
 }
 
 if ( ! $looks_broken ) {
-	echo "SKIP: current description does not match the known broken pattern - already fixed or changed by someone else. No write performed.\n";
+	echo "SKIP: current description is non-empty and does not match the known broken pattern - already fixed or changed by someone else. No write performed.\n";
 	echo "OK: fix completed successfully (nothing to do)\n";
 	return;
+}
+
+if ( $current === null || $current === '' ) {
+	echo "Note: column is empty/NULL, not a stored broken string - the garbled text seen live is AIOSEO generating a description on the fly from page content because no override exists. Writing a real one below overrides that dynamic fallback.\n";
 }
 
 $new_description = 'Get in touch with LUNACI Barcelona. Email, call, or write to us — our team responds to every beauty enquiry within 24 hours.';

@@ -1,0 +1,50 @@
+name: "Diagnose - raw filesystem grep for filter bar markup (read-only)"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Grep the whole webroot for the filter bar markup
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             if [ -z "$WP_PATH" ]; then echo "ERROR: could not locate wp-config.php"; exit 1; fi;
+             echo "WordPress found at: $WP_PATH";
+
+             echo "--- grep -rl lunaci-filter-btn under webroot (excluding cache dirs) ---";
+             grep -rl "lunaci-filter-btn" "$WP_PATH" \
+               --exclude-dir=cache --exclude-dir=litespeed --exclude-dir=".git" \
+               --exclude-dir=uploads 2>/dev/null | head -50;
+
+             echo "";
+             echo "--- same, but INCLUDING wp-content/uploads (in case it is a cached HTML fragment) ---";
+             grep -rl "lunaci-filter-btn" "$WP_PATH/wp-content/uploads" 2>/dev/null | head -50;
+
+             echo "OK: grep diagnostic completed successfully"'

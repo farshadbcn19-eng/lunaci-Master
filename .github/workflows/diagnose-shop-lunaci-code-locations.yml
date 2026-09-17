@@ -1,0 +1,55 @@
+name: "Diagnose - enumerate all custom 'lunaci' PHP/JS code locations (read-only)"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+      - name: Enumerate lunaci-branded code
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 -o ServerAliveInterval=5 -o ServerAliveCountMax=3 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            'WP_PATH="";
+             for candidate in "$HOME/public_html" "$HOME" "$(pwd)"; do
+               if [ -f "$candidate/wp-config.php" ]; then WP_PATH="$candidate"; break; fi;
+             done;
+             if [ -z "$WP_PATH" ]; then
+               FOUND=$(find -L "$HOME" -maxdepth 8 -name "wp-config.php" -not -path "*/wp-content/*" -not -path "*/node_modules/*" 2>/dev/null | head -1);
+               if [ -n "$FOUND" ]; then WP_PATH=$(dirname "$FOUND"); fi;
+             fi;
+             echo "WP_PATH=$WP_PATH";
+
+             echo "--- all mu-plugins files (list only) ---";
+             ls -la "$WP_PATH/wp-content/mu-plugins/" 2>&1;
+
+             echo "";
+             echo "--- all *.php/*.js files under wp-content/plugins and wp-content/themes containing \"lunaci\" (case-insensitive), excluding vendor/node_modules ---";
+             grep -rli "lunaci" "$WP_PATH/wp-content/plugins" "$WP_PATH/wp-content/themes" \
+               --include="*.php" --include="*.js" \
+               --exclude-dir=vendor --exclude-dir=node_modules --exclude-dir=lib 2>&1 | sort -u;
+
+             echo "";
+             echo "--- top-level plugin folder names (to see if there is an obvious custom one) ---";
+             ls -la "$WP_PATH/wp-content/plugins/" 2>&1;
+
+             echo "";
+             echo "--- files under plugins+themes calling wp_redirect/wp_safe_redirect (list only) ---";
+             grep -rliE "wp_(safe_)?redirect" "$WP_PATH/wp-content/plugins" "$WP_PATH/wp-content/themes" \
+               --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules 2>&1 | sort -u;
+
+             echo "OK: enumeration completed"'

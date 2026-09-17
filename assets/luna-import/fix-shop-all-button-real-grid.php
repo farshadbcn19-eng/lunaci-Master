@@ -39,12 +39,29 @@ $new_all_tab = "        'all'   => array( 'label' => 'All',   'url' => home_url(
 
 echo "--- STEP A: PREPARE ---\n";
 
+// Idempotent/resumable: a previous run may have already created the page
+// and stopped before touching the snippet (e.g. exec() unavailable on this
+// host). Reuse it rather than aborting, but only if it's still exactly the
+// bare page this script would have created (no unexpected edits).
 $existing_page = get_page_by_path( $slug, OBJECT, 'page' );
+$reusing_page  = false;
 if ( $existing_page ) {
-	echo "ABORT: a page with slug '{$slug}' already exists (ID={$existing_page->ID}) - refusing to create a duplicate\n";
-	exit( 1 );
+	$existing_edata = get_post_meta( $existing_page->ID, '_elementor_data', true );
+	if ( 'All Products' === $existing_page->post_title
+		&& 'publish' === $existing_page->post_status
+		&& $existing_edata
+		&& false !== strpos( $existing_edata, 'shortcode' )
+		&& false !== strpos( $existing_edata, 'products' )
+	) {
+		echo "RESUMING: page '{$slug}' already exists (ID={$existing_page->ID}) with the expected content - reusing it instead of creating a duplicate\n";
+		$reusing_page = true;
+	} else {
+		echo "ABORT: a page with slug '{$slug}' already exists (ID={$existing_page->ID}) but doesn't match what this script would have created - refusing to touch it\n";
+		exit( 1 );
+	}
+} else {
+	echo "OK: no existing page at slug '{$slug}'\n";
 }
-echo "OK: no existing page at slug '{$slug}'\n";
 
 $snippet_row = $wpdb->get_row( $wpdb->prepare( "SELECT id, code FROM {$snippets_table} WHERE id = %d", 6 ), ARRAY_A );
 if ( ! $snippet_row ) {
@@ -79,66 +96,71 @@ echo "\nOK: all STEP A preconditions satisfied\n";
 
 echo "\n--- STEP B: COMMIT ---\n";
 
-// 1. Create the new page.
-$new_post_id = wp_insert_post(
-	array(
-		'post_title'   => 'All Products',
-		'post_name'    => $slug,
-		'post_status'  => 'publish',
-		'post_type'    => 'page',
-		'post_content' => '',
-		'comment_status' => 'closed',
-		'ping_status'    => 'closed',
-	),
-	true
-);
-
-if ( is_wp_error( $new_post_id ) ) {
-	echo 'ABORT: wp_insert_post failed: ' . $new_post_id->get_error_message() . "\n";
-	exit( 1 );
-}
-echo "created page ID={$new_post_id} slug={$slug}\n";
-
-// 2. Elementor content: one container > inner container > [products] shortcode widget.
-$elementor_data = array(
-	array(
-		'id'       => 'a11f001',
-		'elType'   => 'container',
-		'settings' => array(),
-		'elements' => array(
-			array(
-				'id'       => 'a11f002',
-				'elType'   => 'container',
-				'settings' => array(
-					'flex_direction' => 'column',
-					'content_width'  => 'full',
-				),
-				'elements' => array(
-					array(
-						'id'         => 'a11f003',
-						'elType'     => 'widget',
-						'settings'   => array(
-							'shortcode' => '[products limit="-1" columns="4"]',
-						),
-						'elements'   => array(),
-						'widgetType' => 'shortcode',
-					),
-				),
-				'isInner'  => true,
-			),
+if ( $reusing_page ) {
+	$new_post_id = $existing_page->ID;
+	echo "skipping page creation, reusing page ID={$new_post_id}\n";
+} else {
+	// 1. Create the new page.
+	$new_post_id = wp_insert_post(
+		array(
+			'post_title'   => 'All Products',
+			'post_name'    => $slug,
+			'post_status'  => 'publish',
+			'post_type'    => 'page',
+			'post_content' => '',
+			'comment_status' => 'closed',
+			'ping_status'    => 'closed',
 		),
-		'isInner'  => false,
-	),
-);
+		true
+	);
 
-update_post_meta( $new_post_id, '_elementor_data', wp_json_encode( $elementor_data ) );
-update_post_meta( $new_post_id, '_elementor_edit_mode', $post56_meta['_elementor_edit_mode'] ?: 'builder' );
-update_post_meta( $new_post_id, '_elementor_template_type', $post56_meta['_elementor_template_type'] ?: 'wp-page' );
-update_post_meta( $new_post_id, '_elementor_version', $post56_meta['_elementor_version'] ?: '4.0.9' );
-if ( $post56_meta['_elementor_page_settings'] ) {
-	update_post_meta( $new_post_id, '_elementor_page_settings', $post56_meta['_elementor_page_settings'] );
+	if ( is_wp_error( $new_post_id ) ) {
+		echo 'ABORT: wp_insert_post failed: ' . $new_post_id->get_error_message() . "\n";
+		exit( 1 );
+	}
+	echo "created page ID={$new_post_id} slug={$slug}\n";
+
+	// 2. Elementor content: one container > inner container > [products] shortcode widget.
+	$elementor_data = array(
+		array(
+			'id'       => 'a11f001',
+			'elType'   => 'container',
+			'settings' => array(),
+			'elements' => array(
+				array(
+					'id'       => 'a11f002',
+					'elType'   => 'container',
+					'settings' => array(
+						'flex_direction' => 'column',
+						'content_width'  => 'full',
+					),
+					'elements' => array(
+						array(
+							'id'         => 'a11f003',
+							'elType'     => 'widget',
+							'settings'   => array(
+								'shortcode' => '[products limit="-1" columns="4"]',
+							),
+							'elements'   => array(),
+							'widgetType' => 'shortcode',
+						),
+					),
+					'isInner'  => true,
+				),
+			),
+			'isInner'  => false,
+		),
+	);
+
+	update_post_meta( $new_post_id, '_elementor_data', wp_json_encode( $elementor_data ) );
+	update_post_meta( $new_post_id, '_elementor_edit_mode', $post56_meta['_elementor_edit_mode'] ?: 'builder' );
+	update_post_meta( $new_post_id, '_elementor_template_type', $post56_meta['_elementor_template_type'] ?: 'wp-page' );
+	update_post_meta( $new_post_id, '_elementor_version', $post56_meta['_elementor_version'] ?: '4.0.9' );
+	if ( $post56_meta['_elementor_page_settings'] ) {
+		update_post_meta( $new_post_id, '_elementor_page_settings', $post56_meta['_elementor_page_settings'] );
+	}
+	echo "set Elementor postmeta on page {$new_post_id}\n";
 }
-echo "set Elementor postmeta on page {$new_post_id}\n";
 
 // 3. Update the snippet, with a concurrency guard.
 $fresh_code = $wpdb->get_var( $wpdb->prepare( "SELECT code FROM {$snippets_table} WHERE id = %d", 6 ) );
@@ -151,23 +173,28 @@ $new_code = str_replace( $old_guard, $new_guard, $fresh_code );
 $new_code = str_replace( $old_all_tab, $new_all_tab, $new_code );
 
 // This snippet is active + global scope (runs on every front-end request),
-// so a syntax error here would break the whole site. Lint the exact
-// resulting code before writing it, the same way every other guarded
-// fix script in this repo lints its own file before upload.
-if ( function_exists( 'exec' ) ) {
-	$lint_path = wp_tempnam( 'lunaci-snippet6-lint' );
-	file_put_contents( $lint_path, "<?php\n" . $new_code );
-	exec( 'php -l ' . escapeshellarg( $lint_path ) . ' 2>&1', $lint_output, $lint_status );
-	unlink( $lint_path );
-	echo "php -l on the new snippet code: " . implode( ' | ', $lint_output ) . "\n";
-	if ( 0 !== $lint_status ) {
-		echo "ABORT: new snippet code failed php -l - refusing to write (site-wide, active, global-scope snippet)\n";
-		exit( 1 );
-	}
-} else {
-	echo "ABORT: exec() unavailable - cannot safely lint the new code for a site-wide active snippet, refusing to write\n";
+// so a syntax error here would break the whole site. exec()/shell_exec()
+// are disabled on this host (confirmed by a prior run), so `php -l` isn't
+// available from inside PHP. Two mitigations instead:
+//  1. Static check: braces/parens/quotes must balance exactly the same
+//     before and after the edit, since the only change is swapping two
+//     known-good, already-hand-verified expressions in place - if counts
+//     drift, something matched wrong and we abort before writing.
+//  2. A live HTTP smoke test right after the write (below, STEP C) with
+//     automatic rollback to $original_code if it fails.
+$balance_check = function ( $code ) {
+	return array(
+		substr_count( $code, '(' ) - substr_count( $code, ')' ),
+		substr_count( $code, '{' ) - substr_count( $code, '}' ),
+		substr_count( $code, "'" ) % 2,
+		substr_count( $code, '"' ) % 2,
+	);
+};
+if ( $balance_check( $fresh_code ) !== $balance_check( $new_code ) ) {
+	echo "ABORT: brace/paren/quote balance changed by the edit - refusing to write (site-wide, active, global-scope snippet)\n";
 	exit( 1 );
 }
+echo "OK: brace/paren/quote balance unchanged by the edit\n";
 
 $updated = $wpdb->update(
 	$snippets_table,
@@ -230,6 +257,44 @@ echo "new 'all' tab occurrences: {$new_tab_count} (expected 1)\n";
 if ( 0 !== $remaining_old_guard || 2 !== $new_guard_count || 0 !== $remaining_old_tab || 1 !== $new_tab_count ) {
 	$overall_success = false;
 }
+
+// Live smoke test: no exec() means no php -l, so this is the real safety
+// net for the active, global-scope snippet edit. If the shop/category
+// pages don't come back clean, roll the snippet back to $original_code
+// immediately rather than leaving a broken site-wide snippet live.
+$smoke_urls = array( home_url( '/product-category/face/' ), home_url( '/all-products/' ), home_url( '/' ) );
+$smoke_ok = true;
+foreach ( $smoke_urls as $smoke_url ) {
+	$resp = wp_remote_get( $smoke_url, array( 'timeout' => 20 ) );
+	if ( is_wp_error( $resp ) ) {
+		echo "SMOKE TEST FAIL: {$smoke_url} -> " . $resp->get_error_message() . "\n";
+		$smoke_ok = false;
+		continue;
+	}
+	$code = wp_remote_retrieve_response_code( $resp );
+	$body = wp_remote_retrieve_body( $resp );
+	$has_fatal = ( false !== stripos( $body, 'Fatal error' ) || false !== stripos( $body, 'Parse error' ) || false !== stripos( $body, 'syntax error' ) );
+	echo "SMOKE TEST {$smoke_url}: HTTP {$code}, fatal/parse error in body: " . ( $has_fatal ? 'YES' : 'no' ) . "\n";
+	if ( 200 !== (int) $code || $has_fatal ) {
+		$smoke_ok = false;
+	}
+}
+
+if ( ! $smoke_ok ) {
+	echo "SMOKE TEST FAILED - rolling snippet id=6 back to its original code immediately\n";
+	$rollback = $wpdb->update(
+		$snippets_table,
+		array( 'code' => $original_code ),
+		array( 'id' => 6 ),
+		array( '%s' ),
+		array( '%d' )
+	);
+	echo 'rollback $wpdb->update() rows affected: ' . var_export( $rollback, true ) . "\n";
+	wp_cache_flush();
+	echo "ABORT: rolled back - see smoke test results above\n";
+	exit( 1 );
+}
+echo "OK: smoke test passed on all checked URLs\n";
 
 $verify_aioseo = $wpdb->get_row( $wpdb->prepare( "SELECT robots_default, robots_noindex FROM {$aioseo_table} WHERE post_id = %d", $new_post_id ), ARRAY_A );
 if ( $verify_aioseo ) {

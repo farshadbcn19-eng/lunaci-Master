@@ -3,7 +3,8 @@
  * Plugin Name: LUNACI Contact Form
  * Description: Handles the Contact page form (EN /contact/, ES /es/contacto/).
  *              Emails info@lunacibarcelona.com and keeps a private copy under
- *              WP Admin -> Enquiries (deleted automatically after 12 months).
+ *              WP Admin -> Enquiries (deleted automatically after 12 months
+ *              by a daily WP-Cron job).
  * Author: LUNACI
  *
  * The form markup lives in the Contact page's Elementor HTML widget (posts 60
@@ -24,6 +25,15 @@ const LUNACI_CF_RETENTION_DAYS = 365;
 
 add_action( 'init', 'lunaci_cf_register_post_type' );
 add_action( 'init', 'lunaci_cf_handle_post', 20 );
+add_action( 'init', 'lunaci_cf_schedule_purge' );
+add_action( 'lunaci_cf_daily_purge', 'lunaci_cf_purge_old' );
+
+/** Daily retention cleanup, independent of new submissions. */
+function lunaci_cf_schedule_purge() {
+	if ( ! wp_next_scheduled( 'lunaci_cf_daily_purge' ) ) {
+		wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', 'lunaci_cf_daily_purge' );
+	}
+}
 
 function lunaci_cf_register_post_type() {
 	register_post_type(
@@ -132,13 +142,13 @@ function lunaci_cf_handle_post() {
 		update_post_meta( $enquiry_id, '_lunaci_mail_sent', $sent ? '1' : '0' );
 	}
 
-	lunaci_cf_purge_old();
+	lunaci_cf_purge_old(); // fallback in case WP-Cron is not running
 
 	$stored = $enquiry_id && ! is_wp_error( $enquiry_id );
 	lunaci_cf_redirect( $lang, ( $sent || $stored ) ? 'sent' : 'error' );
 }
 
-/** GDPR retention: delete stored enquiries older than LUNACI_CF_RETENTION_DAYS. */
+/** GDPR retention: delete stored enquiries older than LUNACI_CF_RETENTION_DAYS (daily cron + on submit). */
 function lunaci_cf_purge_old() {
 	$old = get_posts(
 		array(

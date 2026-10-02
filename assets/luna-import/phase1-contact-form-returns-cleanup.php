@@ -71,6 +71,12 @@ function p0_backup_write( $name, $data ) {
 /** Full backup of a post: row, every postmeta row, AIOSEO row. */
 function p0_backup_post( $post_id ) {
 	global $wpdb;
+	// Keep the first (pre-change) snapshot: a post edited twice in one run
+	// must not have its backup overwritten by the already-modified state.
+	if ( file_exists( rtrim( $GLOBALS['p0_backup_dir'], '/' ) . "/post-{$post_id}.json" ) ) {
+		echo "backup: post-{$post_id}.json already holds the pre-run snapshot - kept\n";
+		return true;
+	}
 	$post = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->posts} WHERE ID = %d", $post_id ), ARRAY_A );
 	$meta = $wpdb->get_results( $wpdb->prepare( "SELECT meta_id, meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id = %d ORDER BY meta_id", $post_id ), ARRAY_A );
 	$aio  = null;

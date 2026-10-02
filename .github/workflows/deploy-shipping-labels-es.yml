@@ -1,0 +1,69 @@
+name: "Deploy - Spanish shipping method labels (mu-plugin)"
+
+# Deploys mu-plugins/lunaci-shipping-labels.php (backs up any existing copy
+# to ~/lunaci-backups/shipping-labels-<timestamp>/), purges cache, then checks
+# real Store API carts: Spanish labels on /es/, English labels on /.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Deploy mu-plugin
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "mu-plugins/lunaci-shipping-labels.php" "$SSH_USER@$SSH_HOST:/tmp/lunaimport-shipping-labels.php"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" '
+            set -e
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            echo "WordPress found at: $WP_PATH";
+            php -l /tmp/lunaimport-shipping-labels.php;
+            DEST="$WP_PATH/wp-content/mu-plugins/lunaci-shipping-labels.php";
+            BK="$HOME/lunaci-backups/shipping-labels-$(date -u +%Y%m%d-%H%M%S)";
+            mkdir -p "$BK" "$WP_PATH/wp-content/mu-plugins";
+            if [ -f "$DEST" ]; then cp -p "$DEST" "$BK/"; echo "backed up existing copy to $BK"; else echo "no existing copy"; fi;
+            cp /tmp/lunaimport-shipping-labels.php "$DEST" && rm -f /tmp/lunaimport-shipping-labels.php;
+            echo "deployed: $DEST";
+            wp eval "echo function_exists(\"lunaci_shipping_lang\") ? \"mu-plugin loaded: YES\n\" : \"mu-plugin loaded: NO\n\";" --path="$WP_PATH";
+            wp litespeed-purge all --path="$WP_PATH" || true
+          '
+
+      - name: Live check - shipping labels per language (Store API)
+        run: |
+          BASE="https://lunacibarcelona.com"
+          FAIL=0
+          check() {
+            local prefix="$1" country="$2" state="$3" postcode="$4" city="$5" expect="$6"
+            local J; J=$(mktemp)
+            local NONCE
+            NONCE=$(curl -sS -m 30 -c "$J" -b "$J" -D - -o /dev/null "$BASE$prefix/wp-json/wc/store/v1/cart" | grep -i '^nonce:' | awk '{print $2}' | tr -d '\r')
+            curl -sS -m 30 -c "$J" -b "$J" -H "Nonce: $NONCE" -H 'Content-Type: application/json' \
+              -d '{"id":501,"quantity":1}' "$BASE$prefix/wp-json/wc/store/v1/cart/add-item" -o /dev/null
+            curl -sS -m 30 -c "$J" -b "$J" -H "Nonce: $NONCE" -H 'Content-Type: application/json' \
+              -d "{\"shipping_address\":{\"first_name\":\"Test\",\"last_name\":\"Test\",\"address_1\":\"Test 1\",\"city\":\"$city\",\"state\":\"$state\",\"postcode\":\"$postcode\",\"country\":\"$country\"}}" \
+              "$BASE$prefix/wp-json/wc/store/v1/cart/update-customer" -o cart.json
+            NAME=$(python3 -c "import json;c=json.load(open('cart.json'));r=[x for p in c.get('shipping_rates',[]) for x in p.get('shipping_rates',[])];print(r[0]['name'] if r else '(no rates)')")
+            if [ "$NAME" = "$expect" ]; then echo "PASS  ${prefix:-/} $country: $NAME"; else echo "FAIL  ${prefix:-/} $country: got '$NAME', expected '$expect'"; FAIL=1; fi
+          }
+          check "/es" ES M 28001 Madrid "Envío gratuito · 5–8 días laborables"
+          check "/es" DE "" 10115 Berlin "Envío estándar"
+          check ""    ES M 28001 Madrid "Free shipping · 5–8 business days"
+          check ""    DE "" 10115 Berlin "Standard shipping"
+          if [ "$FAIL" = "0" ]; then echo "RESULT: ALL CHECKS PASSED"; else echo "RESULT: SOME CHECKS FAILED"; exit 1; fi

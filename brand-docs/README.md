@@ -2,6 +2,7 @@
 
 This folder holds the LUNACI brand governance documents — the reference set that defines brand identity, visual system, operations, and approved language.
 
+- **LUNACI_VAQAR_Locked_Definition.md** — Locked Brand Definition of VAQAR™, LUNACI's defining virtue. Single source of truth; supersedes any shorter description of Vaqar elsewhere in these docs. Editable only through formal Brand Governance approval.
 - **LUNACI_LMB-001_Chapter1_Master.md** — LMB-001, Chapter 1: Identity of the Brand Muse.
 - **LUNACI_LMB-002_Chapter2_Master.md** — LMB-002, Chapter 2: Physical Identity & Visual Architecture of LUNA.
 - **LUNACI_LMB-003_BOS_Master.md** — LMB-003, Book III: Brand Operating System (BOS).

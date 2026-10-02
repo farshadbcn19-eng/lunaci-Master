@@ -835,9 +835,13 @@ if ( is_string( $aio_opt ) ) {
 	if ( $new_opt !== $aio_opt && is_array( json_decode( $new_opt, true ) ) ) {
 		echo "aioseo_options contains a wrong email/phone/entity string - will replace\n";
 		if ( $apply ) {
-			p0_backup_write( 'option-aioseo_options.json', array( 'aioseo_options' => $aio_opt ) );
-			update_option( 'aioseo_options', $new_opt );
-			echo "updated aioseo_options\n";
+			if ( p0_backup_write( 'option-aioseo_options.json', array( 'aioseo_options' => $aio_opt ) ) ) {
+				update_option( 'aioseo_options', $new_opt );
+				echo "updated aioseo_options\n";
+			} else {
+				echo "ERROR: backup failed - aioseo_options left untouched\n";
+				$GLOBALS['p0_fail']++;
+			}
 		}
 	} else {
 		echo "aioseo_options: no wrong email/phone/entity strings - untouched\n";
@@ -880,7 +884,11 @@ if ( ! function_exists( 'wc_get_product' ) ) {
 			continue;
 		}
 		if ( $apply ) {
-			p0_backup_post( $pid );
+			if ( ! p0_backup_post( $pid ) ) {
+				echo "ERROR: backup failed - product {$pid} left untouched\n";
+				$GLOBALS['p0_fail']++;
+				continue;
+			}
 			$product->set_status( 'private' );
 			$product->save();
 			clean_post_cache( $pid );
@@ -913,8 +921,10 @@ if ( ! function_exists( 'wc_get_product' ) ) {
 		$same = ( $cur_cmp === $want );
 		echo "{$opt}: current=" . ( is_array( $cur ) ? implode( ',', $cur ) . ' (' . count( $cur ) . ')' : var_export( $cur, true ) ) . ( $same ? ' [OK]' : ' [CHANGE]' ) . "\n";
 	}
-	if ( $apply ) {
-		p0_backup_write( 'option-woocommerce-countries.json', $opt_backup );
+	if ( $apply && ! p0_backup_write( 'option-woocommerce-countries.json', $opt_backup ) ) {
+		echo "ERROR: backup failed - country options left untouched\n";
+		$GLOBALS['p0_fail']++;
+	} elseif ( $apply ) {
 		foreach ( $targets as $opt => $want ) {
 			update_option( $opt, $want );
 		}

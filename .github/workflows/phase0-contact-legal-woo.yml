@@ -86,7 +86,10 @@ jobs:
           rm -f /tmp/lunaimport-phase0.php
           echo "wp eval-file exit code: $EVAL_STATUS"
 
-          if [ "$MODE" = "apply" ] && [ "$STATIC_FOUND" = "1" ]; then
+          if [ "$MODE" = "apply" ] && [ "$STATIC_FOUND" = "1" ] && [ "$EVAL_STATUS" -ne 0 ]; then
+            echo ""
+            echo "SKIP: PHP script reported failures - legacy static files left in place"
+          elif [ "$MODE" = "apply" ] && [ "$STATIC_FOUND" = "1" ]; then
             echo ""
             echo "==================== BACKUP + DELETE STATIC FILES ===================="
             for f in contact.html index.html products.html shop.html; do

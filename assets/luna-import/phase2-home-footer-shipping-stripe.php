@@ -388,28 +388,46 @@ if ( 'yes' === $calc_taxes ) {
 }
 
 foreach ( $zones as $name => $z ) {
-	if ( isset( $existing[ $name ] ) ) {
-		echo "SKIP: zone '{$name}' already exists (#{$existing[$name]})\n";
-		continue;
-	}
-	echo "will create zone '{$name}': " . count( $z['locations'] ) . " locations, method {$z['method']} " . wp_json_encode( $z['settings'], JSON_UNESCAPED_UNICODE ) . "\n";
+	$zone_id = $existing[ $name ] ?? null;
+	echo ( $zone_id ? "zone '{$name}' exists (#{$zone_id}) - will verify/repair its method" : "will create zone '{$name}'" )
+		. ': ' . count( $z['locations'] ) . " locations, method {$z['method']} " . wp_json_encode( $z['settings'], JSON_UNESCAPED_UNICODE ) . "\n";
 	if ( ! $apply || ! $zone_guard_ok ) {
 		continue;
 	}
-	$zone = new WC_Shipping_Zone();
-	$zone->set_zone_name( $name );
-	$zone->set_locations( $z['locations'] );
-	$zone->save();
-	$instance_id = $zone->add_shipping_method( $z['method'] );
+	$zone = $zone_id ? new WC_Shipping_Zone( $zone_id ) : new WC_Shipping_Zone();
+	if ( ! $zone_id ) {
+		$zone->set_zone_name( $name );
+		$zone->set_locations( $z['locations'] );
+		$zone->save();
+	}
+	// Re-runs repair a zone left incomplete by an earlier failed apply.
+	$instance_id = 0;
+	foreach ( $zone->get_shipping_methods() as $method ) {
+		if ( $method->id === $z['method'] ) {
+			$instance_id = $method->instance_id;
+			break;
+		}
+	}
+	if ( ! $instance_id ) {
+		$instance_id = $zone->add_shipping_method( $z['method'] );
+	}
 	if ( ! $instance_id ) {
 		echo "ERROR: could not add {$z['method']} to '{$name}'\n";
 		$GLOBALS['p0_fail']++;
 		continue;
 	}
 	$option_key = "woocommerce_{$z['method']}_{$instance_id}_settings";
-	$settings   = array_merge( (array) get_option( $option_key, array() ), $z['settings'] );
-	update_option( $option_key, $settings );
-	echo "created zone #{$zone->get_id()} '{$name}' with {$z['method']} (instance {$instance_id})\n";
+	$current    = (array) get_option( $option_key, array() );
+	$settings   = array_merge( $current, $z['settings'] );
+	if ( $settings !== $current ) {
+		update_option( $option_key, $settings );
+	}
+	$check = (array) get_option( $option_key, array() );
+	$ok    = ! array_diff_assoc( $z['settings'], $check );
+	echo "zone #{$zone->get_id()} '{$name}': {$z['method']} instance {$instance_id}, settings " . ( $ok ? 'OK' : 'MISMATCH' ) . "\n";
+	if ( ! $ok ) {
+		$GLOBALS['p0_fail']++;
+	}
 }
 
 if ( $apply ) {
@@ -457,10 +475,14 @@ if ( ! $diff ) {
 	echo "ERROR: Stripe plugin not active - settings not written\n";
 	$GLOBALS['p0_fail']++;
 } else {
-	p0_backup_write( 'option-woocommerce_stripe_settings.json', array( 'woocommerce_stripe_settings' => $stripe ) );
-	update_option( 'woocommerce_stripe_settings', array_merge( $stripe, $diff ) );
-	$check = get_option( 'woocommerce_stripe_settings' );
-	echo 'VERIFY testmode=' . ( $check['testmode'] ?? '?' ) . ' descriptor=' . ( $check['statement_descriptor'] ?? '?' ) . "\n";
+	if ( ! p0_backup_write( 'option-woocommerce_stripe_settings.json', array( 'woocommerce_stripe_settings' => $stripe ) ) ) {
+		echo "ERROR: backup failed - Stripe settings left untouched\n";
+		$GLOBALS['p0_fail']++;
+	} else {
+		update_option( 'woocommerce_stripe_settings', array_merge( $stripe, $diff ) );
+		$check = get_option( 'woocommerce_stripe_settings' );
+		echo 'VERIFY testmode=' . ( $check['testmode'] ?? '?' ) . ' descriptor=' . ( $check['statement_descriptor'] ?? '?' ) . "\n";
+	}
 }
 
 p0_h( 'SUMMARY' );

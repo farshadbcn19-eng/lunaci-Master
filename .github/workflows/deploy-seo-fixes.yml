@@ -6,6 +6,9 @@ name: "Deploy - SEO fixes (mu-plugin)"
 #     gone from the page sitemap (their English pages too)
 #   - product pages carry brand, shippingDetails and hasMerchantReturnPolicy
 #   - the home page (EN and ES) sends og:type "website"
+# Before deploying, a full backup (database dump, mu-plugins, .htaccess,
+# plugin list) goes to ~/lunaci-backups/pre-seo-fixes-<timestamp>/; the
+# deploy does not run if that backup fails.
 # Rollback: delete wp-content/mu-plugins/lunaci-seo.php and purge cache.
 
 on:
@@ -21,6 +24,33 @@ jobs:
 
       - name: Install sshpass
         run: sudo apt-get install -y sshpass
+
+      - name: Full pre-deploy backup (database, mu-plugins, .htaccess)
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" '
+            set -e
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            BK="$HOME/lunaci-backups/pre-seo-fixes-$(date -u +%Y%m%d-%H%M%S)";
+            mkdir -p "$BK";
+            wp db export - --path="$WP_PATH" | gzip > "$BK/database.sql.gz";
+            gzip -t "$BK/database.sql.gz";
+            TABLES=$(zcat "$BK/database.sql.gz" | grep -c "^CREATE TABLE" || true);
+            [ "$TABLES" -gt 10 ] || { echo "ABORT: database dump has only $TABLES tables"; exit 1; };
+            tar -czf "$BK/mu-plugins.tar.gz" -C "$WP_PATH/wp-content" mu-plugins;
+            cp -p "$WP_PATH/.htaccess" "$BK/htaccess.bak";
+            wp plugin list --fields=name,status,version --format=csv --path="$WP_PATH" > "$BK/plugins.csv";
+            echo "$BK" > "$HOME/lunaci-backups/LATEST-pre-seo-fixes";
+            echo "BACKUP OK: $BK ($TABLES tables)";
+            ls -la "$BK"
+          '
 
       - name: Deploy mu-plugin
         env:

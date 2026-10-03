@@ -1,0 +1,102 @@
+name: "Deploy - SEO fixes (mu-plugin)"
+
+# Deploys mu-plugins/lunaci-seo.php (backs up any existing copy to
+# ~/lunaci-backups/seo-fixes-<timestamp>/), purges cache, then checks live:
+#   - /es/carrito/, /es/finalizar-compra/, /es/mi-cuenta/ are noindex and
+#     gone from the page sitemap (their English pages too)
+#   - product pages carry brand, shippingDetails and hasMerchantReturnPolicy
+#   - the home page (EN and ES) sends og:type "website"
+# Rollback: delete wp-content/mu-plugins/lunaci-seo.php and purge cache.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Deploy mu-plugin
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "mu-plugins/lunaci-seo.php" "$SSH_USER@$SSH_HOST:/tmp/lunaimport-seo.php"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" '
+            set -e
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            echo "WordPress found at: $WP_PATH";
+            php -l /tmp/lunaimport-seo.php;
+            DEST="$WP_PATH/wp-content/mu-plugins/lunaci-seo.php";
+            BK="$HOME/lunaci-backups/seo-fixes-$(date -u +%Y%m%d-%H%M%S)";
+            mkdir -p "$BK" "$WP_PATH/wp-content/mu-plugins";
+            if [ -f "$DEST" ]; then cp -p "$DEST" "$BK/"; echo "backed up existing copy to $BK"; else echo "no existing copy"; fi;
+            cp /tmp/lunaimport-seo.php "$DEST" && rm -f /tmp/lunaimport-seo.php;
+            echo "deployed: $DEST";
+            wp eval "echo function_exists(\"lunaci_seo_private_page_ids\") ? \"mu-plugin loaded: YES, private page ids: \" . implode(\",\", lunaci_seo_private_page_ids()) . \"\n\" : \"mu-plugin loaded: NO\n\";" --path="$WP_PATH";
+            wp litespeed-purge all --path="$WP_PATH" || true
+          '
+
+      - name: Live check
+        run: |
+          BASE="https://lunacibarcelona.com"
+          FAIL=0
+          pass() { echo "PASS  $1"; }
+          fail() { echo "FAIL  $1"; FAIL=1; }
+
+          for p in /es/carrito/ /es/mi-cuenta/ /cart/ /my-account/; do
+            ROBOTS=$(curl -sS -m 30 "$BASE$p" | grep -o '<meta name="robots" content="[^"]*"' || true)
+            case "$ROBOTS" in *noindex*) pass "$p robots: $ROBOTS";; *) fail "$p robots: '$ROBOTS'";; esac
+          done
+
+          curl -sS -m 30 "$BASE/page-sitemap.xml" -o page-sitemap.xml
+          for p in /es/carrito/ /es/finalizar-compra/ /es/mi-cuenta/ /cart/ /checkout/ /my-account/; do
+            if grep -q "lunacibarcelona.com$p<" page-sitemap.xml || grep -q "lunacibarcelona.com$p]]" page-sitemap.xml; then
+              fail "$p still in page-sitemap.xml"
+            else
+              pass "$p not in page-sitemap.xml"
+            fi
+          done
+          for p in /contact/ /es/contacto/ /about-us/; do
+            if grep -q "lunacibarcelona.com$p" page-sitemap.xml; then pass "$p still in page-sitemap.xml"; else fail "$p missing from page-sitemap.xml"; fi
+          done
+
+          for p in /product/lipstick/ /es/producto/pintalabios/; do
+            curl -sS -m 30 "$BASE$p" -o product.html
+            RES=$(python3 - <<'EOF'
+          import json, re
+          s = open('product.html', encoding='utf-8').read()
+          for block in re.findall(r'<script[^>]+application/ld\+json[^>]*>(.*?)</script>', s, re.S):
+              data = json.loads(block)
+              for node in data.get('@graph', [data]):
+                  if node.get('@type') != 'Product':
+                      continue
+                  offers = node.get('offers')
+                  offer = offers[0] if isinstance(offers, list) else offers
+                  ok = bool(node.get('brand')) and 'shippingDetails' in offer and 'hasMerchantReturnPolicy' in offer
+                  print(('OK' if ok else 'MISSING') + ' brand=%s price=%s' % (node.get('brand', {}).get('name'), offer.get('price')))
+                  raise SystemExit
+          print('MISSING no Product node')
+          EOF
+            )
+            case "$RES" in OK*) pass "$p schema: $RES";; *) fail "$p schema: $RES";; esac
+          done
+
+          for p in / /es/; do
+            OG=$(curl -sS -m 30 "$BASE$p" | grep -o '<meta property="og:type" content="[^"]*"' || true)
+            case "$OG" in *website*) pass "$p $OG";; *) fail "$p og:type: '$OG'";; esac
+          done
+
+          if [ "$FAIL" = "0" ]; then echo "RESULT: ALL CHECKS PASSED"; else echo "RESULT: SOME CHECKS FAILED"; exit 1; fi

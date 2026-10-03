@@ -1,0 +1,48 @@
+name: "Diagnose - LiteSpeed cache misses for cookie-less visitors (read-only)"
+
+# Read-only. Every request without cookies (Googlebot, first visits) answers
+# x-litespeed-cache: miss and sets _lscache_vary, so it is rendered by PHP each
+# time (TTFB 1-2.5 s). Requests that send the _lscache_vary cookie get hits.
+# This dumps the LiteSpeed Cache settings and hooks that create that vary.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Live headers (no cookies, then with the vary cookie)
+        run: |
+          for i in 1 2; do curl -sS -D - -o /dev/null -w "ttfb %{time_starttransfer}\n" https://lunacibarcelona.com/ | grep -iE "x-litespeed-cache:|x-litespeed-vary|set-cookie:|^vary:|ttfb"; echo; done
+          J=$(mktemp); for i in 1 2 3; do curl -sS -b "$J" -c "$J" -D - -o /dev/null -w "ttfb %{time_starttransfer}\n" https://lunacibarcelona.com/ | grep -iE "x-litespeed-cache:|ttfb"; done
+
+      - name: LiteSpeed settings and vary hooks
+        env:
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" '
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            echo "WordPress found at: $WP_PATH";
+            echo "--- LiteSpeed plugin version";
+            wp plugin get litespeed-cache --field=version --path="$WP_PATH";
+            echo "--- litespeed.conf options: guest / vary / cookie / login / mobile / esi";
+            wp option list --search="litespeed.conf.*" --fields=option_name,option_value --format=csv --path="$WP_PATH" | grep -iE "guest|vary|cookie|login|mobile|esi|cache-priv|cache-commenter|cache-rest" ;
+            echo "--- callbacks on litespeed_vary / litespeed_vary_cookies / litespeed_vary_curr_cookies";
+            wp eval "foreach ( array( \"litespeed_vary\", \"litespeed_vary_cookies\", \"litespeed_vary_curr_cookies\", \"litespeed_vary_add\" ) as \$h ) { global \$wp_filter; echo \$h . \": \"; if ( empty( \$wp_filter[ \$h ] ) ) { echo \"none\n\"; continue; } foreach ( \$wp_filter[ \$h ]->callbacks as \$prio => \$cbs ) { foreach ( \$cbs as \$cb ) { \$f = \$cb[\"function\"]; if ( is_array( \$f ) ) { \$f = ( is_object( \$f[0] ) ? get_class( \$f[0] ) : \$f[0] ) . \"::\" . \$f[1]; } elseif ( \$f instanceof Closure ) { \$r = new ReflectionFunction( \$f ); \$f = \"closure \" . \$r->getFileName() . \":\" . \$r->getStartLine(); } echo \"[\$prio] \$f; \"; } } echo \"\n\"; }" --path="$WP_PATH";
+            echo "--- LiteSpeed block in .htaccess";
+            sed -n "/BEGIN LSCACHE/,/END LSCACHE/p" "$WP_PATH/.htaccess";
+            echo "--- active plugins";
+            wp plugin list --status=active --fields=name,version --format=csv --path="$WP_PATH";
+            echo "--- mu-plugins";
+            ls -la "$WP_PATH/wp-content/mu-plugins/" 2>/dev/null
+          '

@@ -27,10 +27,10 @@ jobs:
 
       - name: Full pre-deploy backup (database, mu-plugins, .htaccess)
         env:
-          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
-          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
-          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
-          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
         run: |
           set -e
           sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" '
@@ -54,10 +54,10 @@ jobs:
 
       - name: Deploy mu-plugin
         env:
-          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
-          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
-          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
-          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
         run: |
           set -e
           sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \

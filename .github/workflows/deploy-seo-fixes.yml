@@ -40,10 +40,13 @@ jobs:
             [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
             BK="$HOME/lunaci-backups/pre-seo-fixes-$(date -u +%Y%m%d-%H%M%S)";
             mkdir -p "$BK";
-            wp db export - --path="$WP_PATH" | gzip > "$BK/database.sql.gz";
+            echo "--- tables in database: $(wp db tables --all-tables-with-prefix --path="$WP_PATH" | wc -l)";
+            wp db export "$BK/database.sql" --add-drop-table --path="$WP_PATH" 2>&1 || { echo "ABORT: wp db export failed"; exit 1; };
+            ls -la "$BK/database.sql";
+            TABLES=$(grep -c "CREATE TABLE" "$BK/database.sql" || true);
+            [ "$TABLES" -gt 10 ] || { echo "ABORT: database dump has only $TABLES tables"; head -c 600 "$BK/database.sql"; exit 1; };
+            gzip "$BK/database.sql";
             gzip -t "$BK/database.sql.gz";
-            TABLES=$(zcat "$BK/database.sql.gz" | grep -c "^CREATE TABLE" || true);
-            [ "$TABLES" -gt 10 ] || { echo "ABORT: database dump has only $TABLES tables"; exit 1; };
             tar -czf "$BK/mu-plugins.tar.gz" -C "$WP_PATH/wp-content" mu-plugins;
             cp -p "$WP_PATH/.htaccess" "$BK/htaccess.bak";
             wp plugin list --fields=name,status,version --format=csv --path="$WP_PATH" > "$BK/plugins.csv";

@@ -1,0 +1,136 @@
+name: "Deploy - LiteSpeed guest cache fix (mu-plugin)"
+
+# Deploys mu-plugins/lunaci-cache-vary.php so cookie-less requests (Googlebot,
+# first visits) are served from the LiteSpeed cache.
+# 1. Full backup (database via scripts/db-backup.php, mu-plugins, .htaccess,
+#    plugin list) to ~/lunaci-backups/pre-cache-vary-<timestamp>/; stops on failure.
+# 2. Prints the WCML currency settings; stops if two or more currencies are
+#    active (the fix would do nothing there).
+# 3. Deploys, purges cache, then checks live: no _lscache_vary cookie for
+#    guests, second request is a cache hit, guest cart still works.
+# Rollback: delete wp-content/mu-plugins/lunaci-cache-vary.php and purge cache.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+      SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+      SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+      SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Live baseline (before)
+        run: |
+          for p in / /product/lipstick/; do
+            for i in 1 2; do curl -sS -D - -o /dev/null -w "ttfb %{time_starttransfer}\n" "https://lunacibarcelona.com$p" | grep -iE "x-litespeed-cache:|set-cookie: _lscache_vary|ttfb" | tr '\n' ' '; echo " <- $p"; done
+          done
+
+      - name: Full pre-deploy backup (database, mu-plugins, .htaccess)
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "scripts/db-backup.php" "$SSH_USER@$SSH_HOST:/tmp/lunaimport-db-backup.php"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" '
+            set -e
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            BK="$HOME/lunaci-backups/pre-cache-vary-$(date -u +%Y%m%d-%H%M%S)";
+            mkdir -p "$BK";
+            php -l /tmp/lunaimport-db-backup.php;
+            LIVE=$(wp db tables --all-tables --path="$WP_PATH" | wc -l);
+            echo "--- tables in database: $LIVE";
+            LUNACI_BACKUP_FILE="$BK/database.sql.gz" wp eval-file /tmp/lunaimport-db-backup.php --path="$WP_PATH" || { echo "ABORT: database backup failed"; exit 1; };
+            rm -f /tmp/lunaimport-db-backup.php;
+            gzip -t "$BK/database.sql.gz";
+            TABLES=$(zcat "$BK/database.sql.gz" | grep -c "^CREATE TABLE" || true);
+            [ "$TABLES" -ge "$LIVE" ] && [ "$TABLES" -gt 10 ] || { echo "ABORT: backup has $TABLES tables, database has $LIVE"; exit 1; };
+            tar -czf "$BK/mu-plugins.tar.gz" -C "$WP_PATH/wp-content" mu-plugins;
+            cp -p "$WP_PATH/.htaccess" "$BK/htaccess.bak";
+            wp plugin list --fields=name,status,version --format=csv --path="$WP_PATH" > "$BK/plugins.csv" 2>/dev/null;
+            echo "BACKUP OK: $BK ($TABLES tables)";
+            ls -la "$BK"
+          '
+
+      - name: Pre-flight - WCML currency settings (read-only)
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" '
+            set -e
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            wp eval "
+              global \$woocommerce_wpml;
+              \$s = get_option(\"_wcml_settings\", array());
+              echo \"woocommerce_currency: \" . get_option(\"woocommerce_currency\") . \"\n\";
+              echo \"enable_multi_currency: \" . var_export(isset(\$s[\"enable_multi_currency\"]) ? \$s[\"enable_multi_currency\"] : null, true) . \"\n\";
+              echo \"currency_options: \" . implode(\",\", array_keys((array) (isset(\$s[\"currency_options\"]) ? \$s[\"currency_options\"] : array()))) . \"\n\";
+              \$codes = (is_object(\$woocommerce_wpml) && isset(\$woocommerce_wpml->multi_currency) && is_object(\$woocommerce_wpml->multi_currency) && method_exists(\$woocommerce_wpml->multi_currency, \"get_currency_codes\")) ? \$woocommerce_wpml->multi_currency->get_currency_codes() : array();
+              echo \"active codes (runtime): \" . implode(\",\", (array) \$codes) . \"\n\";
+              \$n = count((array) \$codes);
+              if (\$n < 1 && !empty(\$s[\"enable_multi_currency\"])) { \$n = count((array) \$s[\"currency_options\"]); }
+              echo \"RESULT active currencies: \$n\n\";
+              if (\$n >= 2) { echo \"ABORT: two or more currencies active, fix not applicable\n\"; exit(1); }
+            " --path="$WP_PATH"
+          '
+
+      - name: Deploy mu-plugin
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "mu-plugins/lunaci-cache-vary.php" "$SSH_USER@$SSH_HOST:/tmp/lunaimport-cache-vary.php"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" '
+            set -e
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            echo "WordPress found at: $WP_PATH";
+            php -l /tmp/lunaimport-cache-vary.php;
+            DEST="$WP_PATH/wp-content/mu-plugins/lunaci-cache-vary.php";
+            [ -f "$DEST" ] && cp -p "$DEST" "$HOME/lunaci-backups/lunaci-cache-vary.php.prev-$(date -u +%Y%m%d-%H%M%S)";
+            cp /tmp/lunaimport-cache-vary.php "$DEST" && rm -f /tmp/lunaimport-cache-vary.php;
+            echo "deployed: $DEST";
+            wp eval "echo function_exists(\"lunaci_cache_wcml_currencies\") ? \"mu-plugin loaded: YES, currencies: \" . implode(\",\", lunaci_cache_wcml_currencies()) . \"\n\" : \"mu-plugin loaded: NO\n\";" --path="$WP_PATH";
+            wp litespeed-purge all --path="$WP_PATH" || true
+          '
+
+      - name: Live check
+        run: |
+          BASE="https://lunacibarcelona.com"
+          FAIL=0
+          pass() { echo "PASS  $1"; }
+          fail() { echo "FAIL  $1"; FAIL=1; }
+          sleep 3
+          for p in / /es/ /products/ /product/lipstick/ /es/producto/pintalabios/ /about-us/; do
+            H1=$(curl -sS -D - -o /dev/null "$BASE$p")
+            H2=$(curl -sS -D - -o /dev/null -w "ttfb %{time_starttransfer}" "$BASE$p")
+            CODE=$(echo "$H2" | head -1 | awk '{print $2}')
+            echo "$H1$H2" | grep -qi "set-cookie: _lscache_vary=[^;]" && fail "$p still sets _lscache_vary" || pass "$p no _lscache_vary cookie"
+            STATE=$(echo "$H2" | grep -i "x-litespeed-cache:" | tr -d '\r' | awk '{print $2}')
+            TTFB=$(echo "$H2" | grep -o "ttfb .*")
+            [ "$CODE" = "200" ] || fail "$p status $CODE"
+            [ "$STATE" = "hit" ] && pass "$p 2nd request: hit ($TTFB)" || fail "$p 2nd request: '$STATE' ($TTFB)"
+          done
+
+          # Guest cart still works (Store API, uncached).
+          J=$(mktemp)
+          NONCE=$(curl -sS -m 30 -c "$J" -b "$J" -D - -o /dev/null "$BASE/wp-json/wc/store/v1/cart" | grep -i '^nonce:' | awk '{print $2}' | tr -d '\r')
+          curl -sS -m 30 -c "$J" -b "$J" -H "Nonce: $NONCE" -H 'Content-Type: application/json' \
+            -d '{"id":501,"quantity":1}' "$BASE/wp-json/wc/store/v1/cart/add-item" -o cart.json
+          ITEMS=$(python3 -c "import json;print(json.load(open('cart.json')).get('items_count','?'))" 2>/dev/null || echo "?")
+          [ "$ITEMS" = "1" ] && pass "guest add-to-cart: items_count=1" || fail "guest add-to-cart: items_count=$ITEMS"
+          CART=$(curl -sS -m 30 -c "$J" -b "$J" -D - -o /dev/null "$BASE/cart/" | grep -i "x-litespeed-cache:" | tr -d '\r')
+          case "$CART" in *hit*) fail "/cart/ with items served from cache ($CART)";; *) pass "/cart/ with items not cached (${CART:-no header})";; esac
+
+          if [ "$FAIL" = "0" ]; then echo "RESULT: ALL CHECKS PASSED"; else echo "RESULT: SOME CHECKS FAILED"; exit 1; fi

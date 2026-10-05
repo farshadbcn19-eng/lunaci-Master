@@ -67,7 +67,7 @@ $ids = array(
 	'/es/producto/lapiz-de-cejas-lunaci/' => 737, '/es/producto/delineador-de-labios-lunaci/' => 731,
 	'/es/producto/lapiz-de-ojos-lunaci/' => 741, '/es/producto/mascara-de-pestanas-alargadora-lunaci/' => 728,
 	'/es/producto/mascara-de-pestanas-voluminizadora-lunaci/' => 729, '/es/producto/delineador-de-ojos-lunaci/' => 730,
-	'/products/' => 61, '/es/productos/' => 771, '/es/contacto/' => 770, '/es/about-us-es/' => 680,
+	'/products/' => 61, '/es/productos/' => 771, '/es/contacto/' => 770, '/es/sobre-nosotros/' => 680,
 	'/privacy-policy/' => 3, '/es/politica-de-privacidad/' => 769, '/terms-of-service/' => 676,
 	'/es/terminos-de-servicio/' => 768, '/returns/' => 760, '/es/devoluciones/' => 766,
 	'/shipping/' => 759, '/es/envio/' => 765,

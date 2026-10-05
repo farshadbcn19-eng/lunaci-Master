@@ -1,0 +1,154 @@
+name: "Deploy - Spanish About page in Spanish + slug sobre-nosotros (dry-run / apply / rollback)"
+
+# Runs assets/luna-import/about-es.php:
+#   dry-run  - preconditions and plan only, nothing written
+#   apply    - full backup first (database, mu-plugins, .htaccess) to
+#              ~/lunaci-backups/pre-about-es-<timestamp>/ (stops on failure);
+#              Spanish copy in the HTML widget of post 680, slug about-us-es ->
+#              sobre-nosotros (301 from the old URL, lunaci-seo.php item 7),
+#              /es/about-us-es/ links in other Spanish pages updated (never the
+#              front page); purges cache; live checks
+#   rollback - restores _elementor_data and the slug from the backup JSON
+# lunaci-seo.php (item 7 is inert while the slug is about-us-es) is deployed
+# in every mode.
+
+on:
+#   dry-run  - preconditions and plan only, nothing written
+#   apply    - full backup first (database, mu-plugins, .htaccess) to
+#              ~/lunaci-backups/pre-about-es-<timestamp>/ (stops on failure);
+#              writes option lunaci_cat_intro (lead under the H1 and a
+#              collection block after the product grid on the 8 category
+#              archives); purges cache; live checks every category page
+#   rollback - restores the option from the backup JSON of the last apply
+# lunaci-seo.php (item 6 is inert while lunaci_cat_intro is unset) is
+# deployed in every mode.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run, apply or rollback"
+        required: true
+        default: "dry-run"
+        type: choice
+        options: ["dry-run", "apply", "rollback"]
+
+# One Hostinger deploy at a time: overlapping runs share /tmp files on the server.
+concurrency:
+  group: lunaci-hostinger-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+      SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+      SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+      SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
+      MODE: ${{ inputs.mode }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Run (with full backup before apply)
+        run: |
+          set -e
+          case "$MODE" in dry-run|apply|rollback) ;; *) echo "bad mode $MODE"; exit 1;; esac
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "scripts/db-backup.php" "assets/luna-import/about-es.php" "assets/luna-import/about-es/widget-ce307e5.html" "mu-plugins/lunaci-seo.php" "$SSH_USER@$SSH_HOST:/tmp/"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "MODE=$MODE"' bash -s' <<'REMOTE'
+            set -e
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            php -l /tmp/about-es.php
+            php -l /tmp/lunaci-seo.php
+            if [ "$MODE" = "rollback" ]; then
+              BK=$(cat "$HOME/lunaci-backups/LATEST-about-es" 2>/dev/null || true)
+              [ -n "$BK" ] && [ -f "$BK/about-es-backup.json" ] || { echo "ABORT: no apply backup found"; exit 1; }
+            elif [ "$MODE" = "apply" ]; then
+              BK="$HOME/lunaci-backups/pre-about-es-$(date -u +%Y%m%d-%H%M%S)"
+              mkdir -p "$BK"
+              php -l /tmp/db-backup.php
+              LIVE=$(wp db tables --all-tables --path="$WP_PATH" | wc -l)
+              LUNACI_BACKUP_FILE="$BK/database.sql.gz" wp eval-file /tmp/db-backup.php --path="$WP_PATH" || { echo "ABORT: database backup failed"; exit 1; }
+              gzip -t "$BK/database.sql.gz"
+              TABLES=$(zcat "$BK/database.sql.gz" | grep -c "^CREATE TABLE" || true)
+              [ "$TABLES" -ge "$LIVE" ] && [ "$TABLES" -gt 10 ] || { echo "ABORT: backup has $TABLES tables, database has $LIVE"; exit 1; }
+              tar -czf "$BK/mu-plugins.tar.gz" -C "$WP_PATH/wp-content" mu-plugins
+              cp -p "$WP_PATH/.htaccess" "$BK/htaccess.bak"
+              echo "$BK" > "$HOME/lunaci-backups/LATEST-about-es"
+              echo "BACKUP OK: $BK ($TABLES tables)"
+            else
+              BK=$(mktemp -d)
+            fi
+            DEST="$WP_PATH/wp-content/mu-plugins/lunaci-seo.php"
+            [ -f "$DEST" ] && cp -p "$DEST" "$HOME/lunaci-backups/lunaci-seo.php.prev-$(date -u +%Y%m%d-%H%M%S)"
+            cp /tmp/lunaci-seo.php "$DEST"
+            echo "deployed: $DEST"
+            LUNACI_MODE="$MODE" LUNACI_BACKUP_DIR="$BK" LUNACI_WIDGET_HTML=/tmp/widget-ce307e5.html wp eval-file /tmp/about-es.php --path="$WP_PATH"
+            rm -f /tmp/about-es.php /tmp/widget-ce307e5.html /tmp/db-backup.php /tmp/lunaci-seo.php
+            [ "$MODE" = "dry-run" ] || wp litespeed-purge all --path="$WP_PATH" || true
+          REMOTE
+
+      - name: Live check
+        if: inputs.mode != 'dry-run'
+        run: |
+          sleep 3
+          python3 - <<'PY'
+          import os, re, sys, html, urllib.request, urllib.error
+          mode = os.environ["MODE"]
+          base = "https://lunacibarcelona.com"
+          new, old = "/es/sobre-nosotros/", "/es/about-us-es/"
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, *a, **k): return None
+          opener = urllib.request.build_opener(NoRedirect)
+          def get(u, follow=True):
+              req = urllib.request.Request(base + u, headers={"User-Agent": "Mozilla/5.0 lunaci-check"})
+              try:
+                  r = (urllib.request.urlopen if follow else opener.open)(req, timeout=60)
+                  return r.status, r.headers.get("Location", ""), r.read().decode("utf-8", "replace")
+              except urllib.error.HTTPError as e:
+                  return e.code, e.headers.get("Location", ""), ""
+          fail = 0
+          def check(ok, msg):
+              global fail
+              print(("PASS  " if ok else "FAIL  ") + msg); fail |= not ok
+          live, gone = (new, old) if mode == "apply" else (old, new)
+          code, _, page = get(live)
+          text = html.unescape(re.sub(r"<[^>]+>", " ", page))
+          check(code == 200, f"{live} 200 (got {code})")
+          h1 = re.search(r'<h1 class="lna-hero__h1">(.*?)</h1>', page, re.S)
+          h1t = re.sub(r"<[^>]+>", "", h1.group(1)).strip() if h1 else ""
+          check(h1t == ("Nuestra Historia" if mode == "apply" else "Our Story"), f"H1 '{h1t}'")
+          if mode == "apply":
+              english = [s for s in ("Why LUNACI", "Our Values", "Strengthening the inner", "Non-negotiable", "All rights reserved", "Mediterranean Luxury Beauty House", "Born from the golden") if s in text]
+              check(not english, f"no English copy left in the page body {english}")
+              for s in ("Por qué", "Nuestros", "Fortalecer la confianza interior", "Todos los derechos reservados", "Casa de Belleza de Lujo Mediterránea"):
+                  check(s in text, f"Spanish copy present: {s}")
+              check(f'hreflang="es" href="{base}{new}"' in page, "hreflang es -> new URL")
+              check(f'hreflang="en" href="{base}/about-us/"' in page, "hreflang en -> /about-us/")
+              check(f'<link rel="canonical" href="{base}{new}"' in page, "canonical is the new URL")
+              t = re.search(r"<title>(.*?)</title>", page, re.S)
+              check(t and "Sobre Nosotros" in t.group(1), "title kept (Sobre Nosotros)")
+              code, loc, _ = get(old, follow=False)
+              check(code == 301 and loc == base + new, f"{old} -> 301 {loc}")
+              for u in ("/es/contacto/", "/es/productos/"):
+                  c, _, p = get(u)
+                  check(c == 200 and f"{base}{old}" not in p and f"{base}{new}" in p, f"{u} links the new URL")
+          else:
+              code, _, _ = get(gone, follow=False)
+              check(code == 404, f"rollback: {gone} gone (got {code})")
+          c, _, p = get("/about-us/")
+          check(c == 200 and '<h1 class="lna-hero__h1">Our <em>Story</em></h1>' in p, "English /about-us/ unchanged")
+          for u in ("/", "/es/"):
+              c, _, _ = get(u)
+              check(c == 200, f"{u} 200")
+          print("RESULT: ALL CHECKS PASSED" if not fail else "RESULT: SOME CHECKS FAILED")
+          sys.exit(1 if fail else 0)
+          PY

@@ -22,6 +22,8 @@
  *  6. Category archive intro copy (option lunaci_cat_intro, keyed by term
  *     slug): a short lead under the H1 and a collection block with an H2
  *     after the product grid. Inert while the option is unset.
+ *  7. 301 from /es/about-us-es/ to the Spanish About page's current URL once
+ *     its slug has changed (inert while the slug is still about-us-es).
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -371,4 +373,29 @@ add_action(
 		echo '</section>';
 	},
 	20
+);
+
+// 7. Old Spanish About URL -> current permalink of the Spanish About page
+// (post 680, the WPML translation of About Us).
+add_action(
+	'template_redirect',
+	function () {
+		if ( empty( $_SERVER['REQUEST_URI'] ) ) {
+			return;
+		}
+		$path = (string) wp_parse_url( wp_unslash( $_SERVER['REQUEST_URI'] ), PHP_URL_PATH ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( ! preg_match( '#^/es/about-us-es/?$#', $path ) ) {
+			return;
+		}
+		$page = get_post( 680 );
+		if ( ! $page || 'publish' !== $page->post_status || 'about-us-es' === $page->post_name ) {
+			return;
+		}
+		$link = get_permalink( $page );
+		if ( $link && false === strpos( $link, '/about-us-es/' ) ) {
+			wp_safe_redirect( $link, 301 );
+			exit;
+		}
+	},
+	1
 );

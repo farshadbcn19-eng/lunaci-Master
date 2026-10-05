@@ -1,0 +1,144 @@
+name: "Deploy - Spanish global menu, English-only About, Spanish footer copyright (dry-run / apply / rollback)"
+
+# Runs assets/luna-import/header-about-en.php:
+#   dry-run  - preconditions and plan only, nothing written
+#   apply    - full backup first (database, mu-plugins, .htaccess) to
+#              ~/lunaci-backups/pre-header-about-en-<timestamp>/ (stops on
+#              failure); Code Snippet 8 menu follows the WPML language (the
+#              new code is linted on the server first); Spanish lines removed
+#              from the English About widget; option lunaci_es_copyright=on;
+#              purges cache; live checks on Spanish and English pages
+#   rollback - restores snippet 8, post 59 and the option from the backup JSON
+# lunaci-seo.php (item 8 is inert until lunaci_es_copyright=on) is deployed in
+# every mode.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run, apply or rollback"
+        required: true
+        default: "dry-run"
+        type: choice
+        options: ["dry-run", "apply", "rollback"]
+
+# One Hostinger deploy at a time: overlapping runs share /tmp files on the server.
+concurrency:
+  group: lunaci-hostinger-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+      SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+      SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+      SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
+      MODE: ${{ inputs.mode }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Run (with full backup before apply)
+        run: |
+          set -e
+          case "$MODE" in dry-run|apply|rollback) ;; *) echo "bad mode $MODE"; exit 1;; esac
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'rm -rf /tmp/header-about-en && mkdir -p /tmp/header-about-en'
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "scripts/db-backup.php" "assets/luna-import/header-about-en.php" "mu-plugins/lunaci-seo.php" \
+            "assets/luna-import/header-about-en/snippet-8.php" "assets/luna-import/header-about-en/about-en-ce307e5.html" \
+            "$SSH_USER@$SSH_HOST:/tmp/header-about-en/"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "MODE=$MODE"' bash -s' <<'REMOTE'
+            set -e
+            T=/tmp/header-about-en
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            php -l $T/header-about-en.php
+            php -l $T/lunaci-seo.php
+            # Code Snippets runs snippet code with eval(); a syntax error there
+            # would break every page, so lint the exact new code first.
+            { echo '<?php'; cat $T/snippet-8.php; } > $T/snippet-8-lint.php
+            php -l $T/snippet-8-lint.php
+            if [ "$MODE" = "rollback" ]; then
+              BK=$(cat "$HOME/lunaci-backups/LATEST-header-about-en" 2>/dev/null || true)
+              [ -n "$BK" ] && [ -f "$BK/header-about-en-backup.json" ] || { echo "ABORT: no apply backup found"; exit 1; }
+            elif [ "$MODE" = "apply" ]; then
+              BK="$HOME/lunaci-backups/pre-header-about-en-$(date -u +%Y%m%d-%H%M%S)"
+              mkdir -p "$BK"
+              php -l $T/db-backup.php
+              LIVE=$(wp db tables --all-tables --path="$WP_PATH" | wc -l)
+              LUNACI_BACKUP_FILE="$BK/database.sql.gz" wp eval-file $T/db-backup.php --path="$WP_PATH" || { echo "ABORT: database backup failed"; exit 1; }
+              gzip -t "$BK/database.sql.gz"
+              TABLES=$(zcat "$BK/database.sql.gz" | grep -c "^CREATE TABLE" || true)
+              [ "$TABLES" -ge "$LIVE" ] && [ "$TABLES" -gt 10 ] || { echo "ABORT: backup has $TABLES tables, database has $LIVE"; exit 1; }
+              tar -czf "$BK/mu-plugins.tar.gz" -C "$WP_PATH/wp-content" mu-plugins
+              cp -p "$WP_PATH/.htaccess" "$BK/htaccess.bak"
+              echo "$BK" > "$HOME/lunaci-backups/LATEST-header-about-en"
+              echo "BACKUP OK: $BK ($TABLES tables)"
+            else
+              BK=$(mktemp -d)
+            fi
+            DEST="$WP_PATH/wp-content/mu-plugins/lunaci-seo.php"
+            [ -f "$DEST" ] && cp -p "$DEST" "$HOME/lunaci-backups/lunaci-seo.php.prev-$(date -u +%Y%m%d-%H%M%S)"
+            cp $T/lunaci-seo.php "$DEST"
+            echo "deployed: $DEST"
+            LUNACI_MODE="$MODE" LUNACI_BACKUP_DIR="$BK" LUNACI_SRC_DIR="$T" wp eval-file $T/header-about-en.php --path="$WP_PATH"
+            rm -rf $T
+            [ "$MODE" = "dry-run" ] || wp litespeed-purge all --path="$WP_PATH" || true
+          REMOTE
+
+      - name: Live check
+        if: inputs.mode != 'dry-run'
+        run: |
+          sleep 3
+          python3 - <<'PY'
+          import os, re, sys, html, urllib.request
+          mode = os.environ["MODE"]
+          base = "https://lunacibarcelona.com"
+          def get(u):
+              req = urllib.request.Request(base + u + ("&" if "?" in u else "?") + "lc=" + str(os.getpid()), headers={"User-Agent": "Mozilla/5.0 lunaci-check"})
+              with urllib.request.urlopen(req, timeout=60) as r:
+                  return r.status, r.read().decode("utf-8", "replace")
+          def menu(page):
+              m = re.search(r'<ul class="ln-nav__links" id="lunaciGlobalNavLinks">(.*?)</ul>', page, re.S)
+              return re.findall(r'<a href="([^"]+)">([^<]+)</a>', m.group(1)) if m else []
+          def copyright(page):
+              m = re.search(r'<div class="copyright show">\s*<p>([^<]*)</p>', page)
+              return m.group(1).strip() if m else None
+          EN = [("https://lunacibarcelona.com/", "Home"), ("https://lunacibarcelona.com/products/", "Products"), ("https://lunacibarcelona.com/about-us/", "About"), ("https://lunacibarcelona.com/contact", "Contact")]
+          ES = [("https://lunacibarcelona.com/es/", "Inicio"), ("https://lunacibarcelona.com/es/productos/", "Productos"), ("https://lunacibarcelona.com/es/sobre-nosotros/", "Sobre Nosotros"), ("https://lunacibarcelona.com/es/contacto/", "Contacto")]
+          fail = 0
+          def check(ok, msg):
+              global fail
+              print(("PASS  " if ok else "FAIL  ") + msg); fail |= not ok
+          for u in ("/es/", "/es/contacto/", "/es/sobre-nosotros/", "/es/productos/", "/es/categoria-producto/labios/", "/es/producto/pintalabios/", "/es/envio/"):
+              code, page = get(u)
+              want = ES if mode == "apply" else EN
+              cr = copyright(page)
+              check(code == 200 and menu(page) == want, f"{u} menu {'Spanish' if mode == 'apply' else 'restored'}: {[t for _, t in menu(page)]}")
+              if cr is not None:
+                  check(cr == ("Todos los derechos reservados" if mode == "apply" else "All rights reserved"), f"{u} theme footer copyright '{cr}'")
+          for u in ("/", "/contact/", "/products/", "/product/lipstick/", "/product-category/lips/"):
+              code, page = get(u)
+              cr = copyright(page)
+              check(code == 200 and menu(page) == EN, f"{u} English menu unchanged")
+              if cr is not None:
+                  check(cr == "All rights reserved", f"{u} English copyright unchanged")
+          code, page = get("/about-us/")
+          body = page[page.find('<nav class="lna-nav"'):page.find("</footer>", page.find('<footer class="lna-foot"'))]
+          text = html.unescape(re.sub(r"<[^>]+>", " ", body))
+          spanish = [w for w in ("Nacido de la luz", "Nuestra Historia", "El Comienzo", "nació de una filosofía", "Nuestros Valores", "Confianza", "Todas las mujeres") if w in text]
+          if mode == "apply":
+              check(code == 200 and not spanish and "Our <em>Story</em>" in page and "The <em>Beginning</em>" in page and "Our <em>Values</em>" in page, f"/about-us/ English only, English copy intact (Spanish left: {spanish})")
+              check('<svg' in body and "(function(){" not in re.sub(r"<script>.*?</script>", "", page, flags=re.S), "/about-us/ widget intact (svg kept, script not printed as text)")
+          else:
+              check(code == 200 and "Nacido de la luz" in text, "/about-us/ restored (Spanish lines back)")
+          print("RESULT: ALL CHECKS PASSED" if not fail else "RESULT: SOME CHECKS FAILED")
+          sys.exit(1 if fail else 0)
+          PY

@@ -36,10 +36,17 @@
  *     page on the final HTML): block library, MediaElement, Jetpack Forms,
  *     Hostinger Reach, AIOSEO table of contents, Essential Addons. With item
  *     3 on, the PayPal / WooPayments product CSS goes too.
+ *  6. Store page styling to the brand palette: the product tabs used the
+ *     WooCommerce white/lilac tab background under cream text (contrast
+ *     ~1.1:1, unreadable); they become transparent on the warm black with
+ *     cream text and a thin #D4AF37 rule under the active tab. Theme-pink
+ *     (#CC3366) links in product meta/content and the skip link use brand
+ *     colours (gold as text only, never as a fill).
  *
  * Modes: "off", "test" (active only on URLs with ?lunaci_perf=1) or "on".
  * Items 1-2 use option lunaci_perf_mode, item 3 lunaci_perf_payments_mode,
- * item 4 lunaci_brand_fonts_mode, item 5 lunaci_css_trim_mode.
+ * item 4 lunaci_brand_fonts_mode, item 5 lunaci_css_trim_mode,
+ * item 6 lunaci_wc_style_mode.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -287,3 +294,28 @@ function lunaci_css_trim_html( $html ) {
 	}
 	return $html;
 }
+
+// 6. Store page styling to the brand palette. Printed late so it follows the
+// WooCommerce and theme stylesheets.
+add_action(
+	'wp_head',
+	function () {
+		if ( ! lunaci_perf_mode_active( 'lunaci_wc_style_mode' ) ) {
+			return;
+		}
+		$t   = 'body.single-product div.product .woocommerce-tabs ul.tabs';
+		$css = "$t{padding:0!important;margin:0 0 28px!important;border-bottom:1px solid rgba(247,244,238,.16)!important;overflow:visible}"
+			. "$t::before,$t::after{display:none!important}"
+			. "$t li{background:transparent!important;border:0!important;border-radius:0!important;margin:0 28px 0 0!important;padding:0!important;box-shadow:none!important}"
+			. "$t li::before,$t li::after{display:none!important}"
+			. "$t li a{font-family:'Helvetica LUNACI',Helvetica,Arial,sans-serif!important;font-size:11px!important;font-weight:400!important;letter-spacing:.25em!important;text-transform:uppercase!important;color:rgba(247,244,238,.62)!important;padding:14px 0 12px!important;border-bottom:1px solid transparent!important;margin-bottom:-1px!important;display:inline-block}"
+			. "$t li.active a{color:#F7F4EE!important;border-bottom-color:#D4AF37!important}"
+			. "$t li a:hover,$t li a:focus-visible{color:#F7F4EE!important}"
+			. 'body.woocommerce div.product .product_meta a,body.woocommerce div.product .woocommerce-product-details__short-description a,body.woocommerce div.product .woocommerce-Tabs-panel a:not(.button){color:#D4AF37!important;text-decoration:none}'
+			. 'body.woocommerce div.product .product_meta a:hover,body.woocommerce div.product .woocommerce-Tabs-panel a:not(.button):hover{color:#F7F4EE!important}'
+			. 'a.skip-link.screen-reader-text:focus,.lunaci-skip-link:focus{background:#0B0B0B!important;color:#F7F4EE!important;outline:1px solid #D4AF37!important}'
+			. 'a.skip-link,.lunaci-skip-link{color:#F7F4EE}';
+		echo '<style id="lunaci-wc-style">' . $css . '</style>' . "\n";
+	},
+	999
+);

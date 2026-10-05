@@ -1,4 +1,4 @@
-# Phase C — Meta title & description draft (approved, self-reviewed ×3)
+# Phase C — Meta titles & descriptions (applied live 2026-10-05, run 37346473444)
 
 Drafted 2026-10-05 from the live product copy, using approved vocabulary only (Appendix C). Titles are ≤60 characters. Descriptions are 120–155 characters, so the closing brand line is not truncated in Google. Each product line ends with that product's own on-site tagline (EN/ES), each English category ends with the LDO002 refrain "Seen. Then remembered.", and Spanish uses full sentences with "que se siente / que permanece" rather than comma fragments.
 

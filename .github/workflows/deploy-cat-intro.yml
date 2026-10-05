@@ -1,0 +1,136 @@
+name: "Deploy - category intro copy (dry-run / apply / rollback)"
+
+# Runs assets/luna-import/cat-intro.php with seo/phase-d-cat-intro.json:
+#   dry-run  - preconditions and plan only, nothing written
+#   apply    - full backup first (database, mu-plugins, .htaccess) to
+#              ~/lunaci-backups/pre-cat-intro-<timestamp>/ (stops on failure);
+#              writes option lunaci_cat_intro (lead under the H1 and a
+#              collection block after the product grid on the 8 category
+#              archives); purges cache; live checks every category page
+#   rollback - restores the option from the backup JSON of the last apply
+# lunaci-seo.php (item 6 is inert while lunaci_cat_intro is unset) is
+# deployed in every mode.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run, apply or rollback"
+        required: true
+        default: "dry-run"
+        type: choice
+        options: ["dry-run", "apply", "rollback"]
+
+# One Hostinger deploy at a time: overlapping runs share /tmp files on the server.
+concurrency:
+  group: lunaci-hostinger-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+      SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+      SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+      SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
+      MODE: ${{ inputs.mode }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Run (with full backup before apply)
+        run: |
+          set -e
+          case "$MODE" in dry-run|apply|rollback) ;; *) echo "bad mode $MODE"; exit 1;; esac
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "scripts/db-backup.php" "assets/luna-import/cat-intro.php" "seo/phase-d-cat-intro.json" "mu-plugins/lunaci-seo.php" "$SSH_USER@$SSH_HOST:/tmp/"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "MODE=$MODE"' bash -s' <<'REMOTE'
+            set -e
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            php -l /tmp/cat-intro.php
+            php -l /tmp/lunaci-seo.php
+            if [ "$MODE" = "rollback" ]; then
+              BK=$(cat "$HOME/lunaci-backups/LATEST-cat-intro" 2>/dev/null || true)
+              [ -n "$BK" ] && [ -f "$BK/cat-intro-backup.json" ] || { echo "ABORT: no apply backup found"; exit 1; }
+            elif [ "$MODE" = "apply" ]; then
+              BK="$HOME/lunaci-backups/pre-cat-intro-$(date -u +%Y%m%d-%H%M%S)"
+              mkdir -p "$BK"
+              php -l /tmp/db-backup.php
+              LIVE=$(wp db tables --all-tables --path="$WP_PATH" | wc -l)
+              LUNACI_BACKUP_FILE="$BK/database.sql.gz" wp eval-file /tmp/db-backup.php --path="$WP_PATH" || { echo "ABORT: database backup failed"; exit 1; }
+              gzip -t "$BK/database.sql.gz"
+              TABLES=$(zcat "$BK/database.sql.gz" | grep -c "^CREATE TABLE" || true)
+              [ "$TABLES" -ge "$LIVE" ] && [ "$TABLES" -gt 10 ] || { echo "ABORT: backup has $TABLES tables, database has $LIVE"; exit 1; }
+              tar -czf "$BK/mu-plugins.tar.gz" -C "$WP_PATH/wp-content" mu-plugins
+              cp -p "$WP_PATH/.htaccess" "$BK/htaccess.bak"
+              echo "$BK" > "$HOME/lunaci-backups/LATEST-cat-intro"
+              echo "BACKUP OK: $BK ($TABLES tables)"
+            else
+              BK=$(mktemp -d)
+            fi
+            DEST="$WP_PATH/wp-content/mu-plugins/lunaci-seo.php"
+            [ -f "$DEST" ] && cp -p "$DEST" "$HOME/lunaci-backups/lunaci-seo.php.prev-$(date -u +%Y%m%d-%H%M%S)"
+            cp /tmp/lunaci-seo.php "$DEST"
+            echo "deployed: $DEST"
+            LUNACI_MODE="$MODE" LUNACI_BACKUP_DIR="$BK" LUNACI_INTRO_JSON=/tmp/phase-d-cat-intro.json wp eval-file /tmp/cat-intro.php --path="$WP_PATH"
+            rm -f /tmp/cat-intro.php /tmp/phase-d-cat-intro.json /tmp/db-backup.php /tmp/lunaci-seo.php
+            [ "$MODE" = "dry-run" ] || wp litespeed-purge all --path="$WP_PATH" || true
+          REMOTE
+
+      - name: Live check
+        if: inputs.mode != 'dry-run'
+        run: |
+          sleep 3
+          python3 - <<'PY'
+          import json, html, re, os, sys, urllib.request
+          mode = os.environ["MODE"]
+          base = "https://lunacibarcelona.com"
+          paths = {"lips": "/product-category/lips/", "face": "/product-category/face/", "eyes": "/product-category/eyes/", "nails": "/product-category/nails/",
+                   "labios": "/es/categoria-producto/labios/", "rostro": "/es/categoria-producto/rostro/", "ojos": "/es/categoria-producto/ojos/", "unas": "/es/categoria-producto/unas/"}
+          titles = {r["url"]: r["title"] for r in json.load(open("seo/phase-c-meta.json"))}
+          intro = json.load(open("seo/phase-d-cat-intro.json"))
+          def get(u):
+              req = urllib.request.Request(base + u, headers={"User-Agent": "Mozilla/5.0 lunaci-check"})
+              with urllib.request.urlopen(req, timeout=60) as r:
+                  return r.status, r.read().decode("utf-8", "replace")
+          fail = 0
+          for slug, u in paths.items():
+              code, page = get(u)
+              text = html.unescape(page)
+              v = intro[slug]
+              msgs = []
+              if code != 200 or "lunaci-category-banner" not in page or "lunaci-filter-btn active" not in page:
+                  msgs.append(f"status {code} or banner/filter bar missing")
+              t = re.search(r"<title>(.*?)</title>", page, re.S)
+              if not t or html.unescape(t.group(1)).strip() != titles[u]:
+                  msgs.append("Phase C meta title changed")
+              if page.count("woocommerce-loop-product__title") < 1:
+                  msgs.append("no products listed")
+              has_lead = f'<p class="lunaci-cat-lead">{v["lead"]}</p>' in text
+              has_h2 = f'<section class="lunaci-cat-about"><h2>{v["heading"]}</h2>' in text
+              links = re.findall(r"\{\{([^|]+)\|", " ".join(v["body"]))
+              linked = all(f'href="{base}{l}"' in page for l in links)
+              if mode == "apply":
+                  if not (has_lead and has_h2 and linked and v["body"][-1] in text):
+                      msgs.append(f"intro lead {has_lead}, h2 {has_h2}, links {linked}")
+              else:
+                  if has_lead or has_h2:
+                      msgs.append("intro still shown after rollback")
+              if msgs:
+                  print(f"FAIL  {u}: " + "; ".join(msgs)); fail = 1
+              else:
+                  print(f"PASS  {u}" + (f"  lead + H2 '{v['heading']}' + {len(links)} product links" if mode == "apply" else "  intro removed, page intact"))
+          for u in ("/", "/es/", "/product/lipstick/", "/es/producto/pintalabios/", "/products/"):
+              code, page = get(u)
+              ok = code == 200 and "lunaci-cat-lead" not in page and "lunaci-cat-about" not in page
+              print(("PASS" if ok else "FAIL") + f"  {u} 200, no intro markup"); fail |= not ok
+          print("RESULT: ALL CHECKS PASSED" if not fail else "RESULT: SOME CHECKS FAILED")
+          sys.exit(1 if fail else 0)
+          PY

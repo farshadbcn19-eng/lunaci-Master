@@ -1,0 +1,130 @@
+name: "Deploy - WebP images + unused fonts (mu-plugin)"
+
+# Deploys mu-plugins/lunaci-perf.php and sets its mode:
+#   test - active only on URLs with ?lunaci_perf=1 (visitors see no change)
+#   on   - active for everyone
+#   off  - inactive
+# 1. Full backup (database, mu-plugins, .htaccess, plugin list) to
+#    ~/lunaci-backups/pre-perf-<timestamp>/; stops on failure.
+# 2. Deploys the mu-plugin, creates .webp copies next to PNG/JPEG uploads
+#    (originals untouched), sets lunaci_perf_mode, purges cache.
+# 3. Live check for the chosen mode.
+# Rollback: run with mode "off" (or delete wp-content/mu-plugins/lunaci-perf.php).
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "test, on or off"
+        required: true
+        default: "test"
+        type: choice
+        options: ["test", "on", "off"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+      SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+      SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+      SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
+      MODE: ${{ inputs.mode }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Full pre-deploy backup (database, mu-plugins, .htaccess)
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "scripts/db-backup.php" "$SSH_USER@$SSH_HOST:/tmp/lunaimport-db-backup.php"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" '
+            set -e
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            BK="$HOME/lunaci-backups/pre-perf-$(date -u +%Y%m%d-%H%M%S)";
+            mkdir -p "$BK";
+            php -l /tmp/lunaimport-db-backup.php;
+            LIVE=$(wp db tables --all-tables --path="$WP_PATH" | wc -l);
+            echo "--- tables in database: $LIVE";
+            LUNACI_BACKUP_FILE="$BK/database.sql.gz" wp eval-file /tmp/lunaimport-db-backup.php --path="$WP_PATH" || { echo "ABORT: database backup failed"; exit 1; };
+            rm -f /tmp/lunaimport-db-backup.php;
+            gzip -t "$BK/database.sql.gz";
+            TABLES=$(zcat "$BK/database.sql.gz" | grep -c "^CREATE TABLE" || true);
+            [ "$TABLES" -ge "$LIVE" ] && [ "$TABLES" -gt 10 ] || { echo "ABORT: backup has $TABLES tables, database has $LIVE"; exit 1; };
+            tar -czf "$BK/mu-plugins.tar.gz" -C "$WP_PATH/wp-content" mu-plugins;
+            cp -p "$WP_PATH/.htaccess" "$BK/htaccess.bak";
+            wp plugin list --fields=name,status,version --format=csv --path="$WP_PATH" > "$BK/plugins.csv" 2>/dev/null;
+            echo "lunaci_perf_mode before: $(wp option get lunaci_perf_mode --path="$WP_PATH" 2>/dev/null || echo "(not set)")" | tee "$BK/perf-mode-before.txt";
+            echo "BACKUP OK: $BK ($TABLES tables)";
+            ls -la "$BK"
+          '
+
+      - name: Deploy mu-plugin, create WebP copies, set mode
+        run: |
+          set -e
+          case "$MODE" in test|on|off) ;; *) echo "bad mode $MODE"; exit 1;; esac
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "mu-plugins/lunaci-perf.php" "$SSH_USER@$SSH_HOST:/tmp/lunaimport-perf.php"
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "scripts/generate-webp.php" "$SSH_USER@$SSH_HOST:/tmp/lunaimport-generate-webp.php"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "MODE=$MODE"' bash -s' <<'REMOTE'
+            set -e
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            echo "WordPress found at: $WP_PATH"
+            php -l /tmp/lunaimport-perf.php
+            php -l /tmp/lunaimport-generate-webp.php
+            DEST="$WP_PATH/wp-content/mu-plugins/lunaci-perf.php"
+            [ -f "$DEST" ] && cp -p "$DEST" "$HOME/lunaci-backups/lunaci-perf.php.prev-$(date -u +%Y%m%d-%H%M%S)"
+            cp /tmp/lunaimport-perf.php "$DEST" && rm -f /tmp/lunaimport-perf.php
+            echo "deployed: $DEST"
+            wp eval-file /tmp/lunaimport-generate-webp.php --path="$WP_PATH"
+            rm -f /tmp/lunaimport-generate-webp.php
+            wp option update lunaci_perf_mode "$MODE" --autoload=yes --path="$WP_PATH"
+            echo "lunaci_perf_mode now: $(wp option get lunaci_perf_mode --path="$WP_PATH")"
+            wp litespeed-purge all --path="$WP_PATH" || true
+          REMOTE
+
+      - name: Live check
+        run: |
+          BASE="https://lunacibarcelona.com"
+          FAIL=0
+          pass() { echo "PASS  $1"; }
+          fail() { echo "FAIL  $1"; FAIL=1; }
+          sleep 3
+          case "$MODE" in test) Q="?lunaci_perf=1";; *) Q="";; esac
+          for p in / /es/ /products/ /product/lipstick/ /es/producto/pintalabios/ /about-us/ /product-category/lips/; do
+            curl -sS -m 60 -o page.html -w "%{http_code}" "$BASE$p$Q" > code.txt
+            CODE=$(cat code.txt)
+            [ "$CODE" = "200" ] || fail "$p$Q status $CODE"
+            WEBP=$(grep -oE 'wp-content/uploads/[^"'"'"' ]+\.(png|jpe?g)\.webp' page.html | sort -u | wc -l)
+            GF=$(grep -cE "elementor-gf-(roboto|robotoslab|opensans)-css" page.html || true)
+            if [ "$MODE" = "off" ]; then
+              [ "$WEBP" = "0" ] && pass "$p no webp rewrite (off)" || fail "$p has $WEBP webp URLs while off"
+            else
+              [ "$GF" = "0" ] && pass "$p$Q unused Google Fonts removed" || fail "$p$Q still loads $GF unused Google Font(s)"
+              case "$p" in /product/*|/es/producto/*|/products/|/product-category/*) [ "$WEBP" -gt 0 ] && pass "$p$Q $WEBP WebP image URLs" || fail "$p$Q no WebP image URLs";; *) echo "INFO  $p$Q $WEBP WebP image URLs";; esac
+            fi
+          done
+          # A rewritten image must load as image/webp.
+          curl -sS -m 60 "$BASE/product/lipstick/$Q" -o page.html
+          IMG=$(grep -oE 'https://lunacibarcelona\.com/wp-content/uploads/[^"'"'"' ]+\.(png|jpe?g)\.webp' page.html | head -1)
+          if [ -n "$IMG" ]; then
+            CT=$(curl -sSI -m 60 "$IMG" | grep -i '^content-type:' | tr -d '\r' | awk '{print $2}')
+            LEN=$(curl -sSI -m 60 "$IMG" | grep -i '^content-length:' | tr -d '\r' | awk '{print $2}')
+            [ "$CT" = "image/webp" ] && pass "WebP served: $IMG ($CT, $LEN bytes)" || fail "WebP served as '$CT': $IMG"
+          elif [ "$MODE" != "off" ]; then fail "no WebP URL found on /product/lipstick/$Q"; fi
+          if [ "$MODE" = "test" ]; then
+            curl -sS -m 60 "$BASE/product/lipstick/" -o plain.html
+            N=$(grep -cE '\.(png|jpe?g)\.webp' plain.html || true)
+            [ "$N" = "0" ] && pass "visitors (no ?lunaci_perf) unchanged" || fail "visitors already see $N WebP URLs in test mode"
+          fi
+          if [ "$FAIL" = "0" ]; then echo "RESULT: ALL CHECKS PASSED"; else echo "RESULT: SOME CHECKS FAILED"; exit 1; fi

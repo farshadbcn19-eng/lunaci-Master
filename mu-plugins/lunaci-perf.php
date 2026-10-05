@@ -42,11 +42,16 @@
  *     cream text and a thin #D4AF37 rule under the active tab. Theme-pink
  *     (#CC3366) links in product meta/content and the skip link use brand
  *     colours (gold as text only, never as a fill).
+ *  7. Store gold to the brand gold and no gold fills: the store used #C4A35A
+ *     (prices, category title, breadcrumb, card and field borders) and gold
+ *     filled buttons (Add to cart, loop buttons, active filter). All become
+ *     #D4AF37 (same opacities); buttons are transparent with a #D4AF37
+ *     border and cream text, gold text on hover.
  *
  * Modes: "off", "test" (active only on URLs with ?lunaci_perf=1) or "on".
  * Items 1-2 use option lunaci_perf_mode, item 3 lunaci_perf_payments_mode,
  * item 4 lunaci_brand_fonts_mode, item 5 lunaci_css_trim_mode,
- * item 6 lunaci_wc_style_mode.
+ * item 6 lunaci_wc_style_mode, item 7 lunaci_wc_gold_mode.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -318,4 +323,28 @@ add_action(
 		echo '<style id="lunaci-wc-style">' . $css . '</style>' . "\n";
 	},
 	999
+);
+
+// 7. Brand gold in the store, buttons with a gold border instead of a fill.
+add_action(
+	'wp_head',
+	function () {
+		if ( ! lunaci_perf_mode_active( 'lunaci_wc_gold_mode' ) ) {
+			return;
+		}
+		$g   = '#D4AF37';
+		$w   = 'body.woocommerce';
+		$btn = "$w div.product form.cart .single_add_to_cart_button,$w div.product form.cart button.button.alt,$w ul.products li.product a.button,$w .related ul.products li.product a.button,a.lunaci-filter-btn.active";
+		$css = "$w .woocommerce-breadcrumb a{color:rgba(212,175,55,.55)!important}"
+			. "$w .price,$w .price .woocommerce-Price-amount,$w .price bdi,$w .price .woocommerce-Price-currencySymbol,$w .price ins,$w ul.products li.product .price,$w ul.products li.product .price .woocommerce-Price-amount,$w ul.products li.product .price bdi{color:$g!important}"
+			. "$w h1.woocommerce-products-header__title,$w .woocommerce-products-header__title.page-title{color:$g!important}"
+			. "$w div.product form.cart select,$w select.orderby{border-color:rgba(212,175,55,.2)!important}"
+			. "$w ul.products li.product{border-color:rgba(212,175,55,.15)!important}"
+			. "a.lunaci-filter-btn{border-color:rgba(212,175,55,.3)!important}"
+			. "$btn{background:transparent!important;background-color:transparent!important;background-image:none!important;border:1px solid $g!important;color:#F7F4EE!important;box-shadow:none!important}"
+			. "$w div.product form.cart .single_add_to_cart_button:hover,$w div.product form.cart button.button.alt:hover,$w ul.products li.product a.button:hover,a.lunaci-filter-btn:hover,a.lunaci-filter-btn.active:hover{background:transparent!important;color:$g!important;border-color:$g!important}"
+			. "$w div.product form.cart .single_add_to_cart_button:focus-visible,$w ul.products li.product a.button:focus-visible{outline:1px solid #F7F4EE!important;outline-offset:3px}";
+		echo '<style id="lunaci-wc-gold">' . $css . '</style>' . "\n";
+	},
+	1000
 );

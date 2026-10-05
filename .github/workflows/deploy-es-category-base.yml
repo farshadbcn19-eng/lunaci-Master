@@ -1,0 +1,115 @@
+name: "Deploy - Spanish category base categoria-producto (dry-run / apply / rollback)"
+
+# Runs assets/luna-import/es-category-base.php so Spanish category archives
+# use /es/categoria-producto/<slug>/ instead of /es/product-category/<slug>/:
+#   dry-run  - report the WCML base string status and current links
+#   apply    - full backup first (database, mu-plugins, .htaccess) to
+#              ~/lunaci-backups/pre-es-category-base-<timestamp>/ (stops on
+#              failure); deploys mu-plugins/lunaci-seo.php (301 from the old
+#              base); marks the existing Spanish base translation complete;
+#              flushes rewrite rules; purges cache; live checks
+#   rollback - restores the translation status saved by the last apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run, apply or rollback"
+        required: true
+        default: "dry-run"
+        type: choice
+        options: ["dry-run", "apply", "rollback"]
+
+# One Hostinger deploy at a time: overlapping runs share /tmp files on the server.
+concurrency:
+  group: lunaci-hostinger-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+      SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+      SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+      SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
+      MODE: ${{ inputs.mode }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Run (with full backup before apply)
+        run: |
+          set -e
+          case "$MODE" in dry-run|apply|rollback) ;; *) echo "bad mode $MODE"; exit 1;; esac
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "scripts/db-backup.php" "assets/luna-import/es-category-base.php" "mu-plugins/lunaci-seo.php" "$SSH_USER@$SSH_HOST:/tmp/"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "MODE=$MODE"' bash -s' <<'REMOTE'
+            set -e
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            php -l /tmp/es-category-base.php
+            php -l /tmp/lunaci-seo.php
+            if [ "$MODE" = "rollback" ]; then
+              BK=$(cat "$HOME/lunaci-backups/LATEST-es-category-base" 2>/dev/null || true)
+              [ -n "$BK" ] && [ -f "$BK/es-category-base-backup.json" ] || { echo "ABORT: no apply backup found"; exit 1; }
+            elif [ "$MODE" = "apply" ]; then
+              BK="$HOME/lunaci-backups/pre-es-category-base-$(date -u +%Y%m%d-%H%M%S)"
+              mkdir -p "$BK"
+              php -l /tmp/db-backup.php
+              LIVE=$(wp db tables --all-tables --path="$WP_PATH" | wc -l)
+              LUNACI_BACKUP_FILE="$BK/database.sql.gz" wp eval-file /tmp/db-backup.php --path="$WP_PATH" || { echo "ABORT: database backup failed"; exit 1; }
+              gzip -t "$BK/database.sql.gz"
+              TABLES=$(zcat "$BK/database.sql.gz" | grep -c "^CREATE TABLE" || true)
+              [ "$TABLES" -ge "$LIVE" ] && [ "$TABLES" -gt 10 ] || { echo "ABORT: backup has $TABLES tables, database has $LIVE"; exit 1; }
+              tar -czf "$BK/mu-plugins.tar.gz" -C "$WP_PATH/wp-content" mu-plugins
+              cp -p "$WP_PATH/.htaccess" "$BK/htaccess.bak"
+              echo "$BK" > "$HOME/lunaci-backups/LATEST-es-category-base"
+              echo "BACKUP OK: $BK ($TABLES tables)"
+              DEST="$WP_PATH/wp-content/mu-plugins/lunaci-seo.php"
+              [ -f "$DEST" ] && cp -p "$DEST" "$BK/lunaci-seo.php.prev"
+              cp /tmp/lunaci-seo.php "$DEST"
+              echo "deployed: $DEST"
+            else
+              BK=$(mktemp -d)
+            fi
+            LUNACI_MODE="$MODE" LUNACI_BACKUP_DIR="$BK" wp eval-file /tmp/es-category-base.php --path="$WP_PATH"
+            rm -f /tmp/es-category-base.php /tmp/db-backup.php /tmp/lunaci-seo.php
+            [ "$MODE" = "dry-run" ] || wp litespeed-purge all --path="$WP_PATH" || true
+          REMOTE
+
+      - name: Live check
+        if: inputs.mode != 'dry-run'
+        run: |
+          BASE="https://lunacibarcelona.com"
+          FAIL=0
+          pass() { echo "PASS  $1"; }
+          fail() { echo "FAIL  $1"; FAIL=1; }
+          sleep 3
+          if [ "$MODE" = "apply" ]; then NEW=categoria-producto; OLD=product-category; else NEW=product-category; OLD=categoria-producto; fi
+          for pair in labios:Labios rostro:Rostro ojos:Ojos unas:Uñas; do
+            slug=${pair%%:*}; name=${pair#*:}
+            CODE=$(curl -sS -m 60 -o page.html -w "%{http_code}" "$BASE/es/$NEW/$slug/")
+            [ "$CODE" = "200" ] && pass "/es/$NEW/$slug/ 200" || fail "/es/$NEW/$slug/ status $CODE"
+            grep -q "<h1[^>]*>$name</h1>" page.html && pass "  H1 $name" || fail "  H1 $name missing"
+            grep -q "lunaci-filter-btn active[^>]*href=\"$BASE/es/$NEW/$slug/\"\|href=\"$BASE/es/$NEW/$slug/\"[^>]*class=\"lunaci-filter-btn active" page.html && pass "  filter tab links to /es/$NEW/" || { grep -q "es/$NEW/$slug/" page.html && pass "  page links to /es/$NEW/$slug/" || fail "  filter tab does not link to /es/$NEW/"; }
+            grep -q "hreflang=\"es\" href=\"$BASE/es/$NEW/$slug/\"" page.html && pass "  hreflang es -> /es/$NEW/" || fail "  hreflang es not on /es/$NEW/"
+            if [ "$MODE" = "apply" ]; then
+              R=$(curl -sS -m 60 -o /dev/null -w "%{http_code} %{redirect_url}" "$BASE/es/$OLD/$slug/")
+              [ "$R" = "301 $BASE/es/$NEW/$slug/" ] && pass "  old /es/$OLD/$slug/ -> 301" || fail "  old /es/$OLD/$slug/ gives '$R'"
+            fi
+          done
+          curl -sS -m 60 "$BASE/es/producto/pintalabios/" -o page.html
+          grep -q "es/$NEW/labios/[^>]*>Labios<" page.html && pass "ES product links to /es/$NEW/labios/" || fail "ES product category link not /es/$NEW/labios/"
+          for slug in lips face eyes nails; do
+            CODE=$(curl -sS -m 60 -o page.html -w "%{http_code}" "$BASE/product-category/$slug/")
+            [ "$CODE" = "200" ] && grep -q 'lunaci-category-banner' page.html && pass "EN /product-category/$slug/ unchanged" || fail "EN /product-category/$slug/ status $CODE or banner missing"
+          done
+          curl -sS -m 60 "$BASE/product_cat-sitemap.xml" -o sm.xml
+          grep -q "es/$NEW/labios" sm.xml && pass "sitemap uses /es/$NEW/" || echo "INFO  sitemap not yet regenerated with /es/$NEW/"
+          if [ "$FAIL" = "0" ]; then echo "RESULT: ALL CHECKS PASSED"; else echo "RESULT: SOME CHECKS FAILED"; exit 1; fi

@@ -117,6 +117,10 @@ foreach ( $rows as $r ) {
 		continue;
 	}
 	$title = get_the_title( $id );
+	if ( 'publish' !== get_post_status( $id ) || 'revision' === get_post_type( $id ) ) {
+		echo "SKIP post $id '$title': " . get_post_type( $id ) . '/' . get_post_status( $id ) . " (only published pages are edited)\n";
+		continue;
+	}
 	if ( in_array( $id, $front, true ) ) {
 		echo "SKIP post $id '$title': front page (hard rule), its link goes through the 301\n";
 		continue;

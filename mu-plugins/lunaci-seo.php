@@ -19,6 +19,9 @@
  *     lunaci_cat_meta, keyed by term slug). AIOSEO Lite has no per-term SEO
  *     fields, and the term description is printed on the archive, so the
  *     meta is set here without changing visible copy.
+ *  6. Category archive intro copy (option lunaci_cat_intro, keyed by term
+ *     slug): a short lead under the H1 and a collection block with an H2
+ *     after the product grid. Inert while the option is unset.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -299,6 +302,73 @@ add_filter(
 			$meta['twitter:description'] = $d;
 		}
 		return $meta;
+	},
+	20
+);
+
+// 6. Category archive intro (option lunaci_cat_intro: slug => array(
+// 'lead' => ..., 'heading' => ..., 'body' => array( paragraphs ) )).
+// {{/path/|Label}} in a paragraph becomes a link to that site path.
+function lunaci_seo_cat_intro() {
+	if ( ! is_product_category() ) {
+		return null;
+	}
+	$term  = get_queried_object();
+	$intro = get_option( 'lunaci_cat_intro', array() );
+	if ( ! $term || empty( $term->slug ) || ! is_array( $intro ) || empty( $intro[ $term->slug ]['lead'] ) ) {
+		return null;
+	}
+	return $intro[ $term->slug ];
+}
+
+function lunaci_seo_cat_intro_text( $text ) {
+	$parts = preg_split( '/(\{\{[^}|]+\|[^}]+\}\})/', (string) $text, -1, PREG_SPLIT_DELIM_CAPTURE );
+	$out   = '';
+	foreach ( $parts as $part ) {
+		if ( preg_match( '/^\{\{([^}|]+)\|([^}]+)\}\}$/', $part, $m ) ) {
+			$out .= '<a href="' . esc_url( home_url( $m[1] ) ) . '">' . esc_html( $m[2] ) . '</a>';
+		} else {
+			$out .= esc_html( $part );
+		}
+	}
+	return $out;
+}
+
+add_action(
+	'woocommerce_archive_description',
+	function () {
+		$intro = lunaci_seo_cat_intro();
+		if ( ! $intro ) {
+			return;
+		}
+		echo '<style>'
+			. '.lunaci-cat-lead{max-width:620px;margin:.75rem auto 0;padding:0 1.25rem;text-align:center;font-family:"Helvetica LUNACI",Helvetica,Arial,sans-serif;font-size:1rem;line-height:1.7;letter-spacing:.02em;color:rgba(247,244,238,.74)}'
+			. '.lunaci-cat-about{max-width:720px;margin:4rem auto 3.5rem;padding:2.5rem 1.25rem 0;border-top:1px solid rgba(212,175,55,.35);text-align:center}'
+			. '.lunaci-cat-about h2{font-family:"Trade Gothic LT Std Extended","Helvetica LUNACI",sans-serif;font-weight:400;font-size:clamp(.95rem,2.2vw,1.25rem);letter-spacing:.3em;text-transform:uppercase;color:#F7F4EE;margin:0 0 1.5rem}'
+			. '.lunaci-cat-about p{font-family:"Helvetica LUNACI",Helvetica,Arial,sans-serif;font-size:.95rem;line-height:1.85;color:rgba(247,244,238,.78);margin:0 0 1.1rem}'
+			. '.lunaci-cat-about a{color:inherit;text-decoration:none;border-bottom:1px solid rgba(212,175,55,.55)}'
+			. '.lunaci-cat-about a:hover,.lunaci-cat-about a:focus{color:#D4AF37}'
+			. '.lunaci-cat-about p.lunaci-cat-refrain{margin-top:1.75rem;font-size:.85rem;letter-spacing:.08em;color:#D4AF37}'
+			. '</style>';
+		echo '<p class="lunaci-cat-lead">' . esc_html( $intro['lead'] ) . '</p>';
+	},
+	10
+);
+
+add_action(
+	'woocommerce_after_shop_loop',
+	function () {
+		$intro = lunaci_seo_cat_intro();
+		if ( ! $intro || empty( $intro['heading'] ) || empty( $intro['body'] ) ) {
+			return;
+		}
+		$body = array_values( (array) $intro['body'] );
+		echo '<section class="lunaci-cat-about"><h2>' . esc_html( $intro['heading'] ) . '</h2>';
+		foreach ( $body as $i => $paragraph ) {
+			$class = ( count( $body ) - 1 === $i ) ? ' class="lunaci-cat-refrain"' : '';
+			echo '<p' . $class . '>' . lunaci_seo_cat_intro_text( $paragraph ) . '</p>'; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in lunaci_seo_cat_intro_text().
+		}
+		echo '</section>';
 	},
 	20
 );

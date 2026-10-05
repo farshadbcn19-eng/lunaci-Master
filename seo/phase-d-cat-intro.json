@@ -1,9 +1,9 @@
 {
  "lips": {
-  "lead": "Four lip formulas from Barcelona, each one holding exactly where it was placed.",
+  "lead": "Four lip formulas: a luxury matte, a waterproof matte, a luminous gloss and a pearlescent pencil.",
   "heading": "The LUNACI lip collection",
   "body": [
-   "{{/product/lipstick/|LUNACI Lipstick}} holds a luxury matte finish in 12 refined shades, with a nourishing formula that stays comfortable all day. {{/product/lip-fix/|Lip Fix}} is matte, waterproof and no-transfer, in 6 shades: applied once, worn for hours. {{/product/lipgloss-velvet/|Lipgloss Velvet}} catches the light with a luminous, non-sticky finish in 4 shades. The pearlescent {{/product/lip-pencil/|Lip Pencil}} follows the natural lip line and extends lipstick wear.",
+   "{{/product/lipstick/|LUNACI Lipstick}} holds a luxury matte finish in 12 refined shades, with a nourishing formula that stays comfortable all day. {{/product/lip-fix/|Lip Fix}} is matte, waterproof and no-transfer, in 6 shades: applied once, it stays where it was placed. {{/product/lipgloss-velvet/|Lipgloss Velvet}} catches the light with a luminous, non-sticky finish in 4 shades. The pearlescent {{/product/lip-pencil/|Lip Pencil}} follows the natural lip line and extends lipstick wear.",
    "For a defined line that lasts, start with the Lip Pencil, then add your color.",
    "Because being seen was never the goal. Being remembered always was."
   ]
@@ -36,10 +36,10 @@
   ]
  },
  "labios": {
-  "lead": "Cuatro fórmulas de labios desde Barcelona. Cada una permanece justo donde se colocó.",
+  "lead": "Cuatro fórmulas de labios: un mate de lujo, un mate resistente al agua, un brillo luminoso y un delineador nacarado.",
   "heading": "La colección de labios LUNACI",
   "body": [
-   "El {{/es/producto/pintalabios/|Pintalabios LUNACI}} mantiene un acabado mate de lujo en 12 tonos refinados, con una fórmula nutritiva que se siente cómoda todo el día. El {{/es/producto/fijador-de-labios-lunaci/|Fijador de Labios}} es mate, resistente al agua y sin transferencia, en 6 tonos: se aplica una vez y permanece durante horas. El {{/es/producto/brillo-de-labios-velvet-lunaci/|Brillo de Labios Velvet}} atrapa la luz con un acabado luminoso y no pegajoso, en 4 tonos. El {{/es/producto/delineador-de-labios-lunaci/|Delineador de Labios}} nacarado sigue la línea natural y prolonga la duración del pintalabios.",
+   "El {{/es/producto/pintalabios/|Pintalabios LUNACI}} mantiene un acabado mate de lujo en 12 tonos refinados, con una fórmula nutritiva que se siente cómoda todo el día. El {{/es/producto/fijador-de-labios-lunaci/|Fijador de Labios}} es mate, resistente al agua y sin transferencia, en 6 tonos: se aplica una vez y permanece donde se colocó. El {{/es/producto/brillo-de-labios-velvet-lunaci/|Brillo de Labios Velvet}} atrapa la luz con un acabado luminoso y no pegajoso, en 4 tonos. El {{/es/producto/delineador-de-labios-lunaci/|Delineador de Labios}} nacarado sigue la línea natural y prolonga la duración del pintalabios.",
    "Para una línea definida que permanece, empieza con el delineador y después añade tu color.",
    "Porque ser vista nunca fue el objetivo. Ser recordada siempre lo fue."
   ]

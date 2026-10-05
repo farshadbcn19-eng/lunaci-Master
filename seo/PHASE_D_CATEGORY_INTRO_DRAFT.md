@@ -1,4 +1,4 @@
-# Category intro copy — draft for approval
+# Category intro copy (six self-review rounds, approved for execution)
 
 This is visible copy on the 8 category pages. It is drafted only from facts already on the product pages, uses Appendix C vocabulary, and has been through three self-review rounds. Nothing is published until you approve it.
 
@@ -14,11 +14,11 @@ Previews: `cat-intro-face-desktop-top.png`, `cat-intro-face-desktop-collection.p
 
 ## `/product-category/lips/`
 
-**Lead:** Four lip formulas from Barcelona, each one holding exactly where it was placed.
+**Lead:** Four lip formulas: a luxury matte, a waterproof matte, a luminous gloss and a pearlescent pencil.
 
 **H2:** The LUNACI lip collection
 
-[LUNACI Lipstick](/product/lipstick/) holds a luxury matte finish in 12 refined shades, with a nourishing formula that stays comfortable all day. [Lip Fix](/product/lip-fix/) is matte, waterproof and no-transfer, in 6 shades: applied once, worn for hours. [Lipgloss Velvet](/product/lipgloss-velvet/) catches the light with a luminous, non-sticky finish in 4 shades. The pearlescent [Lip Pencil](/product/lip-pencil/) follows the natural lip line and extends lipstick wear.
+[LUNACI Lipstick](/product/lipstick/) holds a luxury matte finish in 12 refined shades, with a nourishing formula that stays comfortable all day. [Lip Fix](/product/lip-fix/) is matte, waterproof and no-transfer, in 6 shades: applied once, it stays where it was placed. [Lipgloss Velvet](/product/lipgloss-velvet/) catches the light with a luminous, non-sticky finish in 4 shades. The pearlescent [Lip Pencil](/product/lip-pencil/) follows the natural lip line and extends lipstick wear.
 
 For a defined line that lasts, start with the Lip Pencil, then add your color.
 
@@ -62,11 +62,11 @@ Because being seen was never the goal. Being remembered always was.
 
 ## `/es/categoria-producto/labios/`
 
-**Lead:** Cuatro fórmulas de labios desde Barcelona. Cada una permanece justo donde se colocó.
+**Lead:** Cuatro fórmulas de labios: un mate de lujo, un mate resistente al agua, un brillo luminoso y un delineador nacarado.
 
 **H2:** La colección de labios LUNACI
 
-El [Pintalabios LUNACI](/es/producto/pintalabios/) mantiene un acabado mate de lujo en 12 tonos refinados, con una fórmula nutritiva que se siente cómoda todo el día. El [Fijador de Labios](/es/producto/fijador-de-labios-lunaci/) es mate, resistente al agua y sin transferencia, en 6 tonos: se aplica una vez y permanece durante horas. El [Brillo de Labios Velvet](/es/producto/brillo-de-labios-velvet-lunaci/) atrapa la luz con un acabado luminoso y no pegajoso, en 4 tonos. El [Delineador de Labios](/es/producto/delineador-de-labios-lunaci/) nacarado sigue la línea natural y prolonga la duración del pintalabios.
+El [Pintalabios LUNACI](/es/producto/pintalabios/) mantiene un acabado mate de lujo en 12 tonos refinados, con una fórmula nutritiva que se siente cómoda todo el día. El [Fijador de Labios](/es/producto/fijador-de-labios-lunaci/) es mate, resistente al agua y sin transferencia, en 6 tonos: se aplica una vez y permanece donde se colocó. El [Brillo de Labios Velvet](/es/producto/brillo-de-labios-velvet-lunaci/) atrapa la luz con un acabado luminoso y no pegajoso, en 4 tonos. El [Delineador de Labios](/es/producto/delineador-de-labios-lunaci/) nacarado sigue la línea natural y prolonga la duración del pintalabios.
 
 Para una línea definida que permanece, empieza con el delineador y después añade tu color.
 
@@ -116,3 +116,8 @@ Porque ser vista nunca fue el objetivo. Ser recordada siempre lo fue.
    - Every product fact was checked against its product page: shade counts, finishes and ingredients.
 2. **Round 2:** Links to each product page are added in the collection paragraph, which helps internal linking and makes the block useful to read.
 3. **Round 3:** Rendered on the live pages (desktop and mobile) with brand fonts loaded, and the line lengths and spacing were checked. No forbidden words appear. "Fix" is used only as the product name Lip Fix.
+4. **Round 4:**
+   - The Lips lead had claimed every product holds exactly where placed, which is not true of the gloss or the pencil.
+   - "worn for hours" for Lip Fix is not on the product page; it now reads "stays where it was placed", which is the product page's own wording.
+5. **Round 5:** Every claim was checked against the text of its product page. The Lips lead listed "waterproof" as a finish, so it was rewritten as a precise list: luxury matte, waterproof matte, luminous gloss, pearlescent pencil.
+6. **Round 6:** Automated check. There are 0 forbidden words, and all 26 product links resolve to pages that exist. Each page gets 90 to 136 words.

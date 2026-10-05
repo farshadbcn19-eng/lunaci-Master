@@ -82,7 +82,7 @@ jobs:
             [ -f "$DEST" ] && cp -p "$DEST" "$HOME/lunaci-backups/lunaci-perf.php.prev-$(date -u +%Y%m%d-%H%M%S)"
             cp /tmp/lunaimport-perf.php "$DEST" && rm -f /tmp/lunaimport-perf.php
             echo "deployed: $DEST"
-            wp option update lunaci_perf_payments_mode "$MODE" --autoload=yes --path="$WP_PATH"
+            [ "$(wp option get lunaci_perf_payments_mode --path="$WP_PATH" 2>/dev/null)" = "$MODE" ] && echo "lunaci_perf_payments_mode already $MODE" || wp option update lunaci_perf_payments_mode "$MODE" --autoload=yes --path="$WP_PATH"
             echo "lunaci_perf_mode: $(wp option get lunaci_perf_mode --path="$WP_PATH")  lunaci_perf_payments_mode: $(wp option get lunaci_perf_payments_mode --path="$WP_PATH")"
             wp litespeed-purge all --path="$WP_PATH" || true
           REMOTE

@@ -88,7 +88,7 @@ jobs:
             echo "deployed: $DEST"
             wp eval-file /tmp/lunaimport-generate-webp.php --path="$WP_PATH"
             rm -f /tmp/lunaimport-generate-webp.php
-            wp option update lunaci_perf_mode "$MODE" --autoload=yes --path="$WP_PATH"
+            [ "$(wp option get lunaci_perf_mode --path="$WP_PATH" 2>/dev/null)" = "$MODE" ] && echo "lunaci_perf_mode already $MODE" || wp option update lunaci_perf_mode "$MODE" --autoload=yes --path="$WP_PATH"
             echo "lunaci_perf_mode now: $(wp option get lunaci_perf_mode --path="$WP_PATH")"
             wp litespeed-purge all --path="$WP_PATH" || true
           REMOTE

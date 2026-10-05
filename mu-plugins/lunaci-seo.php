@@ -13,6 +13,8 @@
  *     reports missing fields for merchant listings. This adds them, using
  *     the published Shipping and Returns pages as the source.
  *  3. The home page sends og:type "article"; it should be "website".
+ *  4. 301 from the old Spanish category base (/es/product-category/) to
+ *     /es/categoria-producto/.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -173,4 +175,33 @@ add_filter(
 		}
 		return $meta;
 	}
+);
+
+// 4. Spanish category archives moved from /es/product-category/<slug>/ to
+// /es/categoria-producto/<slug>/ (2026-10-05). Old URLs that now 404 get a
+// 301 to the term's current link.
+add_action(
+	'template_redirect',
+	function () {
+		if ( ! is_404() || empty( $_SERVER['REQUEST_URI'] ) ) {
+			return;
+		}
+		$path = (string) wp_parse_url( wp_unslash( $_SERVER['REQUEST_URI'] ), PHP_URL_PATH ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( ! preg_match( '#^/es/product-category/([a-z0-9-]+)/?(page/(\d+)/?)?$#', $path, $m ) ) {
+			return;
+		}
+		do_action( 'wpml_switch_language', 'es' );
+		$term = get_term_by( 'slug', $m[1], 'product_cat' );
+		$link = $term ? get_term_link( $term, 'product_cat' ) : '';
+		do_action( 'wpml_switch_language', null );
+		if ( ! $link || is_wp_error( $link ) || false !== strpos( $link, '/es/product-category/' ) ) {
+			return;
+		}
+		if ( ! empty( $m[3] ) ) {
+			$link = trailingslashit( $link ) . 'page/' . (int) $m[3] . '/';
+		}
+		wp_safe_redirect( $link, 301 );
+		exit;
+	},
+	1
 );

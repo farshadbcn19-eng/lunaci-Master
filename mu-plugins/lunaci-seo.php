@@ -13,8 +13,8 @@
  *     reports missing fields for merchant listings. This adds them, using
  *     the published Shipping and Returns pages as the source.
  *  3. The home page sends og:type "article"; it should be "website".
- *  4. 301 from the old Spanish category base (/es/product-category/) to
- *     /es/categoria-producto/.
+ *  4. Spanish category base /es/categoria-producto/ with a 301 from the old
+ *     /es/product-category/ URLs (option lunaci_es_cat_base).
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -177,24 +177,52 @@ add_filter(
 	}
 );
 
-// 4. Spanish category archives moved from /es/product-category/<slug>/ to
-// /es/categoria-producto/<slug>/ (2026-10-05). Old URLs that now 404 get a
-// 301 to the term's current link.
+// 4. Spanish category base /es/categoria-producto/ (option lunaci_es_cat_base
+// = on). WPML/WCML hold the Spanish base translation but do not apply it (the
+// string is missing from WPML's compiled translation file), so Spanish
+// archives used /es/product-category/<slug>/. Spanish term links use the
+// Spanish base, a rewrite rule serves it, and the old URL redirects (301).
+function lunaci_seo_es_cat_base_on() {
+	return 'on' === get_option( 'lunaci_es_cat_base', 'off' );
+}
+
+add_action(
+	'init',
+	function () {
+		if ( lunaci_seo_es_cat_base_on() ) {
+			add_rewrite_rule( '^categoria-producto/(.+?)/page/?([0-9]{1,})/?$', 'index.php?product_cat=$matches[1]&paged=$matches[2]', 'top' );
+			add_rewrite_rule( '^categoria-producto/(.+?)/?$', 'index.php?product_cat=$matches[1]', 'top' );
+		}
+	},
+	20
+);
+
+add_filter(
+	'term_link',
+	function ( $link, $term, $taxonomy ) {
+		if ( 'product_cat' !== $taxonomy || ! lunaci_seo_es_cat_base_on() || false === strpos( $link, '/es/product-category/' ) ) {
+			return $link;
+		}
+		$lang = apply_filters( 'wpml_element_language_code', null, array( 'element_id' => (int) $term->term_taxonomy_id, 'element_type' => 'product_cat' ) );
+		return 'es' === $lang ? str_replace( '/es/product-category/', '/es/categoria-producto/', $link ) : $link;
+	},
+	99,
+	3
+);
+
 add_action(
 	'template_redirect',
 	function () {
-		if ( ! is_404() || empty( $_SERVER['REQUEST_URI'] ) ) {
+		if ( ! lunaci_seo_es_cat_base_on() || empty( $_SERVER['REQUEST_URI'] ) ) {
 			return;
 		}
 		$path = (string) wp_parse_url( wp_unslash( $_SERVER['REQUEST_URI'] ), PHP_URL_PATH ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 		if ( ! preg_match( '#^/es/product-category/([a-z0-9-]+)/?(page/(\d+)/?)?$#', $path, $m ) ) {
 			return;
 		}
-		do_action( 'wpml_switch_language', 'es' );
 		$term = get_term_by( 'slug', $m[1], 'product_cat' );
 		$link = $term ? get_term_link( $term, 'product_cat' ) : '';
-		do_action( 'wpml_switch_language', null );
-		if ( ! $link || is_wp_error( $link ) || false !== strpos( $link, '/es/product-category/' ) ) {
+		if ( ! $link || is_wp_error( $link ) || false === strpos( $link, '/es/categoria-producto/' ) ) {
 			return;
 		}
 		if ( ! empty( $m[3] ) ) {

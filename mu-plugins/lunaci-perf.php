@@ -21,8 +21,18 @@
  *     scripts are removed on single product pages only; cart and checkout
  *     keep every gateway.
  *
+ *  4. Brand typography (Trade Gothic LT Std Extended + Helvetica). Montserrat
+ *     (menu, footer, About body), Raleway (product pages) and Cormorant
+ *     Garamond (About headings) came from Google Fonts. Their stylesheets are
+ *     removed and the same family names are aliased to the self-hosted brand
+ *     files, so no page HTML or copy changes: Montserrat/Raleway -> Helvetica
+ *     LUNACI, Cormorant Garamond -> Trade Gothic (size-adjust 72% keeps the
+ *     line width; Trade Gothic Extended is ~39% wider). Product page section
+ *     headings use Trade Gothic.
+ *
  * Modes: "off", "test" (active only on URLs with ?lunaci_perf=1) or "on".
- * Items 1-2 use option lunaci_perf_mode; item 3 uses lunaci_perf_payments_mode.
+ * Items 1-2 use option lunaci_perf_mode, item 3 lunaci_perf_payments_mode,
+ * item 4 lunaci_brand_fonts_mode.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -165,3 +175,56 @@ function lunaci_perf_drop_product_payment_scripts() {
 }
 add_action( 'wp_enqueue_scripts', 'lunaci_perf_drop_product_payment_scripts', 999 );
 add_action( 'wp_print_footer_scripts', 'lunaci_perf_drop_product_payment_scripts', 1 );
+
+// 4. Brand typography.
+function lunaci_brand_fonts_active() {
+	return lunaci_perf_mode_active( 'lunaci_brand_fonts_mode' );
+}
+
+add_filter(
+	'style_loader_tag',
+	function ( $tag, $handle ) {
+		return ( 'elementor-gf-montserrat' === $handle && lunaci_brand_fonts_active() ) ? '' : $tag;
+	},
+	10,
+	2
+);
+
+add_action(
+	'wp_head',
+	function () {
+		if ( ! lunaci_brand_fonts_active() ) {
+			return;
+		}
+		$base = get_stylesheet_directory_uri() . '/fonts/';
+		$tg   = esc_url( $base . 'TradeGothicLTStd-Extended.woff2' );
+		$hv   = esc_url( $base . 'Helvetica.woff2' );
+		$css  = '';
+		foreach ( array( 'Montserrat', 'Raleway' ) as $family ) {
+			$css .= "@font-face{font-family:'$family';src:url('$hv') format('woff2');font-weight:100 900;font-style:normal;font-display:swap}";
+		}
+		$css .= "@font-face{font-family:'Cormorant Garamond';src:url('$tg') format('woff2');font-weight:100 900;font-style:normal;font-display:swap;size-adjust:72%}";
+		$css .= ".single-product .woocommerce-tabs h2,.single-product .woocommerce-Reviews-title,.single-product .comment-reply-title,.single-product .related>h2,.single-product .upsells>h2{font-family:'Trade Gothic LT Std Extended',sans-serif;font-weight:400}";
+		echo '<link rel="preload" href="' . $hv . '" as="font" type="font/woff2" crossorigin>' . "\n";
+		echo '<style id="lunaci-brand-fonts">' . $css . '</style>' . "\n";
+	},
+	1
+);
+
+add_action(
+	'template_redirect',
+	function () {
+		if ( lunaci_brand_fonts_active() ) {
+			ob_start( 'lunaci_brand_fonts_strip_links' );
+		}
+	},
+	2
+);
+
+function lunaci_brand_fonts_strip_links( $html ) {
+	$html = preg_replace( '#<link\b[^>]*fonts\.googleapis\.com/css2?\?family=(?:Raleway|Cormorant)[^>]*>\s*#i', '', $html );
+	if ( ! preg_match( '#<link\b[^>]*fonts\.googleapis\.com/css#i', $html ) ) {
+		$html = preg_replace( '#<link\b[^>]*rel=["\']?(?:preconnect|dns-prefetch)["\']?[^>]*fonts\.(?:googleapis|gstatic)\.com[^>]*>\s*#i', '', $html );
+	}
+	return $html;
+}

@@ -2,13 +2,14 @@ name: "Deploy - Spanish category base categoria-producto (dry-run / apply / roll
 
 # Runs assets/luna-import/es-category-base.php so Spanish category archives
 # use /es/categoria-producto/<slug>/ instead of /es/product-category/<slug>/:
-#   dry-run  - report the WCML base string status and current links
+#   dry-run  - report current links and rewrite rules
 #   apply    - full backup first (database, mu-plugins, .htaccess) to
 #              ~/lunaci-backups/pre-es-category-base-<timestamp>/ (stops on
-#              failure); deploys mu-plugins/lunaci-seo.php (301 from the old
-#              base); marks the existing Spanish base translation complete;
-#              flushes rewrite rules; purges cache; live checks
-#   rollback - restores the translation status saved by the last apply
+#              failure); sets lunaci_es_cat_base=on (mu-plugins/lunaci-seo.php
+#              item 4: Spanish term links, rewrite rule, 301 from the old
+#              base); flushes rewrite rules; purges cache; live checks
+#   rollback - sets lunaci_es_cat_base=off and flushes rewrite rules
+# lunaci-seo.php is deployed in every mode; item 4 is inert while the option is off.
 
 on:
   workflow_dispatch:
@@ -57,7 +58,7 @@ jobs:
             php -l /tmp/lunaci-seo.php
             if [ "$MODE" = "rollback" ]; then
               BK=$(cat "$HOME/lunaci-backups/LATEST-es-category-base" 2>/dev/null || true)
-              [ -n "$BK" ] && [ -f "$BK/es-category-base-backup.json" ] || { echo "ABORT: no apply backup found"; exit 1; }
+              [ -n "$BK" ] || BK=$(mktemp -d)
             elif [ "$MODE" = "apply" ]; then
               BK="$HOME/lunaci-backups/pre-es-category-base-$(date -u +%Y%m%d-%H%M%S)"
               mkdir -p "$BK"
@@ -71,13 +72,15 @@ jobs:
               cp -p "$WP_PATH/.htaccess" "$BK/htaccess.bak"
               echo "$BK" > "$HOME/lunaci-backups/LATEST-es-category-base"
               echo "BACKUP OK: $BK ($TABLES tables)"
-              DEST="$WP_PATH/wp-content/mu-plugins/lunaci-seo.php"
-              [ -f "$DEST" ] && cp -p "$DEST" "$BK/lunaci-seo.php.prev"
-              cp /tmp/lunaci-seo.php "$DEST"
-              echo "deployed: $DEST"
             else
               BK=$(mktemp -d)
             fi
+            # lunaci-seo.php item 4 is inert until lunaci_es_cat_base=on, so it is
+            # deployed in every mode (previous copy kept next to the backup).
+            DEST="$WP_PATH/wp-content/mu-plugins/lunaci-seo.php"
+            [ -f "$DEST" ] && cp -p "$DEST" "$HOME/lunaci-backups/lunaci-seo.php.prev-$(date -u +%Y%m%d-%H%M%S)"
+            cp /tmp/lunaci-seo.php "$DEST"
+            echo "deployed: $DEST"
             LUNACI_MODE="$MODE" LUNACI_BACKUP_DIR="$BK" wp eval-file /tmp/es-category-base.php --path="$WP_PATH"
             rm -f /tmp/es-category-base.php /tmp/db-backup.php /tmp/lunaci-seo.php
             [ "$MODE" = "dry-run" ] || wp litespeed-purge all --path="$WP_PATH" || true

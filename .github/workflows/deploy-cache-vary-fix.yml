@@ -13,6 +13,11 @@ name: "Deploy - LiteSpeed guest cache fix (mu-plugin)"
 on:
   workflow_dispatch:
 
+# One Hostinger deploy at a time: overlapping runs share /tmp files on the server.
+concurrency:
+  group: lunaci-hostinger-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest

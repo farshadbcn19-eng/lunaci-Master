@@ -1,0 +1,123 @@
+name: "Deploy - unused plugin CSS switch (mu-plugin)"
+
+# Sets lunaci_css_trim_mode for mu-plugins/lunaci-perf.php item 5: removes
+# render-blocking plugin stylesheets a page does not use (checked per page
+# on the final HTML: block library, MediaElement, Jetpack Forms, Hostinger
+# Reach, AIOSEO TOC, Essential Addons; PayPal/WooPayments CSS on product
+# pages when the payments switch is on).
+#   test - only on URLs with ?lunaci_perf=1 (visitors see no change)
+#   on   - for everyone
+#   off  - inactive
+# 1. Full backup to ~/lunaci-backups/pre-css-trim-<timestamp>/; stops on failure.
+# 2. Deploys the mu-plugin, sets the option, purges cache.
+# 3. Live check. Rollback: run with mode "off".
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "test, on or off"
+        required: true
+        default: "test"
+        type: choice
+        options: ["test", "on", "off"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+      SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+      SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+      SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
+      MODE: ${{ inputs.mode }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Full pre-deploy backup (database, mu-plugins, .htaccess)
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "scripts/db-backup.php" "$SSH_USER@$SSH_HOST:/tmp/lunaimport-db-backup.php"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" '
+            set -e
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            BK="$HOME/lunaci-backups/pre-css-trim-$(date -u +%Y%m%d-%H%M%S)";
+            mkdir -p "$BK";
+            php -l /tmp/lunaimport-db-backup.php;
+            LIVE=$(wp db tables --all-tables --path="$WP_PATH" | wc -l);
+            echo "--- tables in database: $LIVE";
+            LUNACI_BACKUP_FILE="$BK/database.sql.gz" wp eval-file /tmp/lunaimport-db-backup.php --path="$WP_PATH" || { echo "ABORT: database backup failed"; exit 1; };
+            rm -f /tmp/lunaimport-db-backup.php;
+            gzip -t "$BK/database.sql.gz";
+            TABLES=$(zcat "$BK/database.sql.gz" | grep -c "^CREATE TABLE" || true);
+            [ "$TABLES" -ge "$LIVE" ] && [ "$TABLES" -gt 10 ] || { echo "ABORT: backup has $TABLES tables, database has $LIVE"; exit 1; };
+            tar -czf "$BK/mu-plugins.tar.gz" -C "$WP_PATH/wp-content" mu-plugins;
+            cp -p "$WP_PATH/.htaccess" "$BK/htaccess.bak";
+            wp plugin list --fields=name,status,version --format=csv --path="$WP_PATH" > "$BK/plugins.csv" 2>/dev/null;
+            echo "lunaci_perf_mode: $(wp option get lunaci_perf_mode --path="$WP_PATH" 2>/dev/null || echo "(not set)")" | tee "$BK/perf-modes-before.txt";
+            echo "lunaci_perf_payments_mode: $(wp option get lunaci_perf_payments_mode --path="$WP_PATH" 2>/dev/null || echo "(not set)")" | tee -a "$BK/perf-modes-before.txt";
+            echo "lunaci_brand_fonts_mode: $(wp option get lunaci_brand_fonts_mode --path="$WP_PATH" 2>/dev/null || echo "(not set)")" | tee -a "$BK/perf-modes-before.txt";
+            echo "lunaci_css_trim_mode: $(wp option get lunaci_css_trim_mode --path="$WP_PATH" 2>/dev/null || echo "(not set)")" | tee -a "$BK/perf-modes-before.txt";
+            echo "BACKUP OK: $BK ($TABLES tables)"
+          '
+
+      - name: Deploy mu-plugin and set CSS trim mode
+        run: |
+          set -e
+          case "$MODE" in test|on|off) ;; *) echo "bad mode $MODE"; exit 1;; esac
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "mu-plugins/lunaci-perf.php" "$SSH_USER@$SSH_HOST:/tmp/lunaimport-perf.php"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "MODE=$MODE"' bash -s' <<'REMOTE'
+            set -e
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            php -l /tmp/lunaimport-perf.php
+            DEST="$WP_PATH/wp-content/mu-plugins/lunaci-perf.php"
+            [ -f "$DEST" ] && cp -p "$DEST" "$HOME/lunaci-backups/lunaci-perf.php.prev-$(date -u +%Y%m%d-%H%M%S)"
+            cp /tmp/lunaimport-perf.php "$DEST" && rm -f /tmp/lunaimport-perf.php
+            echo "deployed: $DEST"
+            [ "$(wp option get lunaci_css_trim_mode --path="$WP_PATH" 2>/dev/null)" = "$MODE" ] && echo "lunaci_css_trim_mode already $MODE" || wp option update lunaci_css_trim_mode "$MODE" --autoload=yes --path="$WP_PATH"
+            echo "lunaci_perf_mode: $(wp option get lunaci_perf_mode --path="$WP_PATH")  lunaci_perf_payments_mode: $(wp option get lunaci_perf_payments_mode --path="$WP_PATH")  lunaci_brand_fonts_mode: $(wp option get lunaci_brand_fonts_mode --path="$WP_PATH")  lunaci_css_trim_mode: $(wp option get lunaci_css_trim_mode --path="$WP_PATH")"
+            wp litespeed-purge all --path="$WP_PATH" || true
+          REMOTE
+
+      - name: Live check
+        run: |
+          BASE="https://lunacibarcelona.com"
+          FAIL=0
+          pass() { echo "PASS  $1"; }
+          fail() { echo "FAIL  $1"; FAIL=1; }
+          has() { grep -cE "<link[^>]+id=['\"]$1-css['\"]" page.html || true; }
+          sleep 3
+          case "$MODE" in test) Q="?lunaci_perf=1";; *) Q="";; esac
+          for p in / /es/ /products/ /product/lipstick/ /about-us/ /contact/ /shipping/ /product-category/lips/ /cart/; do
+            curl -sS -m 60 -o page.html -w "%{http_code}" "$BASE$p$Q" > code.txt
+            [ "$(cat code.txt)" = "200" ] || fail "$p$Q status $(cat code.txt)"
+            N=$(grep -cE "<link[^>]+rel=['\"]stylesheet['\"]" page.html || true)
+            M=$(has mediaelement); H=$(has hostinger-reach-subscription-block)
+            if [ "$MODE" = "off" ]; then
+              [ "$M" -gt 0 ] && pass "$p stylesheets untouched (off), $N links" || fail "$p mediaelement CSS missing while off"
+            else
+              [ "$M" = "0" ] && [ "$H" = "0" ] && pass "$p$Q unused CSS removed, $N stylesheet links left" || fail "$p$Q unused CSS still present (mediaelement=$M hostinger=$H)"
+            fi
+          done
+          if [ "$MODE" != "off" ]; then
+            curl -sS -m 60 "$BASE/contact/$Q" -o page.html
+            [ "$(has jetpack-forms-layout)" -gt 0 ] && pass "/contact/ keeps Jetpack Forms CSS (form present)" || fail "/contact/ lost Jetpack Forms CSS"
+            curl -sS -m 60 "$BASE/shipping/$Q" -o page.html
+            [ "$(has wp-block-library)" -gt 0 ] && pass "/shipping/ keeps block library CSS (block content)" || fail "/shipping/ lost block library CSS"
+          fi
+          if [ "$MODE" = "test" ]; then
+            curl -sS -m 60 "$BASE/product/lipstick/" -o page.html
+            [ "$(has mediaelement)" -gt 0 ] && pass "visitors (no ?lunaci_perf) unchanged" || fail "visitors already lost CSS in test mode"
+          fi
+          if [ "$FAIL" = "0" ]; then echo "RESULT: ALL CHECKS PASSED"; else echo "RESULT: SOME CHECKS FAILED"; exit 1; fi

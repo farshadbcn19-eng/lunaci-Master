@@ -1,0 +1,38 @@
+name: "Diagnose - Spanish product categories (read-only)"
+
+# Read-only. Prints WPML/WCML settings for product_cat, existing category
+# terms and translations, ES product category assignments, and the Code
+# Snippets that render the category banners and filter bar.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+      SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+      SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+      SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Run diagnostic
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "assets/luna-import/diagnose-es-categories.php" "$SSH_USER@$SSH_HOST:/tmp/lunaimport-diagnose-es-categories.php"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" '
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            php -l /tmp/lunaimport-diagnose-es-categories.php;
+            wp eval-file /tmp/lunaimport-diagnose-es-categories.php --path="$WP_PATH";
+            rm -f /tmp/lunaimport-diagnose-es-categories.php
+          '

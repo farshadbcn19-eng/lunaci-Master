@@ -1,0 +1,41 @@
+name: "Diagnose - Spanish About page (read-only)"
+
+# Read-only. Structure and HTML of the Spanish About page (post 680) and
+# every place that links /es/about-us-es/.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: lunaci-hostinger-deploy
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+      SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+      SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+      SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Run diagnostic
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "assets/luna-import/diagnose-about-es.php" "$SSH_USER@$SSH_HOST:/tmp/"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            php -l /tmp/diagnose-about-es.php
+            wp eval-file /tmp/diagnose-about-es.php --path="$WP_PATH"
+            rm -f /tmp/diagnose-about-es.php
+          REMOTE

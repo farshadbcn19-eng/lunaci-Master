@@ -1,4 +1,4 @@
-# Category intro copy (six self-review rounds, approved for execution)
+# Category intro copy (applied live 2026-10-05, run 37349755595)
 
 This is visible copy on the 8 category pages. It is drafted only from facts already on the product pages, uses Appendix C vocabulary, and has been through three self-review rounds. Nothing is published until you approve it.
 

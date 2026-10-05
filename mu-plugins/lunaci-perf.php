@@ -14,28 +14,39 @@
  *     pixel-identical without them). Montserrat, Raleway and Cormorant
  *     Garamond are in use and stay.
  *
- * Mode (option lunaci_perf_mode): "off", "test" (active only on URLs with
- * ?lunaci_perf=1) or "on" (active for everyone).
+ *  3. Product pages load Stripe.js (WooPayments, 250 KB), WooPayments
+ *     product-details/tracks and the PayPal SDK, but render no visible
+ *     button or message there (containers are 0 px high). The main thread
+ *     work delays the product image paint (LCP render delay 4.2 s). These
+ *     scripts are removed on single product pages only; cart and checkout
+ *     keep every gateway.
+ *
+ * Modes: "off", "test" (active only on URLs with ?lunaci_perf=1) or "on".
+ * Items 1-2 use option lunaci_perf_mode; item 3 uses lunaci_perf_payments_mode.
  */
 
 defined( 'ABSPATH' ) || exit;
 
 const LUNACI_PERF_WEBP_QUALITY = 92;
 
-function lunaci_perf_active() {
-	static $active = null;
-	if ( null !== $active ) {
-		return $active;
+function lunaci_perf_mode_active( $option ) {
+	static $active = array();
+	if ( isset( $active[ $option ] ) ) {
+		return $active[ $option ];
 	}
-	$mode = get_option( 'lunaci_perf_mode', 'off' );
+	$mode = get_option( $option, 'off' );
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$test   = isset( $_GET['lunaci_perf'] ) && '1' === $_GET['lunaci_perf'];
-	$active = ( 'on' === $mode || ( 'test' === $mode && $test ) )
+	$test               = isset( $_GET['lunaci_perf'] ) && '1' === $_GET['lunaci_perf'];
+	$active[ $option ] = ( 'on' === $mode || ( 'test' === $mode && $test ) )
 		&& ! is_admin()
 		&& ! wp_doing_ajax()
 		&& ! ( defined( 'REST_REQUEST' ) && REST_REQUEST )
 		&& ! isset( $_GET['elementor-preview'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	return $active;
+	return $active[ $option ];
+}
+
+function lunaci_perf_active() {
+	return lunaci_perf_mode_active( 'lunaci_perf_mode' );
 }
 
 /**
@@ -142,3 +153,15 @@ add_filter(
 	10,
 	2
 );
+
+// 3. Payment gateway scripts that render nothing on single product pages.
+function lunaci_perf_drop_product_payment_scripts() {
+	if ( ! function_exists( 'is_product' ) || ! is_product() || ! lunaci_perf_mode_active( 'lunaci_perf_payments_mode' ) ) {
+		return;
+	}
+	foreach ( array( 'WCPAY_PRODUCT_DETAILS', 'wcpay-frontend-tracks', 'wc-ppcp-sdk-v6-boot', 'stripe' ) as $handle ) {
+		wp_dequeue_script( $handle );
+	}
+}
+add_action( 'wp_enqueue_scripts', 'lunaci_perf_drop_product_payment_scripts', 999 );
+add_action( 'wp_print_footer_scripts', 'lunaci_perf_drop_product_payment_scripts', 1 );

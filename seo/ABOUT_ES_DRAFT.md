@@ -1,4 +1,4 @@
-# Spanish About page (/es/about-us-es/ → /es/sobre-nosotros/)
+# Spanish About page (/es/about-us-es/ → /es/sobre-nosotros/) — applied live 2026-10-05, run 37352508744
 
 ## What was wrong (live page, 2026-10-05)
 - The H1 was in English ("Our Story"), and so was the hero subtitle ("Born from the golden light of Barcelona").
@@ -56,3 +56,15 @@
 - The Spanish home footer links its categories to the English category pages and links About through the 301. This is the front page, which falls under the hard rule.
 - The English About page quote reads "All women are seen. Yet your presence is remembered." The official tagline is "Every woman is seen. But your presence is remembered."
 - The English About page also contains "less, when done perfectly", and "perfect" is forbidden.
+
+## Execution log
+1. **Dry-run 1:** planned edits to posts 774 and 775. Both are revisions, and 775 is a front-page revision. The script was changed to edit published pages only.
+2. **Apply, run 37352091965:** the HTML widget was sanitised on save.
+   - The cause: `update_post_meta()` and `wp_update_post()` ran under WP-CLI without a user that has `unfiltered_html`.
+   - What was stripped: the cart SVG, part of the inline styles, and the `<script>` tags, so the script body showed as text at the end of the page.
+   - The script's md5 verification flagged it.
+3. **Rollback, run 37352399459:** posts 680, 770 and 771 were restored byte for byte from the backup, with the original widget md5 and slug. All rollback checks passed.
+4. **Apply, run 37352508744:** this time the script wrote directly to the database.
+   - The stored widget is byte-identical to the reviewed file.
+   - Live checks: H1, Spanish copy, hreflang, canonical, title, the 301, the updated links on Contacto and Productos, and the English page unchanged.
+   - The one failed check was "All rights reserved". It comes from the theme's sitewide `#site-footer`, outside this page. The check is now scoped to the page's own widget.

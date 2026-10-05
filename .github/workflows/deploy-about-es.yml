@@ -116,8 +116,13 @@ jobs:
           h1t = re.sub(r"<[^>]+>", "", h1.group(1)).strip() if h1 else ""
           check(h1t == ("Nuestra Historia" if mode == "apply" else "Our Story"), f"H1 '{h1t}'")
           if mode == "apply":
-              english = [s for s in ("Why LUNACI", "Our Values", "Strengthening the inner", "Non-negotiable", "All rights reserved", "Mediterranean Luxury Beauty House", "Born from the golden") if s in text]
-              check(not english, f"no English copy left in the page body {english}")
+              # Only the page's own widget (nav to its footer); the theme's global
+              # footer ("All rights reserved") is sitewide and outside this page.
+              w0 = page.find('<nav class="lna-nav"'); w1 = page.find("</footer>", page.find('<footer class="lna-foot"'))
+              wtext = html.unescape(re.sub(r"<[^>]+>", " ", page[w0:w1])) if w0 >= 0 and w1 > w0 else text
+              english = [s for s in ("Why LUNACI", "Our Values", "Strengthening the inner", "Non-negotiable", "All rights reserved", "Mediterranean Luxury Beauty House", "Born from the golden") if s in wtext]
+              check(not english, f"no English copy left in the page widget {english}")
+              check('<svg width="16"' in page[w0:w1] and "(function(){" not in re.sub(r"<script>.*?</script>", "", page, flags=re.S), "widget intact (svg kept, script not printed as text)")
               for s in ("Por qué", "Nuestros", "Fortalecer la confianza interior", "Todos los derechos reservados", "Casa de Belleza de Lujo Mediterránea"):
                   check(s in text, f"Spanish copy present: {s}")
               check(f'hreflang="es" href="{base}{new}"' in page, "hreflang es -> new URL")

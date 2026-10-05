@@ -1,0 +1,110 @@
+name: "Deploy - official Spanish tagline on /es/sobre-nosotros/ and /es/ (dry-run / apply / rollback)"
+
+# Runs assets/luna-import/es-tagline.php: "Todas las mujeres son vistas. Pero
+# tu presencia es recordada." -> "Toda mujer es vista. Pero tu presencia es
+# recordada." in the HTML widgets of post 680 and post 772 (Spanish front page,
+# owner's explicit instruction). Full backup before apply; rollback restores
+# both from the backup JSON.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run, apply or rollback"
+        required: true
+        default: "dry-run"
+        type: choice
+        options: ["dry-run", "apply", "rollback"]
+
+# One Hostinger deploy at a time: overlapping runs share /tmp files on the server.
+concurrency:
+  group: lunaci-hostinger-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+      SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+      SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+      SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
+      MODE: ${{ inputs.mode }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Run (with full backup before apply)
+        run: |
+          set -e
+          case "$MODE" in dry-run|apply|rollback) ;; *) echo "bad mode $MODE"; exit 1;; esac
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'rm -rf /tmp/es-tagline && mkdir -p /tmp/es-tagline'
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "scripts/db-backup.php" "assets/luna-import/es-tagline.php" \
+            "$SSH_USER@$SSH_HOST:/tmp/es-tagline/"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "MODE=$MODE"' bash -s' <<'REMOTE'
+            set -e
+            T=/tmp/es-tagline
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            php -l $T/es-tagline.php
+            if [ "$MODE" = "rollback" ]; then
+              BK=$(cat "$HOME/lunaci-backups/LATEST-es-tagline" 2>/dev/null || true)
+              [ -n "$BK" ] && [ -f "$BK/es-tagline-backup.json" ] || { echo "ABORT: no apply backup found"; exit 1; }
+            elif [ "$MODE" = "apply" ]; then
+              BK="$HOME/lunaci-backups/pre-es-tagline-$(date -u +%Y%m%d-%H%M%S)"
+              mkdir -p "$BK"
+              php -l $T/db-backup.php
+              LIVE=$(wp db tables --all-tables --path="$WP_PATH" | wc -l)
+              LUNACI_BACKUP_FILE="$BK/database.sql.gz" wp eval-file $T/db-backup.php --path="$WP_PATH" || { echo "ABORT: database backup failed"; exit 1; }
+              gzip -t "$BK/database.sql.gz"
+              TABLES=$(zcat "$BK/database.sql.gz" | grep -c "^CREATE TABLE" || true)
+              [ "$TABLES" -ge "$LIVE" ] && [ "$TABLES" -gt 10 ] || { echo "ABORT: backup has $TABLES tables, database has $LIVE"; exit 1; }
+              tar -czf "$BK/mu-plugins.tar.gz" -C "$WP_PATH/wp-content" mu-plugins
+              cp -p "$WP_PATH/.htaccess" "$BK/htaccess.bak"
+              echo "$BK" > "$HOME/lunaci-backups/LATEST-es-tagline"
+              echo "BACKUP OK: $BK ($TABLES tables)"
+            else
+              BK=$(mktemp -d)
+            fi
+            LUNACI_MODE="$MODE" LUNACI_BACKUP_DIR="$BK" wp eval-file $T/es-tagline.php --path="$WP_PATH"
+            rm -rf $T
+            [ "$MODE" = "dry-run" ] || wp litespeed-purge all --path="$WP_PATH" || true
+          REMOTE
+
+      - name: Live check
+        if: inputs.mode != 'dry-run'
+        run: |
+          sleep 3
+          python3 - <<'PY'
+          import os, re, sys, urllib.request
+          mode = os.environ["MODE"]
+          new, old = "Toda mujer es vista. Pero tu presencia es recordada.", "Todas las mujeres son vistas. Pero tu presencia es recordada."
+          def get(u):
+              req = urllib.request.Request("https://lunacibarcelona.com" + u + "?lc=" + str(os.getpid()), headers={"User-Agent": "Mozilla/5.0 lunaci-check"})
+              with urllib.request.urlopen(req, timeout=60) as r:
+                  return r.status, r.read().decode("utf-8", "replace")
+          fail = 0
+          def check(ok, msg):
+              global fail
+              print(("PASS  " if ok else "FAIL  ") + msg); fail |= not ok
+          want, gone = (new, old) if mode == "apply" else (old, new)
+          for u in ("/es/sobre-nosotros/", "/es/"):
+              code, p = get(u)
+              check(code == 200 and want in p and gone not in p, f"{u}: '{want[:28]}...' shown")
+          code, p = get("/es/")
+          d = re.search(r'<p class="ln-hero__desc">([^<]*)', p)
+          check(d and "Inspirada en el esp" in d.group(1) and ">Inicio<" in p, "/es/ hero still Spanish, Spanish menu kept")
+          code, p = get("/")
+          d = re.search(r'<p class="ln-hero__desc">([^<]*)', p)
+          check(code == 200 and d and "Inspired by the Mediterranean" in d.group(1), "English home unchanged")
+          code, p = get("/about-us/")
+          check(code == 200 and "Every woman is seen." in p, "English About tagline unchanged")
+          print("RESULT: ALL CHECKS PASSED" if not fail else "RESULT: SOME CHECKS FAILED")
+          sys.exit(1 if fail else 0)
+          PY

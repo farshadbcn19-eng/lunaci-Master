@@ -13,17 +13,6 @@ name: "Deploy - Spanish About page in Spanish + slug sobre-nosotros (dry-run / a
 # in every mode.
 
 on:
-#   dry-run  - preconditions and plan only, nothing written
-#   apply    - full backup first (database, mu-plugins, .htaccess) to
-#              ~/lunaci-backups/pre-about-es-<timestamp>/ (stops on failure);
-#              writes option lunaci_cat_intro (lead under the H1 and a
-#              collection block after the product grid on the 8 category
-#              archives); purges cache; live checks every category page
-#   rollback - restores the option from the backup JSON of the last apply
-# lunaci-seo.php (item 6 is inert while lunaci_cat_intro is unset) is
-# deployed in every mode.
-
-on:
   workflow_dispatch:
     inputs:
       mode:

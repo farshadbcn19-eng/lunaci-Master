@@ -1,0 +1,104 @@
+name: "Restore - Spanish front page from the 17:55:58 backup (dry-run / apply)"
+
+# Runs assets/luna-import/es-home-restore.php: post 772 (Spanish front page)
+# back to its state in ~/lunaci-backups/pre-about-es-20261005-175558 (taken
+# before WPML rebuilt it from the English original at 17:56:10).
+#   dry-run  - compare backup vs live and plan only, nothing written
+#   apply    - fresh full backup first, then restore and verify; live checks
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run or apply"
+        required: true
+        default: "dry-run"
+        type: choice
+        options: ["dry-run", "apply"]
+
+# One Hostinger deploy at a time: overlapping runs share /tmp files on the server.
+concurrency:
+  group: lunaci-hostinger-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+      SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+      SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+      SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
+      MODE: ${{ inputs.mode }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Run (with full backup before apply)
+        run: |
+          set -e
+          case "$MODE" in dry-run|apply) ;; *) echo "bad mode $MODE"; exit 1;; esac
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'rm -rf /tmp/es-home-restore && mkdir -p /tmp/es-home-restore'
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "scripts/db-backup.php" "assets/luna-import/es-home-restore.php" \
+            "$SSH_USER@$SSH_HOST:/tmp/es-home-restore/"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "MODE=$MODE"' bash -s' <<'REMOTE'
+            set -e
+            T=/tmp/es-home-restore
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            php -l $T/es-home-restore.php
+            DUMP="$HOME/lunaci-backups/pre-about-es-20261005-175558/database.sql.gz"
+            gzip -t "$DUMP" && echo "source backup OK: $DUMP"
+            if [ "$MODE" = "apply" ]; then
+              BK="$HOME/lunaci-backups/pre-es-home-restore-$(date -u +%Y%m%d-%H%M%S)"
+              mkdir -p "$BK"
+              php -l $T/db-backup.php
+              LIVE=$(wp db tables --all-tables --path="$WP_PATH" | wc -l)
+              LUNACI_BACKUP_FILE="$BK/database.sql.gz" wp eval-file $T/db-backup.php --path="$WP_PATH" || { echo "ABORT: database backup failed"; exit 1; }
+              gzip -t "$BK/database.sql.gz"
+              TABLES=$(zcat "$BK/database.sql.gz" | grep -c "^CREATE TABLE" || true)
+              [ "$TABLES" -ge "$LIVE" ] && [ "$TABLES" -gt 10 ] || { echo "ABORT: backup has $TABLES tables, database has $LIVE"; exit 1; }
+              tar -czf "$BK/mu-plugins.tar.gz" -C "$WP_PATH/wp-content" mu-plugins
+              cp -p "$WP_PATH/.htaccess" "$BK/htaccess.bak"
+              echo "$BK" > "$HOME/lunaci-backups/LATEST-es-home-restore"
+              echo "BACKUP OK: $BK ($TABLES tables)"
+            else
+              BK=$(mktemp -d)
+            fi
+            LUNACI_MODE="$MODE" LUNACI_BACKUP_DIR="$BK" LUNACI_DUMP="$DUMP" wp eval-file $T/es-home-restore.php --path="$WP_PATH"
+            rm -rf $T
+            [ "$MODE" = "dry-run" ] || wp litespeed-purge all --path="$WP_PATH" || true
+          REMOTE
+
+      - name: Live check
+        if: inputs.mode == 'apply'
+        run: |
+          sleep 3
+          python3 - <<'PY'
+          import os, re, sys, urllib.request
+          def get(u):
+              req = urllib.request.Request("https://lunacibarcelona.com" + u + "?lc=" + str(os.getpid()), headers={"User-Agent": "Mozilla/5.0 lunaci-check"})
+              with urllib.request.urlopen(req, timeout=60) as r:
+                  return r.status, r.read().decode("utf-8", "replace")
+          fail = 0
+          def check(ok, msg):
+              global fail
+              print(("PASS  " if ok else "FAIL  ") + msg); fail |= not ok
+          code, es = get("/es/")
+          tag = re.search(r'<p class="ln-hero__tagline">([^<]*)</p>', es)
+          desc = re.search(r'<p class="ln-hero__desc">([^<]*)', es)
+          check(code == 200 and desc and "Inspirada en el esp" in desc.group(1), f"/es/ hero in Spanish: {desc.group(1)[:60] if desc else None}")
+          check(tag and "Inspired" not in es[es.find('ln-hero'):es.find('ln-hero') + 5000], f"/es/ tagline: {tag.group(1) if tag else None}")
+          check('id="lunaciGlobalNavLinks">' in es and ">Inicio<" in es, "/es/ Spanish menu kept")
+          code, en = get("/")
+          d2 = re.search(r'<p class="ln-hero__desc">([^<]*)', en)
+          check(code == 200 and d2 and "Inspired by the Mediterranean" in d2.group(1), "English home unchanged")
+          print("RESULT: ALL CHECKS PASSED" if not fail else "RESULT: SOME CHECKS FAILED")
+          sys.exit(1 if fail else 0)
+          PY

@@ -15,6 +15,10 @@
  *  3. The home page sends og:type "article"; it should be "website".
  *  4. Spanish category base /es/categoria-producto/ with a 301 from the old
  *     /es/product-category/ URLs (option lunaci_es_cat_base).
+ *  5. Meta title and description for product category archives (option
+ *     lunaci_cat_meta, keyed by term slug). AIOSEO Lite has no per-term SEO
+ *     fields, and the term description is printed on the archive, so the
+ *     meta is set here without changing visible copy.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -232,4 +236,69 @@ add_action(
 		exit;
 	},
 	1
+);
+
+// 5. Product category archive meta (option lunaci_cat_meta:
+// slug => array( 'title' => ..., 'desc' => ... )).
+function lunaci_seo_cat_meta( $field ) {
+	if ( ! is_tax( 'product_cat' ) ) {
+		return '';
+	}
+	$term = get_queried_object();
+	$meta = get_option( 'lunaci_cat_meta', array() );
+	if ( ! $term || empty( $term->slug ) || ! is_array( $meta ) || empty( $meta[ $term->slug ][ $field ] ) ) {
+		return '';
+	}
+	return (string) $meta[ $term->slug ][ $field ];
+}
+
+add_filter(
+	'aioseo_title',
+	function ( $title ) {
+		$custom = lunaci_seo_cat_meta( 'title' );
+		return '' !== $custom ? $custom : $title;
+	},
+	20
+);
+
+add_filter(
+	'aioseo_description',
+	function ( $description ) {
+		$custom = lunaci_seo_cat_meta( 'desc' );
+		return '' !== $custom ? $custom : $description;
+	},
+	20
+);
+
+// Keep og:/twitter: titles and descriptions in step on category archives.
+add_filter(
+	'aioseo_facebook_tags',
+	function ( $meta ) {
+		$t = lunaci_seo_cat_meta( 'title' );
+		$d = lunaci_seo_cat_meta( 'desc' );
+		if ( '' !== $t ) {
+			$meta['og:title'] = $t;
+		}
+		if ( '' !== $d ) {
+			$meta['og:description'] = $d;
+		}
+		return $meta;
+	},
+	20
+);
+
+add_filter(
+	'aioseo_twitter_tags',
+	function ( $meta ) {
+		$t = lunaci_seo_cat_meta( 'title' );
+		$d = lunaci_seo_cat_meta( 'desc' );
+		if ( '' !== $t ) {
+			$meta['twitter:title'] = $t;
+		}
+		if ( '' !== $d ) {
+			$meta['twitter:description'] = $d;
+		}
+		return $meta;
+	},
+	20
 );

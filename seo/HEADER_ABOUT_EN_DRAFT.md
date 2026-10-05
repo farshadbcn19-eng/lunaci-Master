@@ -1,4 +1,4 @@
-# Spanish global menu, English-only About page, Spanish footer copyright
+# Spanish global menu, English-only About page, Spanish footer copyright — applied live 2026-10-05, run 37354636418 (all checks passed)
 
 ## What was wrong
 - The global header (Code Snippet 8) showed Home / Products / About / Contact, linked to the English pages, on every Spanish page.

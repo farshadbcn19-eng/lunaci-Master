@@ -24,6 +24,9 @@
  *     after the product grid. Inert while the option is unset.
  *  7. 301 from /es/about-us-es/ to the Spanish About page's current URL once
  *     its slug has changed (inert while the slug is still about-us-es).
+ *  8. Theme footer copyright in Spanish on Spanish pages (option
+ *     lunaci_es_copyright = on). The Hello theme reads one value from the
+ *     Elementor kit setting hello_footer_copyright_text for every language.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -398,4 +401,28 @@ add_action(
 		}
 	},
 	1
+);
+
+// 8. Spanish theme footer copyright (option lunaci_es_copyright = on).
+add_filter(
+	'get_post_metadata',
+	function ( $value, $object_id, $meta_key, $single ) {
+		static $busy = false;
+		if ( $busy || '_elementor_page_settings' !== $meta_key || is_admin() || wp_doing_ajax() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+			return $value;
+		}
+		if ( (int) $object_id !== (int) get_option( 'elementor_active_kit' ) || 'on' !== get_option( 'lunaci_es_copyright', 'off' ) || 'es' !== apply_filters( 'wpml_current_language', null ) ) {
+			return $value;
+		}
+		$busy     = true;
+		$settings = get_post_meta( $object_id, '_elementor_page_settings', true );
+		$busy     = false;
+		if ( ! is_array( $settings ) || 'All rights reserved' !== ( $settings['hello_footer_copyright_text'] ?? '' ) ) {
+			return $value;
+		}
+		$settings['hello_footer_copyright_text'] = 'Todos los derechos reservados';
+		return array( $settings );
+	},
+	10,
+	4
 );

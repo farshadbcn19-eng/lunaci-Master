@@ -28,7 +28,8 @@
  *     files, so no page HTML or copy changes: Montserrat/Raleway -> Helvetica
  *     LUNACI, Cormorant Garamond -> Trade Gothic (size-adjust 72% keeps the
  *     line width; Trade Gothic Extended is ~39% wider). Product page section
- *     headings use Trade Gothic.
+ *     headings use Trade Gothic. The aliases declare weight 400 only, so the
+ *     browser still synthesizes bold for 600-900 text.
  *
  * Modes: "off", "test" (active only on URLs with ?lunaci_perf=1) or "on".
  * Items 1-2 use option lunaci_perf_mode, item 3 lunaci_perf_payments_mode,
@@ -201,10 +202,10 @@ add_action(
 		$hv   = esc_url( $base . 'Helvetica.woff2' );
 		$css  = '';
 		foreach ( array( 'Montserrat', 'Raleway' ) as $family ) {
-			$css .= "@font-face{font-family:'$family';src:url('$hv') format('woff2');font-weight:100 900;font-style:normal;font-display:swap}";
+			$css .= "@font-face{font-family:'$family';src:url('$hv') format('woff2');font-weight:400;font-style:normal;font-display:swap}";
 		}
-		$css .= "@font-face{font-family:'Cormorant Garamond';src:url('$tg') format('woff2');font-weight:100 900;font-style:normal;font-display:swap;size-adjust:72%}";
-		$css .= ".single-product .woocommerce-tabs h2,.single-product .woocommerce-Reviews-title,.single-product .comment-reply-title,.single-product .related>h2,.single-product .upsells>h2{font-family:'Trade Gothic LT Std Extended',sans-serif;font-weight:400}";
+		$css .= "@font-face{font-family:'Cormorant Garamond';src:url('$tg') format('woff2');font-weight:400;font-style:normal;font-display:swap;size-adjust:72%}";
+		$css .= "body.single-product div.product .woocommerce-tabs h2,body.single-product div.product .woocommerce-tabs .panel h2,body.single-product .woocommerce-Reviews-title,body.single-product .comment-reply-title,body.single-product .related>h2,body.single-product .upsells>h2{font-family:'Trade Gothic LT Std Extended',sans-serif!important;font-weight:400!important}";
 		echo '<link rel="preload" href="' . $hv . '" as="font" type="font/woff2" crossorigin>' . "\n";
 		echo '<style id="lunaci-brand-fonts">' . $css . '</style>' . "\n";
 	},

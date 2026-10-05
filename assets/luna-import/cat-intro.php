@@ -55,8 +55,15 @@ foreach ( $want as $slug => $lang ) {
 	}
 	preg_match_all( '/\{\{([^}|]+)\|/', implode( ' ', $v['body'] ), $m );
 	foreach ( $m[1] as $path ) {
-		$id = url_to_postid( home_url( $path ) );
-		if ( ! $id || 'publish' !== get_post_status( $id ) ) {
+		// url_to_postid() does not resolve WPML's /es/ prefix under WP-CLI, so
+		// look the product up by slug and confirm its permalink is this path.
+		$slug = basename( untrailingslashit( $path ) );
+		$p    = get_posts( array( 'name' => $slug, 'post_type' => 'product', 'post_status' => 'publish', 'numberposts' => 1, 'suppress_filters' => true ) );
+		$id   = $p ? $p[0]->ID : 0;
+		do_action( 'wpml_switch_language', $lang );
+		$link = $id ? untrailingslashit( (string) wp_parse_url( get_permalink( $id ), PHP_URL_PATH ) ) : '';
+		do_action( 'wpml_switch_language', null );
+		if ( ! $id || $link !== untrailingslashit( $path ) ) {
 			echo "FAIL $slug: link $path does not resolve to a published post\n";
 			$fail = 1;
 		}

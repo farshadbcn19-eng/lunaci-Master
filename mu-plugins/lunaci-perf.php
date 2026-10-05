@@ -31,9 +31,15 @@
  *     headings use Trade Gothic. The aliases declare weight 400 only, so the
  *     browser still synthesizes bold for 600-900 text.
  *
+ *  5. Render-blocking plugin CSS that a page does not use. Each stylesheet is
+ *     removed only when the page body has no element it styles (checked per
+ *     page on the final HTML): block library, MediaElement, Jetpack Forms,
+ *     Hostinger Reach, AIOSEO table of contents, Essential Addons. With item
+ *     3 on, the PayPal / WooPayments product CSS goes too.
+ *
  * Modes: "off", "test" (active only on URLs with ?lunaci_perf=1) or "on".
  * Items 1-2 use option lunaci_perf_mode, item 3 lunaci_perf_payments_mode,
- * item 4 lunaci_brand_fonts_mode.
+ * item 4 lunaci_brand_fonts_mode, item 5 lunaci_css_trim_mode.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -226,6 +232,58 @@ function lunaci_brand_fonts_strip_links( $html ) {
 	$html = preg_replace( '#<link\b[^>]*fonts\.googleapis\.com/css2?\?family=(?:Raleway|Cormorant)[^>]*>\s*#i', '', $html );
 	if ( ! preg_match( '#<link\b[^>]*fonts\.googleapis\.com/css#i', $html ) ) {
 		$html = preg_replace( '#<link\b[^>]*rel=["\']?(?:preconnect|dns-prefetch)["\']?[^>]*fonts\.(?:googleapis|gstatic)\.com[^>]*>\s*#i', '', $html );
+	}
+	return $html;
+}
+
+// 5. Unused render-blocking plugin CSS.
+add_filter(
+	'style_loader_tag',
+	function ( $tag, $handle ) {
+		if ( in_array( $handle, array( 'wc-ppcp-sdk-v6-gateway', 'wcpay-product-details' ), true )
+			&& function_exists( 'is_product' ) && is_product()
+			&& lunaci_perf_mode_active( 'lunaci_perf_payments_mode' )
+			&& lunaci_perf_mode_active( 'lunaci_css_trim_mode' ) ) {
+			return '';
+		}
+		return $tag;
+	},
+	10,
+	2
+);
+
+add_action(
+	'template_redirect',
+	function () {
+		if ( lunaci_perf_mode_active( 'lunaci_css_trim_mode' ) ) {
+			ob_start( 'lunaci_css_trim_html' );
+		}
+	},
+	3
+);
+
+function lunaci_css_trim_html( $html ) {
+	$pos = stripos( $html, '<body' );
+	if ( false === $pos ) {
+		return $html;
+	}
+	// Markup only: drop scripts, styles and JSON so config strings do not count.
+	$body = preg_replace( '#<(script|style|template)\b[^>]*>.*?</\1>#is', '', substr( $html, $pos ) );
+
+	// Stylesheet id (without -css) => pattern its styled elements match.
+	$rules = array(
+		'wp-block-library'        => '#class=["\'][^"\']*\bwp-block-#i',
+		'mediaelement'            => '#wp-(?:video|audio)-shortcode|wp-playlist|\bmejs-#i',
+		'wp-mediaelement'         => '#wp-(?:video|audio)-shortcode|wp-playlist|\bmejs-#i',
+		'jetpack-forms-layout'    => '#contact-form|jetpack-form|grunion#i',
+		'hostinger-reach-subscription-block' => '#hostinger-reach|wp-block-hostinger#i',
+		'aioseo/css/src/vue/standalone/blocks/table-of-contents/global.scss' => '#aioseo-toc|aioseo-table-of-contents#i',
+		'eael-general'            => '#\beael-#i',
+	);
+	foreach ( $rules as $id => $used ) {
+		if ( ! preg_match( $used, $body ) ) {
+			$html = preg_replace( '#<link\b[^>]*\bid=["\']' . preg_quote( $id, '#' ) . '-css["\'][^>]*>\s*#i', '', $html );
+		}
 	}
 	return $html;
 }

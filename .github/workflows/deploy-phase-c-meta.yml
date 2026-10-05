@@ -1,0 +1,127 @@
+name: "Deploy - Phase C meta titles and descriptions (dry-run / apply / rollback)"
+
+# Runs assets/luna-import/phase-c-meta.php with seo/phase-c-meta.json:
+#   dry-run  - preconditions and plan only, nothing written
+#   apply    - full backup first (database, mu-plugins, .htaccess) to
+#              ~/lunaci-backups/pre-phase-c-meta-<timestamp>/ (stops on
+#              failure); writes the AIOSEO title/description of 38 posts and
+#              pages and option lunaci_cat_meta for 8 categories; purges
+#              cache; checks every URL renders the new <title> and description
+#   rollback - restores the old values from the backup JSON of the last apply
+# lunaci-seo.php (item 5 reads lunaci_cat_meta, inert while it is unset) is
+# deployed in every mode.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run, apply or rollback"
+        required: true
+        default: "dry-run"
+        type: choice
+        options: ["dry-run", "apply", "rollback"]
+
+# One Hostinger deploy at a time: overlapping runs share /tmp files on the server.
+concurrency:
+  group: lunaci-hostinger-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+      SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+      SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+      SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
+      MODE: ${{ inputs.mode }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Run (with full backup before apply)
+        run: |
+          set -e
+          case "$MODE" in dry-run|apply|rollback) ;; *) echo "bad mode $MODE"; exit 1;; esac
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "scripts/db-backup.php" "assets/luna-import/phase-c-meta.php" "seo/phase-c-meta.json" "mu-plugins/lunaci-seo.php" "$SSH_USER@$SSH_HOST:/tmp/"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "MODE=$MODE"' bash -s' <<'REMOTE'
+            set -e
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            php -l /tmp/phase-c-meta.php
+            php -l /tmp/lunaci-seo.php
+            if [ "$MODE" = "rollback" ]; then
+              BK=$(cat "$HOME/lunaci-backups/LATEST-phase-c-meta" 2>/dev/null || true)
+              [ -n "$BK" ] && [ -f "$BK/phase-c-meta-backup.json" ] || { echo "ABORT: no apply backup found"; exit 1; }
+            elif [ "$MODE" = "apply" ]; then
+              BK="$HOME/lunaci-backups/pre-phase-c-meta-$(date -u +%Y%m%d-%H%M%S)"
+              mkdir -p "$BK"
+              php -l /tmp/db-backup.php
+              LIVE=$(wp db tables --all-tables --path="$WP_PATH" | wc -l)
+              LUNACI_BACKUP_FILE="$BK/database.sql.gz" wp eval-file /tmp/db-backup.php --path="$WP_PATH" || { echo "ABORT: database backup failed"; exit 1; }
+              gzip -t "$BK/database.sql.gz"
+              TABLES=$(zcat "$BK/database.sql.gz" | grep -c "^CREATE TABLE" || true)
+              [ "$TABLES" -ge "$LIVE" ] && [ "$TABLES" -gt 10 ] || { echo "ABORT: backup has $TABLES tables, database has $LIVE"; exit 1; }
+              tar -czf "$BK/mu-plugins.tar.gz" -C "$WP_PATH/wp-content" mu-plugins
+              cp -p "$WP_PATH/.htaccess" "$BK/htaccess.bak"
+              echo "$BK" > "$HOME/lunaci-backups/LATEST-phase-c-meta"
+              echo "BACKUP OK: $BK ($TABLES tables)"
+            else
+              BK=$(mktemp -d)
+            fi
+            DEST="$WP_PATH/wp-content/mu-plugins/lunaci-seo.php"
+            [ -f "$DEST" ] && cp -p "$DEST" "$HOME/lunaci-backups/lunaci-seo.php.prev-$(date -u +%Y%m%d-%H%M%S)"
+            cp /tmp/lunaci-seo.php "$DEST"
+            echo "deployed: $DEST"
+            LUNACI_MODE="$MODE" LUNACI_BACKUP_DIR="$BK" LUNACI_META_JSON=/tmp/phase-c-meta.json wp eval-file /tmp/phase-c-meta.php --path="$WP_PATH"
+            rm -f /tmp/phase-c-meta.php /tmp/phase-c-meta.json /tmp/db-backup.php /tmp/lunaci-seo.php
+            [ "$MODE" = "dry-run" ] || wp litespeed-purge all --path="$WP_PATH" || true
+          REMOTE
+
+      - name: Live check
+        if: inputs.mode != 'dry-run'
+        run: |
+          sleep 3
+          python3 - <<'PY'
+          import json, html, re, os, sys, urllib.request
+          mode = os.environ["MODE"]
+          base = "https://lunacibarcelona.com"
+          fail = 0
+          for r in json.load(open("seo/phase-c-meta.json")):
+              u = base + r["url"]
+              try:
+                  req = urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0 lunaci-check"})
+                  with urllib.request.urlopen(req, timeout=60) as resp:
+                      code, page = resp.status, resp.read().decode("utf-8", "replace")
+              except Exception as e:
+                  print(f"FAIL  {r['url']}: {e}"); fail = 1; continue
+              t = re.search(r"<title>(.*?)</title>", page, re.S)
+              d = re.search(r'<meta name="description" content="([^"]*)"', page)
+              title = html.unescape(t.group(1)).strip() if t else ""
+              desc = html.unescape(d.group(1)).strip() if d else ""
+              h1 = "<h1" in page
+              msgs = []
+              if code != 200 or not h1:
+                  msgs.append(f"status {code}, h1 {h1}")
+              if mode == "apply":
+                  if r["title"] and title != r["title"]:
+                      msgs.append(f"title is '{title}'")
+                  if r["desc"] and desc != r["desc"]:
+                      msgs.append(f"description is '{desc[:80]}'")
+              if msgs:
+                  print(f"FAIL  {r['url']}: " + "; ".join(msgs)); fail = 1
+              else:
+                  print(f"PASS  {r['url']}  [{len(title)}] {title}")
+          for u in ("/", "/es/", "/contact/", "/about-us/"):
+              with urllib.request.urlopen(urllib.request.Request(base + u, headers={"User-Agent": "Mozilla/5.0 lunaci-check"}), timeout=60) as resp:
+                  ok = resp.status == 200
+              print(("PASS" if ok else "FAIL") + f"  untouched page {u} 200"); fail |= not ok
+          print("RESULT: ALL CHECKS PASSED" if not fail else "RESULT: SOME CHECKS FAILED")
+          sys.exit(1 if fail else 0)
+          PY

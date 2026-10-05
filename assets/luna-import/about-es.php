@@ -28,6 +28,41 @@ $old_url = 'https://lunacibarcelona.com/es/about-us-es/';
 $new_url = 'https://lunacibarcelona.com/es/' . LUNACI_NEW_SLUG . '/';
 $backup  = rtrim( $dir, '/' ) . '/about-es-backup.json';
 
+// Writes go straight to the database. update_post_meta()/wp_update_post()
+// under WP-CLI run without a user that has unfiltered_html, and the HTML
+// widget was sanitised on the way in (script, svg and style parts stripped).
+function lunaci_set_meta_raw( $id, $key, $value ) {
+	global $wpdb;
+	$n = $wpdb->update( $wpdb->postmeta, array( 'meta_value' => $value ), array( 'post_id' => $id, 'meta_key' => $key ) );
+	wp_cache_delete( $id, 'post_meta' );
+	return false !== $n;
+}
+
+function lunaci_set_slug_raw( $id, $slug ) {
+	global $wpdb;
+	$n = $wpdb->update( $wpdb->posts, array( 'post_name' => $slug ), array( 'ID' => $id ) );
+	clean_post_cache( $id );
+	return false !== $n;
+}
+
+function lunaci_widget_md5( $id ) {
+	global $wpdb;
+	$raw  = (string) $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM {$wpdb->postmeta} WHERE post_id=%d AND meta_key='_elementor_data'", $id ) );
+	$md5  = 'missing';
+	$walk = function ( $els ) use ( &$walk, &$md5 ) {
+		foreach ( (array) $els as $el ) {
+			if ( ( $el['id'] ?? '' ) === LUNACI_WIDGET ) {
+				$md5 = md5( (string) ( $el['settings']['html'] ?? '' ) );
+			}
+			if ( ! empty( $el['elements'] ) ) {
+				$walk( $el['elements'] );
+			}
+		}
+	};
+	$walk( json_decode( $raw, true ) );
+	return $md5;
+}
+
 function lunaci_clear_elementor_cache( $id ) {
 	delete_post_meta( $id, '_elementor_element_cache' );
 	delete_post_meta( $id, '_elementor_css' );
@@ -40,19 +75,25 @@ if ( 'rollback' === $mode ) {
 		echo "ABORT: no backup at $backup\n";
 		exit( 1 );
 	}
+	$bad = 0;
 	foreach ( $b['data'] as $id => $raw ) {
-		update_post_meta( (int) $id, '_elementor_data', wp_slash( $raw ) );
+		lunaci_set_meta_raw( (int) $id, '_elementor_data', $raw );
 		lunaci_clear_elementor_cache( (int) $id );
-		echo "restored _elementor_data of post $id\n";
+		global $wpdb;
+		$now = (string) $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM {$wpdb->postmeta} WHERE post_id=%d AND meta_key='_elementor_data'", $id ) );
+		$ok  = $now === $raw;
+		$bad = $bad || ! $ok;
+		echo "restored _elementor_data of post $id: " . ( $ok ? 'identical to backup' : 'MISMATCH' ) . "\n";
 	}
-	wp_update_post( array( 'ID' => LUNACI_ABOUT_ES, 'post_name' => $b['slug'] ) );
+	lunaci_set_slug_raw( LUNACI_ABOUT_ES, $b['slug'] );
 	echo 'slug: ' . get_post_field( 'post_name', LUNACI_ABOUT_ES ) . "\n";
+	echo 'widget md5: ' . lunaci_widget_md5( LUNACI_ABOUT_ES ) . ( lunaci_widget_md5( LUNACI_ABOUT_ES ) === LUNACI_OLD_MD5 ? ' (original)' : ' (NOT original)' ) . "\n";
 	if ( class_exists( '\Elementor\Plugin' ) ) {
 		\Elementor\Plugin::$instance->files_manager->clear_cache();
 	}
 	wp_cache_flush();
-	echo "ROLLBACK DONE\n";
-	exit( 0 );
+	echo $bad ? "ROLLBACK FINISHED WITH ERRORS\n" : "ROLLBACK DONE\n";
+	exit( $bad ? 1 : 0 );
 }
 
 $fail = 0;
@@ -147,12 +188,12 @@ if ( false === file_put_contents( $backup, wp_json_encode( $b ) ) ) {
 }
 echo "backup: $backup\n";
 
-update_post_meta( LUNACI_ABOUT_ES, '_elementor_data', wp_slash( wp_json_encode( $data ) ) );
+lunaci_set_meta_raw( LUNACI_ABOUT_ES, '_elementor_data', wp_json_encode( $data ) );
 lunaci_clear_elementor_cache( LUNACI_ABOUT_ES );
-wp_update_post( array( 'ID' => LUNACI_ABOUT_ES, 'post_name' => LUNACI_NEW_SLUG ) );
+lunaci_set_slug_raw( LUNACI_ABOUT_ES, LUNACI_NEW_SLUG );
 foreach ( $others as $id => $val ) {
 	$val = str_replace( array( 'https:\/\/lunacibarcelona.com\/es\/about-us-es\/', $old_url ), array( 'https:\/\/lunacibarcelona.com\/es\/' . LUNACI_NEW_SLUG . '\/', $new_url ), $val );
-	update_post_meta( $id, '_elementor_data', wp_slash( $val ) );
+	lunaci_set_meta_raw( $id, '_elementor_data', $val );
 	lunaci_clear_elementor_cache( $id );
 }
 if ( class_exists( '\Elementor\Plugin' ) ) {
@@ -161,12 +202,12 @@ if ( class_exists( '\Elementor\Plugin' ) ) {
 wp_cache_flush();
 
 $bad   = 0;
-$check = json_decode( (string) get_post_meta( LUNACI_ABOUT_ES, '_elementor_data', true ), true );
-$found = '';
-array_walk_recursive( $check, function ( $v, $k ) use ( &$found, $new_html ) { if ( 'html' === $k && $v === $new_html ) { $found = 'yes'; } } );
-if ( 'yes' !== $found ) {
-	echo "VERIFY FAIL: widget HTML not saved\n";
+$saved = lunaci_widget_md5( LUNACI_ABOUT_ES );
+if ( LUNACI_NEW_MD5 !== $saved ) {
+	echo "VERIFY FAIL: stored widget md5 $saved, expected " . LUNACI_NEW_MD5 . "\n";
 	$bad = 1;
+} else {
+	echo "VERIFY OK: stored widget is byte-identical to the reviewed file\n";
 }
 if ( LUNACI_NEW_SLUG !== get_post_field( 'post_name', LUNACI_ABOUT_ES ) ) {
 	echo "VERIFY FAIL: slug\n";

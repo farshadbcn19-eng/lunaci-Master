@@ -44,6 +44,13 @@ The single source of truth for brand identity, voice, and approved language live
 - SSH/WP-CLI automation runs via GitHub Actions workflows (`diagnose-*` / `fix-*` / `query-*.yml`) using `sshpass` and Hostinger SSH secrets.
 - **Hard rule:** homepage copy/text must never change without the user's explicit instruction — only image placement and section sizing/dimensions may change unless told otherwise.
 
+## Supabase
+
+- LUNACI's Supabase project is **`lunaci`**, project ref **`hkgplbknepsdhwqbmikx`** (region `eu-central-1`, Frankfurt). Use only this project for LUNACI work.
+- Never read from or write to the `bronci` Supabase project from this repo. It belongs to the separate oil & gas business.
+- Schema changes go through migrations, and every table needs RLS enabled. Run the security advisors after any DDL change.
+- Never commit Supabase keys to this repo. The service-role key must stay server-side only.
+
 ## Products (15 confirmed SKUs)
 
 - Lips: Lip Pencil, Lipstick Matt Vegan, Lip Gloss Matt Fix, Lip Velvet.

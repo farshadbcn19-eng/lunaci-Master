@@ -127,3 +127,29 @@ Lighthouse SEO scores 100 on all 8 audited pages (EN and ES home, product, categ
 - The unpublished Shadow product and the EN-only "All Products" page. The Spanish "Todos" tab uses `/es/productos/`.
 
 **Rollback:** `deploy-wpml-gutenberg-es.yml` and `deploy-wpml-store-es.yml`, mode `rollback`.
+
+## Update — item 4 accessibility done (2026-10-06, Lighthouse mobile run 37459830629)
+| Page | Accessibility before → after | Best practices before → after |
+|---|---|---|
+| /product/lipstick/ | 89 → 100 | 75 → 79 |
+| /product-category/lips/ | 87 → 100 | 75 → 79 |
+| /about-us/ | 92 → 100 | 75 → 79 |
+| /shipping/ | 96 → 100 | 75 → 79 |
+| /contact/ | 88 → 98 | 75 → 79 |
+| /products/ | 90 → 98 | 75 → 79 |
+| /es/ | 96 → 96 | 75 → 79 |
+
+**What changed** (`deploy-a11y-fixes.yml`; backup `pre-a11y-fixes-*`):
+- **Cart link:** the English cart link in snippet 8 now has `aria-label="Cart"`.
+- **WPCode CSS snippet "LUNACI Accessibility Contrast (WCAG AA)", v3:**
+  - Greys are `#9a9894` with opacity 1.
+  - Links are `#D4AF37` and underlined.
+  - Text on gold is `#3a2f0f`.
+  - Decorative numbers are `#8a7530`.
+  - Every rule is scoped to `body:not(.home)`; the theme copyright rule applies only to the About pages.
+- **`lunaci-seo.php` items 13–15:** the WooCommerce `#content` skip target; the favicon and touch icons (the "L" mark, cropped from the logo with no colour change); and the two missing-font `@font-face` rules on the contact page, which are dropped from the output.
+
+**Open, needs the owner's decision:**
+- Contrast on the home page: the marquee text `#856f27` and the footer line `#5e5d5a`. The home page is protected.
+- The Hostinger Reach `embed.js` third-party cookie. It is the only thing holding Best Practices at 79.
+- Footer heading order (h4) on contact and products, weight 3.

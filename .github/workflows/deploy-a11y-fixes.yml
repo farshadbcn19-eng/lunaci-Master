@@ -14,11 +14,11 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "dry-run, apply or rollback"
+        description: "dry-run, apply, rollback or update-css"
         required: true
         default: "dry-run"
         type: choice
-        options: ["dry-run", "apply", "rollback"]
+        options: ["dry-run", "apply", "rollback", "update-css"]
 
 # One Hostinger deploy at a time: overlapping runs share /tmp files on the server.
 concurrency:
@@ -45,7 +45,7 @@ jobs:
       - name: Run (with full backup before apply)
         run: |
           set -e
-          case "$MODE" in dry-run|apply|rollback) ;; *) echo "bad mode $MODE"; exit 1;; esac
+          case "$MODE" in dry-run|apply|rollback|update-css) ;; *) echo "bad mode $MODE"; exit 1;; esac
           sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'rm -rf /tmp/a11y-fixes && mkdir -p /tmp/a11y-fixes'
           sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
             "scripts/db-backup.php" "assets/luna-import/a11y-fixes.php" "mu-plugins/lunaci-seo.php" \
@@ -62,6 +62,12 @@ jobs:
             if [ "$MODE" = "rollback" ]; then
               BK=$(cat "$HOME/lunaci-backups/LATEST-a11y-fixes" 2>/dev/null || true)
               [ -n "$BK" ] && [ -f "$BK/a11y-fixes-backup.json" ] || { echo "ABORT: no apply backup found"; exit 1; }
+            elif [ "$MODE" = "update-css" ]; then
+              BK=$(cat "$HOME/lunaci-backups/LATEST-a11y-fixes" 2>/dev/null || true)
+              [ -n "$BK" ] && [ -d "$BK" ] || { echo "ABORT: no apply backup dir"; exit 1; }
+              php -l $T/db-backup.php
+              LUNACI_BACKUP_FILE="$BK/database-before-update-css-$(date -u +%Y%m%d-%H%M%S).sql.gz" wp eval-file $T/db-backup.php --path="$WP_PATH" || { echo "ABORT: database backup failed"; exit 1; }
+              echo "BACKUP OK (update-css): $BK"
             elif [ "$MODE" = "apply" ]; then
               BK="$HOME/lunaci-backups/pre-a11y-fixes-$(date -u +%Y%m%d-%H%M%S)"
               mkdir -p "$BK"
@@ -122,6 +128,7 @@ jobs:
           _, p = get("/about-us/")
           check('aria-label="Cart"' in p, "English cart link has aria-label Cart (/about-us/)")
           check("lunaci-a11y-contrast" in p, "contrast CSS present (/about-us/)")
+          check("lunaci-a11y-contrast v2" in p or os.environ.get("MODE") != "update-css", "contrast CSS v2 live (/about-us/)")
           check('rel="icon"' in p and "/favicon.ico" in p, "favicon link in head (/about-us/)")
           _, p = get("/es/sobre-nosotros/")
           check('aria-label="Carrito"' in p, "Spanish cart link keeps aria-label Carrito")

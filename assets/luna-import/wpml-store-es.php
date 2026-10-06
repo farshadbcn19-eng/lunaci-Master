@@ -64,6 +64,7 @@ $plan_strings = array(
 	'elementor-62'                                             => array( 'shortcode-shortcode-d088cbe' => null ),
 	'elementor-63'                                             => array( 'shortcode-shortcode-83b0fa0' => null ),
 	'elementor-64'                                             => array( 'shortcode-shortcode-18c27c9' => null ),
+	'WP'                                                       => array( 'Blog Title' => null ),
 );
 // AIOSEO: by English value; values made only of tags stay the same.
 $aioseo_es = array(
@@ -89,6 +90,9 @@ $endpoint_es = array(
 	'order-received'             => 'pedido-recibido',
 	'my-account'                 => 'mi-cuenta',
 	'pay'                        => 'pagar',
+	// System endpoints (payment gateway callbacks, file downloads): same value.
+	'wc-api'                     => 'wc-api',
+	'wc/file/transient'          => 'wc/file/transient',
 );
 
 $fail = 0;
@@ -126,7 +130,7 @@ foreach ( $wpdb->get_results( "SELECT id, name, value FROM $st WHERE context='WP
 		$fail = 1;
 	}
 }
-foreach ( $wpdb->get_results( "SELECT id, context, name, value FROM $st WHERE context IN ('WP','gutenberg-1') AND language='en'" ) as $r ) {
+foreach ( $wpdb->get_results( "SELECT id, context, name, value FROM $st WHERE context='gutenberg-1' AND language='en'" ) as $r ) {
 	echo "INFO (not planned): [{$r->context}] {$r->name} = " . substr( $r->value, 0, 80 ) . "\n";
 }
 foreach ( $todo as $sid => $t ) {
@@ -148,7 +152,8 @@ foreach ( array( 'pa_color', 'product_cat' ) as $tax ) {
 			continue;
 		}
 		$es_name = 'product_cat' === $tax ? 'Sin categoría' : $term->name;
-		$es_slug = 'product_cat' === $tax ? 'sin-categoria' : $term->slug . '-es';
+		// From the current name, not the English slug (one still reads perfect-04).
+		$es_slug = 'product_cat' === $tax ? 'sin-categoria' : sanitize_title( $term->name ) . '-es';
 		if ( term_exists( $es_slug, $tax ) ) {
 			echo "FAIL: slug $es_slug already exists in $tax\n";
 			$fail = 1;

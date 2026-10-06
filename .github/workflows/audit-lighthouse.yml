@@ -1,0 +1,46 @@
+name: "Audit - Lighthouse mobile on key pages (read-only)"
+
+# Read-only. Runs Lighthouse 12 (mobile, default throttling) from the GitHub
+# runner against the public site and prints category scores, Core Web Vitals
+# and every SEO / accessibility / best-practices audit scoring below 0.9.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Lighthouse
+        run: |
+          set -e
+          npm i -g lighthouse@12 >/dev/null 2>&1
+          URLS="https://lunacibarcelona.com/ https://lunacibarcelona.com/es/ https://lunacibarcelona.com/product/lipstick/ https://lunacibarcelona.com/es/producto/pintalabios/ https://lunacibarcelona.com/product-category/lips/ https://lunacibarcelona.com/es/categoria-producto/labios/ https://lunacibarcelona.com/about-us/ https://lunacibarcelona.com/es/sobre-nosotros/"
+          for u in $URLS; do curl -s -o /dev/null "$u"; done   # warm the page cache
+          i=0
+          for u in $URLS; do
+            i=$((i+1))
+            lighthouse "$u" --quiet --chrome-flags="--headless=new --no-sandbox" --only-categories=performance,seo,accessibility,best-practices --output=json --output-path="lh-$i.json" || echo "lighthouse failed for $u"
+          done
+          python3 - <<'PY'
+          import json, glob
+          for f in sorted(glob.glob("lh-*.json"), key=lambda x: int(x[3:-5])):
+              lr = json.load(open(f)); a = lr["audits"]
+              cats = {k: round((v["score"] or 0) * 100) for k, v in lr["categories"].items()}
+              print(lr["finalDisplayedUrl"], cats)
+              print("   LCP", a["largest-contentful-paint"]["displayValue"], "| FCP", a["first-contentful-paint"]["displayValue"], "| TBT", a["total-blocking-time"]["displayValue"], "| CLS", a["cumulative-layout-shift"]["displayValue"], "| TTFB", a["server-response-time"].get("displayValue", ""))
+              for cat in ("seo", "accessibility", "best-practices"):
+                  for ref in lr["categories"][cat]["auditRefs"]:
+                      x = a[ref["id"]]
+                      if x.get("score") is not None and x["score"] < 0.9 and x.get("scoreDisplayMode") in ("binary", "numeric"):
+                          items = x.get("details", {}).get("items", [])
+                          ex = ""
+                          if items:
+                              it = items[0]
+                              ex = (it.get("node", {}) or {}).get("snippet", "") or str(it.get("url", "") or it.get("description", ""))
+                          print(f"   [{cat}] {ref['id']} score={x['score']} {len(items)} items  e.g. {ex[:140]}")
+          PY

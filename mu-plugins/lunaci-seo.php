@@ -42,6 +42,10 @@
  *     /es/politica-de-privacidad/. A save that would replace their Spanish
  *     content with mostly English content keeps the current content and
  *     title; logged in lunaci_es_guard_log.
+ * 13. Skip-link target on WooCommerce shop, category and product pages: the
+ *     theme's skip links point to #content, which those templates lack.
+ * 14. Favicon and touch icons (the LUNACI "L" mark; files in the web root):
+ *     the site had no icon, so /favicon.ico returned 404.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -631,4 +635,30 @@ add_filter(
 	},
 	PHP_INT_MAX, // last, so no other filter can put the English content back
 	2
+);
+
+// 13. Skip-link target on WooCommerce pages. The skip links ("Skip to
+// content") point to #content; the WooCommerce templates open with
+// main#main, so the target is added as the first element inside it.
+add_action(
+	'woocommerce_before_main_content',
+	function () {
+		echo '<div id="content" tabindex="-1" style="outline:none"></div>';
+	},
+	11 // right after WooCommerce opens div#primary / main#main (priority 10)
+);
+
+// 14. Favicon and touch icons, unless a WordPress site icon is ever set.
+add_action(
+	'wp_head',
+	function () {
+		if ( has_site_icon() ) {
+			return;
+		}
+		$root = untrailingslashit( (string) get_option( 'home' ) ); // not home_url(): WPML adds /es/ to it
+		echo '<link rel="icon" href="' . esc_url( $root . '/favicon.ico' ) . '" sizes="16x16 32x32 48x48">' . "\n";
+		echo '<link rel="icon" type="image/png" sizes="192x192" href="' . esc_url( $root . '/lunaci-icon-192.png' ) . '">' . "\n";
+		echo '<link rel="apple-touch-icon" href="' . esc_url( $root . '/lunaci-apple-touch-icon.png' ) . '">' . "\n";
+	},
+	5
 );

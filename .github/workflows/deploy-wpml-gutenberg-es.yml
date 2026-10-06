@@ -1,0 +1,119 @@
+name: "WPML - Spanish translations for the Gutenberg pages (dry-run / apply / rollback)"
+
+# Runs assets/luna-import/wpml-gutenberg-es.php:
+#   dry-run  - validates the extraction against WPML's strings and prints the
+#              plan; nothing written
+#   apply    - full backup first; syncs the WPML strings of the shipping,
+#              returns, terms and privacy pages to the current English blocks
+#              and registers the live Spanish blocks as complete Spanish
+#              translations (direct database writes, no page saved); purges
+#              cache; live checks
+#   rollback - restores the strings and translations from the backup
+# lunaci-seo.php is deployed in every mode (unchanged code, needed for the
+# shared word counter).
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run, apply or rollback"
+        required: true
+        default: "dry-run"
+        type: choice
+        options: ["dry-run", "apply", "rollback"]
+
+# One Hostinger deploy at a time: overlapping runs share /tmp files on the server.
+concurrency:
+  group: lunaci-hostinger-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+      SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+      SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+      SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
+      MODE: ${{ inputs.mode }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Run (with full backup before apply)
+        run: |
+          set -e
+          case "$MODE" in dry-run|apply|rollback) ;; *) echo "bad mode $MODE"; exit 1;; esac
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'rm -rf /tmp/wpml-gutenberg-es && mkdir -p /tmp/wpml-gutenberg-es'
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            "scripts/db-backup.php" "assets/luna-import/wpml-gutenberg-es.php" "mu-plugins/lunaci-seo.php" \
+            "$SSH_USER@$SSH_HOST:/tmp/wpml-gutenberg-es/"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "MODE=$MODE"' bash -s' <<'REMOTE'
+            set -e
+            T=/tmp/wpml-gutenberg-es
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            php -l $T/wpml-gutenberg-es.php
+            php -l $T/lunaci-seo.php
+            if [ "$MODE" = "rollback" ]; then
+              BK=$(cat "$HOME/lunaci-backups/LATEST-wpml-gutenberg-es" 2>/dev/null || true)
+              [ -n "$BK" ] && [ -f "$BK/wpml-gutenberg-es-backup.json" ] || { echo "ABORT: no apply backup found"; exit 1; }
+            elif [ "$MODE" = "apply" ]; then
+              BK="$HOME/lunaci-backups/pre-wpml-gutenberg-es-$(date -u +%Y%m%d-%H%M%S)"
+              mkdir -p "$BK"
+              php -l $T/db-backup.php
+              LIVE=$(wp db tables --all-tables --path="$WP_PATH" | wc -l)
+              LUNACI_BACKUP_FILE="$BK/database.sql.gz" wp eval-file $T/db-backup.php --path="$WP_PATH" || { echo "ABORT: database backup failed"; exit 1; }
+              gzip -t "$BK/database.sql.gz"
+              TABLES=$(zcat "$BK/database.sql.gz" | grep -c "^CREATE TABLE" || true)
+              [ "$TABLES" -ge "$LIVE" ] && [ "$TABLES" -gt 10 ] || { echo "ABORT: backup has $TABLES tables, database has $LIVE"; exit 1; }
+              tar -czf "$BK/mu-plugins.tar.gz" -C "$WP_PATH/wp-content" mu-plugins
+              cp -p "$WP_PATH/.htaccess" "$BK/htaccess.bak"
+              echo "$BK" > "$HOME/lunaci-backups/LATEST-wpml-gutenberg-es"
+              echo "BACKUP OK: $BK ($TABLES tables)"
+            else
+              BK=$(mktemp -d)
+            fi
+            DEST="$WP_PATH/wp-content/mu-plugins/lunaci-seo.php"
+            [ -f "$DEST" ] && cp -p "$DEST" "$HOME/lunaci-backups/lunaci-seo.php.prev-$(date -u +%Y%m%d-%H%M%S)"
+            cp $T/lunaci-seo.php "$DEST"
+            echo "deployed: $DEST"
+            LUNACI_MODE="$MODE" LUNACI_BACKUP_DIR="$BK" wp eval-file $T/wpml-gutenberg-es.php --path="$WP_PATH"
+            rm -rf $T
+            [ "$MODE" = "dry-run" ] || wp litespeed-purge all --path="$WP_PATH" || true
+          REMOTE
+
+      - name: Live check
+        if: inputs.mode != 'dry-run'
+        run: |
+          sleep 3
+          python3 - <<'PY'
+          import os, re, sys, html, urllib.request
+          def get(u):
+              req = urllib.request.Request("https://lunacibarcelona.com" + u + "?lc=" + str(os.getpid()), headers={"User-Agent": "Mozilla/5.0 lunaci-check"})
+              with urllib.request.urlopen(req, timeout=60) as r:
+                  return r.status, r.read().decode("utf-8", "replace")
+          def counts(page):
+              m = re.search(r"<main.*?</main>", page, re.S) or re.search(r"<body.*", page, re.S)
+              t = " " + " ".join(html.unescape(re.sub(r"<[^>]+>", " ", re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", m.group(0), flags=re.S))).split()).lower() + " "
+              return sum(t.count(f" {w} ") for w in ("the", "and", "your", "with", "our", "for", "of", "is")), sum(t.count(f" {w} ") for w in ("el", "la", "de", "tu", "con", "para", "los", "las", "que"))
+          fail = 0
+          def check(ok, msg):
+              global fail
+              print(("PASS  " if ok else "FAIL  ") + msg); fail |= not ok
+          for u in ("/es/envio/", "/es/devoluciones/", "/es/terminos-de-servicio/", "/es/politica-de-privacidad/"):
+              code, p = get(u)
+              en, es = counts(p)
+              check(code == 200 and es >= 8 and en <= 3, f"{u} Spanish (en={en} es={es})")
+          for u in ("/shipping/", "/returns/", "/terms-of-service/", "/privacy-policy/"):
+              code, p = get(u)
+              en, es = counts(p)
+              check(code == 200 and en >= 5 and es <= 3, f"{u} English (en={en} es={es})")
+          print("RESULT: ALL CHECKS PASSED" if not fail else "RESULT: SOME CHECKS FAILED")
+          sys.exit(1 if fail else 0)
+          PY

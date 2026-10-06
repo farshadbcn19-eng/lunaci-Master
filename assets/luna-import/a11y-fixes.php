@@ -26,7 +26,7 @@ $title = 'LUNACI Accessibility Contrast (WCAG AA)';
 $old   = "'cart_aria' => '',";
 $new   = "'cart_aria' => 'Cart',";
 // No ">" or quotes: nothing for HTML sanitising to alter.
-$css = '/* lunaci-a11y-contrast v3: WCAG AA text contrast. Not applied on the home page. */
+$css = '/* lunaci-a11y-contrast v4: WCAG AA text contrast. */
 body:not(.home) .woocommerce-breadcrumb,
 body:not(.home) .woocommerce-result-count,
 body:not(.home) .lna-foot__c,
@@ -47,6 +47,8 @@ html body:not(.home) .form-consent label a { color: #D4AF37 !important; text-dec
 body:not(.home) .newsletter .nl-text p,
 body:not(.home) .cta-strip .cta-text p { color: #3a2f0f !important; }
 body:not(.home) .philosophy .phil-num { color: #8a7530 !important; }
+html body.home .ln-mq__t span { color: rgba(212,175,55,.75) !important; }
+html body.home .ln-foot__c { color: rgba(247,244,238,.6) !important; }
 ';
 function lunaci_a_cache_entry( $id ) {
 	$opt = get_option( 'wpcode_snippets' );

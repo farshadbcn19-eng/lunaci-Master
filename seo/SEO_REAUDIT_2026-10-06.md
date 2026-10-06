@@ -159,3 +159,14 @@ Lighthouse SEO scores 100 on all 8 audited pages (EN and ES home, product, categ
 - Footer line: cream alpha 0.35 → 0.6.
 
 Copy and layout are unchanged. Accessibility on `/` and `/es/` is now **100**. Every audited page scores 98–100. Still open: Hostinger Reach (Best Practices 79) and the footer h4 order on contact and products.
+
+## Update — "All" removed, category banners fixed on mobile (2026-10-06, run 37464054048)
+- **"All" removed (owner request):**
+  - The All/Todos button is gone from the category filter tabs (snippet 6, both languages).
+  - Page 836 "All Products" is in the trash, so it can be restored.
+  - `/all-products/` now returns a 301 to `/products/` (`lunaci-seo.php` item 16).
+- **Category banners:** WooCommerce's `.woocommerce img {height:auto}` overrode the banner image height, so on mobile the image stayed 163 px tall inside a 260 px (3:2) box. That left an empty band under the banner. Snippet 7 now has `height: 100% !important`.
+  - Mobile: 390×260 with no gap.
+  - Desktop: fills the 21:9 box exactly (585 px at 1366).
+  - Checked on all 4 categories, EN and ES.
+- **Rollback:** `deploy-all-products-banner.yml`, mode `rollback`. Backup: `pre-all-products-banner-*`.

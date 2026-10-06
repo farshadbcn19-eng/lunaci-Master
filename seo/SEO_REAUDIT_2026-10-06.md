@@ -75,5 +75,5 @@ Lighthouse SEO scores 100 on all 8 audited pages (EN and ES home, product, categ
   - `/checkout/`: the English text and the `/privacy-policy/` link are unchanged.
   - Screenshot: `es-checkout-privacy.png`.
 - Cart, checkout and account pages were already Spanish apart from this text. The account endpoints are noindex, so translating their slugs adds no SEO value. Registration is switched off on `/mi-cuenta/`; the Spanish registration text is ready if it is switched on.
-- **New critical finding, not SEO:** checkout shows "no payment methods available" in **both languages**. The test cart used the default address (Spain / Madrid). The "Place order" button is visible, but no order can be paid. Not changed here, because payment gateway settings need the owner's decision.
+- **New critical finding, not SEO:** checkout shows "no payment methods available" in **both languages**. The test cart used the default address (Spain / Madrid). The "Place order" button is visible, but no order can be paid. **Known and expected (owner, 2026-10-06):** the payment gateway is pending setup with the bank. Re-test checkout end to end once it is live.
 - **Brand note:** the checkout keeps WooCommerce's default purple button and pink links, not the brand's black and `#D4AF37`.

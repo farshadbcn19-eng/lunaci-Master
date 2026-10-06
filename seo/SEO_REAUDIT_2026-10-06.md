@@ -77,3 +77,18 @@ Lighthouse SEO scores 100 on all 8 audited pages (EN and ES home, product, categ
 - Cart, checkout and account pages were already Spanish apart from this text. The account endpoints are noindex, so translating their slugs adds no SEO value. Registration is switched off on `/mi-cuenta/`; the Spanish registration text is ready if it is switched on.
 - **New critical finding, not SEO:** checkout shows "no payment methods available" in **both languages**. The test cart used the default address (Spain / Madrid). The "Place order" button is visible, but no order can be paid. **Known and expected (owner, 2026-10-06):** the payment gateway is pending setup with the bank. Re-test checkout end to end once it is live.
 - **Brand note:** the checkout keeps WooCommerce's default purple button and pink links, not the brand's black and `#D4AF37`.
+
+## Update — item 2 done (2026-10-06, run 37449633484)
+- The Spanish Gutenberg pages are now protected: 765 `/es/envio/`, 766 `/es/devoluciones/`, 768 `/es/terminos-de-servicio/` and 769 `/es/politica-de-privacidad/`. This is `lunaci-seo.php` item 12, enabled by option `lunaci_es_post_guard` = on.
+  - If a save would replace their Spanish content with mostly English content (a WPML rebuild from the English original), the guard keeps the current content and title. The attempt is logged in `lunaci_es_guard_log`.
+  - Spanish edits go through.
+- **Diagnosis (run 37449297225):** all four pages were Spanish, paired correctly in WPML, and not flagged as duplicates. They had no WPML translation job and 0 of 74 Gutenberg strings translated. Item 9 did not cover them, because these pages keep their text in `post_content`, not Elementor meta.
+- **Apply:**
+  - Full backup first: `~/lunaci-backups/pre-es-legal-guard-20261006-102517`, 102 tables.
+  - Filter test for each page, with no writes to any post: the English original came back as the current Spanish content, and a Spanish edit passed through. md5 confirmed the four pages were unchanged.
+  - Live: the 4 Spanish pages are Spanish and the 4 English pages are English.
+- **Rollback:** `deploy-es-legal-guard.yml`, mode `rollback`.
+- **Protection now covers every Spanish content page:**
+  - Elementor: `/es/`, `/es/sobre-nosotros/`, `/es/contacto/`, `/es/productos/`.
+  - Gutenberg: shipping, returns, terms, privacy.
+  - Cart, checkout and account have no text content to protect.

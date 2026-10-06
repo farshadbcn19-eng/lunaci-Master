@@ -35,6 +35,13 @@
  *     go through. Every refusal is logged in option lunaci_es_guard_log.
  * 10. Product attribute label "Shade" shown as "Tono" on Spanish pages
  *     (display only; the attribute key and the variations are unchanged).
+ * 11. WooCommerce checkout and registration privacy notices in Spanish on
+ *     Spanish pages, with the privacy link mapped to the Spanish page.
+ * 12. Guard for the Spanish Gutenberg pages (option lunaci_es_post_guard =
+ *     on): /es/envio/, /es/devoluciones/, /es/terminos-de-servicio/ and
+ *     /es/politica-de-privacidad/. A save that would replace their Spanish
+ *     content with mostly English content keeps the current content and
+ *     title; logged in lunaci_es_guard_log.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -458,7 +465,12 @@ function lunaci_seo_es_guard_counts( $value ) {
 		}
 	};
 	$walk( $data );
-	$text = preg_replace( '#<(script|style)[^>]*>.*?</\1>#is', ' ', $text );
+	return lunaci_seo_es_text_counts( $text );
+}
+
+// Counts of common English and Spanish words in an HTML string.
+function lunaci_seo_es_text_counts( $text ) {
+	$text = preg_replace( '#<(script|style)[^>]*>.*?</\1>#is', ' ', (string) $text );
 	$t    = ' ' . strtolower( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $text ) ) ) . ' ';
 	$en   = 0;
 	$es   = 0;
@@ -572,4 +584,51 @@ add_filter(
 		return $page_id;
 	},
 	20
+);
+
+// 12. Spanish Gutenberg page guard (option lunaci_es_post_guard = on): the
+// legal and shipping/returns pages keep their text in post_content, so item 9
+// does not cover them. A save that would replace their Spanish content with
+// mostly English content (a WPML rebuild from the English original) keeps the
+// current content and title instead, and is logged in lunaci_es_guard_log.
+function lunaci_seo_es_post_guard_posts() {
+	return array( 765, 766, 768, 769 ); // envio, devoluciones, terminos-de-servicio, politica-de-privacidad
+}
+
+function lunaci_seo_es_post_guard_blocks( $content ) {
+	list( $en, $es ) = lunaci_seo_es_text_counts( $content );
+	return $en >= 5 && $en > 2 * $es; // the shortest page (shipping) has about 65 words
+}
+
+add_filter(
+	'wp_insert_post_data',
+	function ( $data, $postarr ) {
+		$id = isset( $postarr['ID'] ) ? (int) $postarr['ID'] : 0;
+		if ( ! $id || ! in_array( $id, lunaci_seo_es_post_guard_posts(), true ) || 'on' !== get_option( 'lunaci_es_post_guard', 'off' ) ) {
+			return $data;
+		}
+		if ( ! lunaci_seo_es_post_guard_blocks( wp_unslash( $data['post_content'] ?? '' ) ) ) {
+			return $data;
+		}
+		$current = get_post( $id );
+		if ( ! $current || lunaci_seo_es_post_guard_blocks( $current->post_content ) ) {
+			return $data; // only protect content that is Spanish today
+		}
+		list( $en, $es ) = lunaci_seo_es_text_counts( wp_unslash( $data['post_content'] ) );
+		$data['post_content'] = wp_slash( $current->post_content );
+		$data['post_title']   = wp_slash( $current->post_title );
+		$log   = (array) get_option( 'lunaci_es_guard_log', array() );
+		$log[] = array(
+			'time' => gmdate( 'c' ),
+			'post' => $id,
+			'en'   => $en,
+			'es'   => $es,
+			'uri'  => isset( $_SERVER['REQUEST_URI'] ) ? substr( (string) wp_unslash( $_SERVER['REQUEST_URI'] ), 0, 200 ) : 'cli', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+			'kind' => 'post_content',
+		);
+		update_option( 'lunaci_es_guard_log', array_slice( $log, -20 ), false );
+		return $data;
+	},
+	PHP_INT_MAX, // last, so no other filter can put the English content back
+	2
 );

@@ -67,3 +67,13 @@ Lighthouse SEO scores 100 on all 8 audited pages (EN and ES home, product, categ
   - The nail polish shades are placeholders ("Shade 01 (placeholder)") in both languages and need the real shade names.
   - WooCommerce's default review-rating labels include "Perfect" / "Perfecto".
   - The 36 `pa_color` terms are untranslated. They are not used by the shade selectors.
+
+## Update — item 3 done (2026-10-06, run 37448098583)
+- The WooCommerce checkout and registration privacy notices display in Spanish on Spanish pages (`lunaci-seo.php` item 11, display only). The `[privacy_policy]` link points to `/es/politica-de-privacidad/`.
+- **Live check, browser plus a test cart (variation 712), after WooCommerce's AJAX refresh:**
+  - `/es/finalizar-compra/`: "Utilizaremos tus datos personales para procesar tu pedido, facilitar tu experiencia en esta web y para los demás fines descritos en nuestra política de privacidad." The link goes to `/es/politica-de-privacidad/`.
+  - `/checkout/`: the English text and the `/privacy-policy/` link are unchanged.
+  - Screenshot: `es-checkout-privacy.png`.
+- Cart, checkout and account pages were already Spanish apart from this text. The account endpoints are noindex, so translating their slugs adds no SEO value. Registration is switched off on `/mi-cuenta/`; the Spanish registration text is ready if it is switched on.
+- **New critical finding, not SEO:** checkout shows "no payment methods available" in **both languages**. The test cart used the default address (Spain / Madrid). The "Place order" button is visible, but no order can be paid. Not changed here, because payment gateway settings need the owner's decision.
+- **Brand note:** the checkout keeps WooCommerce's default purple button and pink links, not the brand's black and `#D4AF37`.

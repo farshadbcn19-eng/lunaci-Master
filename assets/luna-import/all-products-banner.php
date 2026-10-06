@@ -52,12 +52,12 @@ if ( 1 !== $n6 || false === strpos( $m6[0][0], "'All'" ) || false === strpos( $m
 	echo "  block to remove:\n" . $m6[0][0] . "\n";
 }
 $new6 = $n6 === 1 ? str_replace( $m6[0][0], '', $s6 ) : $s6;
-$tmp  = wp_tempnam( 'snip6' );
-file_put_contents( $tmp, "<?php\n" . $new6 );
-$lint = shell_exec( 'php -l ' . escapeshellarg( $tmp ) . ' 2>&1' );
-unlink( $tmp );
-echo '  new snippet 6 php -l: ' . trim( (string) $lint ) . "\n";
-if ( false === strpos( (string) $lint, 'No syntax errors' ) ) {
+// Syntax check of the new code (what php -l does), with PHP's own parser.
+try {
+	token_get_all( "<?php\n" . $new6, TOKEN_PARSE );
+	echo "  new snippet 6 syntax: OK\n";
+} catch ( \ParseError $e ) {
+	echo '  new snippet 6 syntax: ERROR ' . $e->getMessage() . ' line ' . $e->getLine() . "\n";
 	$fail = 1;
 }
 // 3. banner image height.

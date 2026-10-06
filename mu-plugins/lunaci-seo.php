@@ -46,6 +46,9 @@
  *     theme's skip links point to #content, which those templates lack.
  * 14. Favicon and touch icons (the LUNACI "L" mark; files in the web root):
  *     the site had no icon, so /favicon.ico returned 404.
+ * 15. Contact page (EN and ES HTML widget): the two @font-face rules that
+ *     point to /wp-content/themes/lunaci/fonts/ (files that never existed;
+ *     two 404s in the console) are left out of the output. Display only.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -661,4 +664,19 @@ add_action(
 		echo '<link rel="apple-touch-icon" href="' . esc_url( $root . '/lunaci-apple-touch-icon.png' ) . '">' . "\n";
 	},
 	5
+);
+
+// 15. Drop the @font-face rules that load fonts from the non-existent
+// themes/lunaci/fonts/ folder (contact page widget). The fonts never loaded,
+// so the page looks the same; the widget itself is not edited (its WPML
+// strings stay in sync).
+add_filter(
+	'elementor/widget/render_content',
+	function ( $content ) {
+		if ( false === strpos( $content, 'themes/lunaci/fonts/' ) ) {
+			return $content;
+		}
+		return preg_replace( '#@font-face\s*\{[^{}]*/wp-content/themes/lunaci/fonts/[^{}]*\}#', '', $content );
+	},
+	20
 );

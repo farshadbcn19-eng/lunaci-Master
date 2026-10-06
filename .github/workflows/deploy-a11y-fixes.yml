@@ -128,7 +128,10 @@ jobs:
           _, p = get("/about-us/")
           check('aria-label="Cart"' in p, "English cart link has aria-label Cart (/about-us/)")
           check("lunaci-a11y-contrast" in p, "contrast CSS present (/about-us/)")
-          check("lunaci-a11y-contrast v2" in p or os.environ.get("MODE") != "update-css", "contrast CSS v2 live (/about-us/)")
+          check("lunaci-a11y-contrast v3" in p or os.environ.get("MODE") != "update-css", "contrast CSS v3 live (/about-us/)")
+          for u in ("/contact/", "/es/contacto/"):
+              _, p = get(u)
+              check("themes/lunaci/fonts/" not in p and "lunaci-contact-page-css" in p, f"{u}: missing-font rules gone, page CSS still present")
           check('rel="icon"' in p and "/favicon.ico" in p, "favicon link in head (/about-us/)")
           _, p = get("/es/sobre-nosotros/")
           check('aria-label="Carrito"' in p, "Spanish cart link keeps aria-label Carrito")

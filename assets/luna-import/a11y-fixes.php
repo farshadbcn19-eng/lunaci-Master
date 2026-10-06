@@ -26,7 +26,7 @@ $title = 'LUNACI Accessibility Contrast (WCAG AA)';
 $old   = "'cart_aria' => '',";
 $new   = "'cart_aria' => 'Cart',";
 // No ">" or quotes: nothing for HTML sanitising to alter.
-$css = '/* lunaci-a11y-contrast v2: WCAG AA text contrast. Not applied on the home page. */
+$css = '/* lunaci-a11y-contrast v3: WCAG AA text contrast. Not applied on the home page. */
 body:not(.home) .woocommerce-breadcrumb,
 body:not(.home) .woocommerce-result-count,
 body:not(.home) .lna-foot__c,
@@ -42,8 +42,8 @@ body:not(.home) .footer-copy,
 body:not(.home) .ing-text span { color: #9a9894 !important; opacity: 1 !important; }
 body:not(.home) .footer-col ul li a:hover,
 body:not(.home) .footer-col ul li a:focus { color: #D4AF37 !important; }
-body:not(.home) .woocommerce-breadcrumb a,
-body:not(.home) .form-consent label a { color: #D4AF37 !important; text-decoration: underline !important; text-underline-offset: 2px; }
+html body:not(.home) .woocommerce-breadcrumb a,
+html body:not(.home) .form-consent label a { color: #D4AF37 !important; text-decoration: underline !important; text-underline-offset: 2px; }
 body:not(.home) .newsletter .nl-text p,
 body:not(.home) .cta-strip .cta-text p { color: #3a2f0f !important; }
 body:not(.home) .philosophy .phil-num { color: #8a7530 !important; }
@@ -102,6 +102,11 @@ if ( 'update-css' === $mode ) {
 	$opt = get_option( 'wpcode_snippets' );
 	$opt[ $e[0] ][ $e[1] ]['code'] = $css;
 	update_option( 'wpcode_snippets', $opt );
+	// Contact pages (EN 60, ES 770): drop Elementor's cached widget output so
+	// lunaci-seo.php item 15 applies on the next render.
+	foreach ( array( 60, 770 ) as $pid ) {
+		delete_post_meta( $pid, '_elementor_element_cache' );
+	}
 	$ok = (string) $wpdb->get_var( $wpdb->prepare( "SELECT post_content FROM {$wpdb->posts} WHERE ID=%d", $id ) ) === $css && lunaci_a_cache_entry( $id )[2]['code'] === $css;
 	echo "WPCode snippet $id CSS updated (" . strlen( $prev ) . ' -> ' . strlen( $css ) . ' bytes), post and cache exact: ' . ( $ok ? 'yes' : 'NO' ) . "\n";
 	exit( $ok ? 0 : 1 );

@@ -33,6 +33,8 @@
  *     source (WPML rebuilding a translation from the English original, a
  *     save hook, cron). Spanish edits, including from the Elementor editor,
  *     go through. Every refusal is logged in option lunaci_es_guard_log.
+ * 10. Product attribute label "Shade" shown as "Tono" on Spanish pages
+ *     (display only; the attribute key and the variations are unchanged).
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -518,4 +520,19 @@ add_filter(
 	},
 	PHP_INT_MAX, // last, so no other filter can turn the refusal back into a write
 	4
+);
+
+// 10. "Shade" -> "Tono" on Spanish pages. The shade attribute is a custom
+// product attribute with one name for both languages; renaming it would change
+// the variation keys, so only the displayed label is translated.
+add_filter(
+	'woocommerce_attribute_label',
+	function ( $label, $name = '' ) {
+		if ( 'Shade' === $label && 'es' === apply_filters( 'wpml_current_language', null ) ) {
+			return 'Tono';
+		}
+		return $label;
+	},
+	20,
+	2
 );

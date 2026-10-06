@@ -536,3 +536,40 @@ add_filter(
 	20,
 	2
 );
+
+// 11. WooCommerce privacy notices (checkout and registration) in Spanish on
+// Spanish pages. The stored option text is English only; this changes the
+// displayed text, not the option. [privacy_policy] is still replaced by
+// WooCommerce with the link to the privacy page, which is mapped to its
+// Spanish translation below.
+add_filter(
+	'woocommerce_get_privacy_policy_text',
+	function ( $text, $type = '' ) {
+		if ( 'es' !== apply_filters( 'wpml_current_language', null ) ) {
+			return $text;
+		}
+		if ( 'checkout' === $type ) {
+			return 'Utilizaremos tus datos personales para procesar tu pedido, facilitar tu experiencia en esta web y para los demás fines descritos en nuestra [privacy_policy].';
+		}
+		if ( 'registration' === $type ) {
+			return 'Utilizaremos tus datos personales para facilitar tu experiencia en esta web, gestionar el acceso a tu cuenta y para los demás fines descritos en nuestra [privacy_policy].';
+		}
+		return $text;
+	},
+	20,
+	2
+);
+
+add_filter(
+	'woocommerce_privacy_policy_page_id',
+	function ( $page_id ) {
+		if ( $page_id && 'es' === apply_filters( 'wpml_current_language', null ) ) {
+			$es_id = apply_filters( 'wpml_object_id', (int) $page_id, 'page', true, 'es' );
+			if ( $es_id ) {
+				return (int) $es_id;
+			}
+		}
+		return $page_id;
+	},
+	20
+);

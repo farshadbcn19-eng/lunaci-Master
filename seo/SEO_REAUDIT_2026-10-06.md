@@ -150,6 +150,12 @@ Lighthouse SEO scores 100 on all 8 audited pages (EN and ES home, product, categ
 - **`lunaci-seo.php` items 13–15:** the WooCommerce `#content` skip target; the favicon and touch icons (the "L" mark, cropped from the logo with no colour change); and the two missing-font `@font-face` rules on the contact page, which are dropped from the output.
 
 **Open, needs the owner's decision:**
-- Contrast on the home page: the marquee text `#856f27` and the footer line `#5e5d5a`. The home page is protected.
+- ~~Contrast on the home page~~: fixed with the owner's approval (see below).
 - The Hostinger Reach `embed.js` third-party cookie. It is the only thing holding Best Practices at 79.
 - Footer heading order (h4) on contact and products, weight 3.
+
+**Home page contrast (owner-approved, run 37461172936):** CSS v4 changes only the colours:
+- Marquee: gold alpha 0.6 → 0.75.
+- Footer line: cream alpha 0.35 → 0.6.
+
+Copy and layout are unchanged. Accessibility on `/` and `/es/` is now **100**. Every audited page scores 98–100. Still open: Hostinger Reach (Best Practices 79) and the footer h4 order on contact and products.

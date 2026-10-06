@@ -1,0 +1,55 @@
+name: "Audit - Lighthouse accessibility and best-practices details (read-only)"
+
+# Read-only. Runs Lighthouse 12 (mobile, default throttling) from the GitHub
+# runner against the public site and prints category scores, Core Web Vitals
+# and, for every accessibility / best-practices audit scoring below 1, every
+# failing element (selector, snippet, explanation) or resource.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Lighthouse
+        run: |
+          set -e
+          npm i -g lighthouse@12 >/dev/null 2>&1
+          URLS="https://lunacibarcelona.com/ https://lunacibarcelona.com/es/ https://lunacibarcelona.com/product/lipstick/ https://lunacibarcelona.com/product-category/lips/ https://lunacibarcelona.com/about-us/ https://lunacibarcelona.com/contact/ https://lunacibarcelona.com/products/ https://lunacibarcelona.com/shipping/"
+          for u in $URLS; do curl -s -o /dev/null "$u"; done   # warm the page cache
+          i=0
+          for u in $URLS; do
+            i=$((i+1))
+            lighthouse "$u" --quiet --chrome-flags="--headless=new --no-sandbox" --only-categories=accessibility,best-practices --output=json --output-path="lh-$i.json" || echo "lighthouse failed for $u"
+          done
+          python3 - <<'PY'
+          import json, glob
+          for f in sorted(glob.glob("lh-*.json"), key=lambda x: int(x[3:-5])):
+              lr = json.load(open(f)); a = lr["audits"]
+              cats = {k: round((v["score"] or 0) * 100) for k, v in lr["categories"].items()}
+              print("\n=====", lr["finalDisplayedUrl"], cats)
+              for cat in ("accessibility", "best-practices"):
+                  for ref in lr["categories"][cat]["auditRefs"]:
+                      x = a[ref["id"]]
+                      if x.get("score") is None or x["score"] >= 1 or x.get("scoreDisplayMode") not in ("binary", "numeric"):
+                          continue
+                      items = x.get("details", {}).get("items", [])
+                      print(f"  [{cat}] {ref['id']} score={x['score']} weight={ref.get('weight')} items={len(items)}")
+                      for it in items[:25]:
+                          n = it.get("node") or {}
+                          if n:
+                              print("     sel:", (n.get("selector") or "")[:160])
+                              print("     html:", (n.get("snippet") or "")[:220])
+                              expl = (n.get("explanation") or "").replace("\n", " | ")
+                              if expl:
+                                  print("     why:", expl[:300])
+                          else:
+                              print("     item:", json.dumps({k: v for k, v in it.items() if k in ("url", "description", "source", "sourceLocation", "name", "label")})[:300])
+                          for sub in (it.get("subItems") or {}).get("items", [])[:5]:
+                              print("       sub:", json.dumps(sub)[:240])
+          PY

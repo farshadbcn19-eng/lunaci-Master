@@ -27,6 +27,12 @@
  *  8. Theme footer copyright in Spanish on Spanish pages (option
  *     lunaci_es_copyright = on). The Hello theme reads one value from the
  *     Elementor kit setting hello_footer_copyright_text for every language.
+ *  9. Guard for the Spanish Elementor pages (option lunaci_es_guard = on):
+ *     refuses any write of _elementor_data to /es/, /es/sobre-nosotros/,
+ *     /es/contacto/ or /es/productos/ whose text is mostly English, from any
+ *     source (WPML rebuilding a translation from the English original, a
+ *     save hook, cron). Spanish edits, including from the Elementor editor,
+ *     go through. Every refusal is logged in option lunaci_es_guard_log.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -424,5 +430,89 @@ add_filter(
 		return array( $settings );
 	},
 	10,
+	4
+);
+
+// 9. Spanish page guard (option lunaci_es_guard = on). On 2026-10-05 WPML
+// rebuilt the Spanish front page from the English original after an
+// unrelated save; this refuses such writes.
+function lunaci_seo_es_guard_posts() {
+	return array( 772, 680, 770, 771 );
+}
+
+function lunaci_seo_es_guard_counts( $value ) {
+	$data = is_array( $value ) ? $value : json_decode( (string) $value, true );
+	$text = '';
+	$walk = function ( $els ) use ( &$walk, &$text ) {
+		foreach ( (array) $els as $el ) {
+			foreach ( (array) ( $el['settings'] ?? array() ) as $v ) {
+				if ( is_string( $v ) && strlen( $v ) > 40 ) {
+					$text .= ' ' . $v;
+				}
+			}
+			if ( ! empty( $el['elements'] ) ) {
+				$walk( $el['elements'] );
+			}
+		}
+	};
+	$walk( $data );
+	$text = preg_replace( '#<(script|style)[^>]*>.*?</\1>#is', ' ', $text );
+	$t    = ' ' . strtolower( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $text ) ) ) . ' ';
+	$en   = 0;
+	$es   = 0;
+	foreach ( array( 'the', 'and', 'your', 'with', 'our', 'for', 'of', 'is', 'every', 'that', 'we' ) as $w ) {
+		$en += substr_count( $t, " $w " );
+	}
+	foreach ( array( 'el', 'la', 'de', 'tu', 'con', 'para', 'los', 'las', 'que', 'y', 'una', 'del' ) as $w ) {
+		$es += substr_count( $t, " $w " );
+	}
+	return array( $en, $es );
+}
+
+function lunaci_seo_es_guard_blocks( $value ) {
+	list( $en, $es ) = lunaci_seo_es_guard_counts( $value );
+	return $en >= 15 && $en > 2 * $es;
+}
+
+function lunaci_seo_es_guard_check( $check, $object_id, $meta_key, $meta_value ) {
+	if ( '_elementor_data' !== $meta_key || ! in_array( (int) $object_id, lunaci_seo_es_guard_posts(), true ) || 'on' !== get_option( 'lunaci_es_guard', 'off' ) ) {
+		return $check;
+	}
+	if ( ! lunaci_seo_es_guard_blocks( $meta_value ) ) {
+		return $check;
+	}
+	list( $en, $es ) = lunaci_seo_es_guard_counts( $meta_value );
+	$trace = array();
+	foreach ( array_slice( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ), 3, 12 ) as $f ) {
+		$trace[] = ( isset( $f['class'] ) ? $f['class'] . '::' : '' ) . ( $f['function'] ?? '?' ) . ( isset( $f['file'] ) ? ' @' . basename( dirname( $f['file'] ) ) . '/' . basename( $f['file'] ) . ':' . ( $f['line'] ?? 0 ) : '' );
+	}
+	$log   = (array) get_option( 'lunaci_es_guard_log', array() );
+	$log[] = array(
+		'time'  => gmdate( 'c' ),
+		'post'  => (int) $object_id,
+		'en'    => $en,
+		'es'    => $es,
+		'uri'   => isset( $_SERVER['REQUEST_URI'] ) ? substr( (string) wp_unslash( $_SERVER['REQUEST_URI'] ), 0, 200 ) : 'cli', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		'trace' => $trace,
+	);
+	update_option( 'lunaci_es_guard_log', array_slice( $log, -20 ), false );
+	return false;
+}
+
+add_filter(
+	'update_post_metadata',
+	function ( $check, $object_id, $meta_key, $meta_value ) {
+		return lunaci_seo_es_guard_check( $check, $object_id, $meta_key, $meta_value );
+	},
+	1,
+	4
+);
+
+add_filter(
+	'add_post_metadata',
+	function ( $check, $object_id, $meta_key, $meta_value ) {
+		return lunaci_seo_es_guard_check( $check, $object_id, $meta_key, $meta_value );
+	},
+	1,
 	4
 );

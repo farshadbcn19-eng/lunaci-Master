@@ -15,4 +15,19 @@
 
 ## Prevention
 - Every script since that run writes `_elementor_data`, slugs and snippet code directly to the database, with no `wp_update_post()` or `update_post_meta()`, and verifies each write byte for byte.
-- **Remaining risk (outside the scripts):** if the English front page is saved in Elementor, or its translation is refreshed in WPML, WPML can rebuild the Spanish front page from English in the same way. This happens because the Spanish strings are not registered as WPML string translations. Until that is fixed, edit the Spanish front page directly, and check `/es/` after any edit to the English front page.
+
+## Permanent fix (2026-10-06, run 37440020554, verified by run 37440524590)
+1. **Root cause removed (WPML string translations).**
+   - For the four English/Spanish Elementor pairs, the WPML page-builder string now holds the live English widget as its original. The live Spanish widget is stored as its complete Spanish translation (status 10).
+   - The pairs are Home 57 → `/es/` 772, About Us 59 → `/es/sobre-nosotros/` 680, Contact 60 → `/es/contacto/` 770, and Product 61 → `/es/productos/` 771 (strings 125, 126, 136, 137).
+   - WPML's own package objects, the ones its page-builder integration uses when it rebuilds a translation, now return the Spanish value for all four strings. Each value is byte-identical to the live Spanish page.
+   - Before the fix, none of the four strings had a Spanish translation, so any WPML rebuild produced English.
+2. **Safety net (`lunaci-seo.php` item 9, option `lunaci_es_guard`).**
+   - Any write of mostly-English `_elementor_data` to those four Spanish pages is refused, whatever the source, and logged in option `lunaci_es_guard_log`.
+   - The guard runs last on `update_post_metadata` / `add_post_metadata`. Spanish edits, including saves from the Elementor editor, go through.
+   - **Controlled test:** `update_post_meta()` of the English About data onto post 680 was refused, and the page stayed byte-identical. One log entry from that test remains, dated 2026-10-06 09:01 UTC.
+
+## Maintenance
+- After editing a Spanish page directly in Elementor, re-run `protect-es-pages` in apply mode. That re-registers the new Spanish text, so a later WPML rebuild uses the latest version and not an older Spanish one. The guard already blocks English in every case.
+- If a new English/Spanish Elementor page pair is added, add it to `$pairs` in `assets/luna-import/wpml-es-protect.php` and to `lunaci_seo_es_guard_posts()`.
+- To undo the fix, run `protect-es-pages` in rollback mode. It restores the WPML strings and turns the guard off.

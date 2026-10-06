@@ -57,3 +57,13 @@ Lighthouse SEO scores 100 on all 8 audited pages (EN and ES home, product, categ
 4. Accessibility and best-practices fixes: a name for the EN cart link, colour contrast, the skip link, the 404 resource, and the Hostinger Reach cookie.
 5. Content: enrich the four thinnest product pages, publish Concealer and Shadow, and add GTIN and reviews to the schema.
 6. Performance: LCP on the About and product pages (hero image priority and size).
+
+## Update — item 1 done (2026-10-06, run 37446462902)
+- The 57 Spanish variations are linked in WPML to the 57 English variations, and carry WCML's marker. The six Spanish parents are now variable.
+- **Live check:** all 9 Spanish variable products show a shade selector with the same shades and prices as English. A Store API add-to-cart of a Spanish variation succeeded (Fijador / PETAL-01).
+- "Perfect 04-V" became "Signature 04-V" in both languages, and the `pa_color` term "Perfect 04" became "Signature 04".
+- The attribute label displays as "Tono" on Spanish pages (`lunaci-seo.php` item 10).
+- **Still open:**
+  - The nail polish shades are placeholders ("Shade 01 (placeholder)") in both languages and need the real shade names.
+  - WooCommerce's default review-rating labels include "Perfect" / "Perfecto".
+  - The 36 `pa_color` terms are untranslated. They are not used by the shade selectors.

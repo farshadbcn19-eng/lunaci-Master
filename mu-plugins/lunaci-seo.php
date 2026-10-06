@@ -49,6 +49,8 @@
  * 15. Contact page (EN and ES HTML widget): the two @font-face rules that
  *     point to /wp-content/themes/lunaci/fonts/ (files that never existed;
  *     two 404s in the console) are left out of the output. Display only.
+ * 16. 301 from /all-products/ to /products/ (the "All Products" page was
+ *     removed on 2026-10-06; the full catalogue lives on /products/).
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -679,4 +681,18 @@ add_filter(
 		return preg_replace( '#@font-face\s*\{[^{}]*/wp-content/themes/lunaci/fonts/[^{}]*\}#', '', $content );
 	},
 	20
+);
+
+// 16. The "All Products" page (836) was removed; its URL now points to the
+// full catalogue page.
+add_action(
+	'template_redirect',
+	function () {
+		$path = trim( (string) wp_parse_url( isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '', PHP_URL_PATH ), '/' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( 'all-products' === $path ) {
+			wp_safe_redirect( home_url( '/products/' ), 301 );
+			exit;
+		}
+	},
+	1
 );

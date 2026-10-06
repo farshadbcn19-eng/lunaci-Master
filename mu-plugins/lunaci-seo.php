@@ -475,6 +475,9 @@ function lunaci_seo_es_guard_blocks( $value ) {
 }
 
 function lunaci_seo_es_guard_check( $check, $object_id, $meta_key, $meta_value ) {
+	if ( false === $check ) {
+		return $check;
+	}
 	if ( '_elementor_data' !== $meta_key || ! in_array( (int) $object_id, lunaci_seo_es_guard_posts(), true ) || 'on' !== get_option( 'lunaci_es_guard', 'off' ) ) {
 		return $check;
 	}
@@ -504,7 +507,7 @@ add_filter(
 	function ( $check, $object_id, $meta_key, $meta_value ) {
 		return lunaci_seo_es_guard_check( $check, $object_id, $meta_key, $meta_value );
 	},
-	1,
+	PHP_INT_MAX, // last, so no other filter can turn the refusal back into a write
 	4
 );
 
@@ -513,6 +516,6 @@ add_filter(
 	function ( $check, $object_id, $meta_key, $meta_value ) {
 		return lunaci_seo_es_guard_check( $check, $object_id, $meta_key, $meta_value );
 	},
-	1,
+	PHP_INT_MAX, // last, so no other filter can turn the refusal back into a write
 	4
 );

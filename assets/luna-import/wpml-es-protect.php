@@ -111,6 +111,16 @@ foreach ( $pairs as $sid => $p ) {
 	$plan[ $sid ] = array( 'row' => $row, 'en' => $en, 'es' => $es, 'existing' => $existing, 'es_id' => $es_id );
 }
 echo 'guard option now: ' . get_option( 'lunaci_es_guard', '(unset)' ) . "\n";
+// WPML's own page-builder package API: which Spanish translation would a
+// rebuild of each Spanish page use?
+foreach ( $pairs as $sid => $p ) {
+	$pkg = array( 'kind' => 'Elementor', 'kind_slug' => 'elementor', 'name' => (string) $p[0], 'title' => 'Page Builder Page ' . $p[0] );
+	$tr  = apply_filters( 'wpml_get_translated_strings', array(), $pkg );
+	$es  = $tr[ 'html-html-' . $p[2] ]['es'] ?? null;
+	$cur = lunaci_p_html( $p[1], $p[2] );
+	echo "WPML package elementor-{$p[0]} string html-html-{$p[2]}: es translation " . ( null === $es ? 'NOT returned' : 'status=' . ( $es['status'] ?? '?' ) . ' ' . ( ( $es['value'] ?? null ) === $cur ? 'equals the live Spanish page' : 'differs from the live Spanish page' ) ) . "\n";
+}
+echo 'guard filter priority: ' . ( has_filter( 'update_post_metadata' ) ? 'registered' : 'missing' ) . "\n";
 if ( $fail || count( $plan ) !== 4 ) {
 	echo "ABORT: preconditions failed, nothing written\n";
 	exit( 1 );

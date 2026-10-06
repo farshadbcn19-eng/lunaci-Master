@@ -92,3 +92,38 @@ Lighthouse SEO scores 100 on all 8 audited pages (EN and ES home, product, categ
   - Elementor: `/es/`, `/es/sobre-nosotros/`, `/es/contacto/`, `/es/productos/`.
   - Gutenberg: shipping, returns, terms, privacy.
   - Cart, checkout and account have no text content to protect.
+
+## Update — all Spanish translations registered in WPML (2026-10-06)
+**Result:** 124 of 162 WPML strings now have a complete Spanish translation, up from 10. The 38 that remain hold no text: 37 are empty fields, plus the WordPress sample post "Hello world".
+
+**Gutenberg pages (run 37454321385; backup `pre-wpml-gutenberg-es-20261006-110751`):**
+- The English WPML strings of shipping, returns, terms and privacy were out of date. They had the old email `info@lunaci.es`, "Patriotic Trade Co.", an older GDPR paragraph, and the returns hygiene paragraph was missing. A WPML rebuild would have brought that old English text back.
+- 65 strings were kept. Each is named the way WPML names it, `md5(blockName . value)`, and the extraction matched WPML byte for byte on all 65.
+- 10 strings were added and 9 obsolete ones dropped.
+- All 75 now carry the live Spanish block as their complete translation.
+- Direct database writes only: no page was saved, and md5 confirmed the Spanish pages were unchanged.
+
+**Store (run 37454824840; backup `pre-wpml-store-es-*`), 39 string translations:**
+- Checkout and registration privacy notices.
+- Email footer and sender, price separators, sharing label "Compartir:", site title.
+- The cart, checkout and account shortcode strings.
+- 13 of the 15 endpoint slugs translated, for example `/es/mi-cuenta/recuperar-contrasena/`, `pedidos` and `editar-direccion`. `wc-api` and `wc/file/transient` keep their value on purpose, because payment gateways and file downloads depend on them.
+- 13 AIOSEO templates, for example "404 - Página no encontrada" and "Archivo de …".
+
+**Terms:**
+- 36 Spanish `pa_color` shade terms, with the same shade names (they match the packaging) and slugs built from the current names.
+- "Sin categoría".
+- No product was changed. Live checks: the shade selectors and the "Tono" label still show, and the Spanish checkout privacy notice is unchanged.
+
+**Live checks:**
+- The Spanish cart, checkout, account and password-recovery pages work.
+- The Spanish account page links to the Spanish password URL.
+- The English URLs are unchanged.
+
+**Left untranslated on purpose:**
+- The 37 empty fields: blank email subjects and headings, and empty AIOSEO fields. WooCommerce and AIOSEO use their own translated defaults for these.
+- The legacy empty categories Eyes Glow, Lips Bold and Nails Chic (0 products). These are candidates for deletion.
+- `product_visibility`, the theme and template parts, WPCode, the unused "Main Menu" and the Default Kit. All are internal or unused.
+- The unpublished Shadow product and the EN-only "All Products" page. The Spanish "Todos" tab uses `/es/productos/`.
+
+**Rollback:** `deploy-wpml-gutenberg-es.yml` and `deploy-wpml-store-es.yml`, mode `rollback`.

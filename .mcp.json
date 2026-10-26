@@ -3,6 +3,11 @@
     "supabase": {
       "type": "http",
       "url": "https://mcp.supabase.com/mcp?features=docs,account,database,debugging,development,functions,branching"
+    },
+    "nero-ai": {
+      "command": "npx",
+      "args": ["-y", "@nero-ai/nero-ai-mcp-server"],
+      "env": { "NERO_AI_API_KEY": "${NERO_AI_API_KEY}" }
     }
   }
 }

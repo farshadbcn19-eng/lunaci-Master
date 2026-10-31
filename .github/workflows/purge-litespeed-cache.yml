@@ -1,0 +1,121 @@
+name: "Maintenance - Purge LiteSpeed page cache + live check (Nail Polish EN/ES)"
+
+# Purges the LiteSpeed page cache on Hostinger WITHOUT swallowing errors, then checks the two
+# Nail Polish product URLs exactly as a visitor sees them (no ?nocache, mobile User-Agent).
+# Read-only for content: no product, copy, image, plugin or setting is changed.
+
+on:
+  workflow_dispatch:
+
+# One Hostinger deploy at a time: overlapping runs share /tmp files on the server.
+concurrency:
+  group: lunaci-hostinger-deploy
+  cancel-in-progress: false
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+      SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+      SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+      SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Purge LiteSpeed cache (no || true)
+        run: |
+          set -eo pipefail
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE' 2>&1 | tee /tmp/run.log
+            set -e
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            [ -f "$WP_PATH/wp-config.php" ] || { echo "ABORT: wp-config.php not found"; exit 1; }
+            echo "WP_PATH=$WP_PATH"
+            # run <label> <cmd...>: prints the command's output and exit code, never aborts; exit code in $RC
+            run() { L="$1"; shift; echo "----- $L: $*"; set +e; OUT=$("$@" 2>&1); RC=$?; set -e; echo "$OUT"; echo "----- $L exit=$RC"; }
+
+            run plugins wp plugin list --status=active --path="$WP_PATH"
+            echo "$OUT" | grep -i litespeed || echo "WARNING: no active plugin matching 'litespeed'"
+            run help wp litespeed-purge --help --path="$WP_PATH"
+            HELP="$OUT"
+
+            run purge-all wp litespeed-purge all --path="$WP_PATH"
+            PURGED=$RC
+            if [ "$PURGED" -ne 0 ]; then
+              echo "purge-all failed (exit $PURGED) -> fallback do_action( litespeed_purge_all )"
+              run purge-all-fallback wp eval 'do_action( "litespeed_purge_all" ); echo "litespeed_purge_all fired\n";' --path="$WP_PATH"
+              PURGED=$RC
+            fi
+
+            if echo "$HELP" | grep -qiw url; then
+              for U in https://lunacibarcelona.com/product/nail-polish-long-lasting/ \
+                       https://lunacibarcelona.com/es/producto/esmalte-de-unas-larga-duracion-lunaci/; do
+                run purge-url wp litespeed-purge url "$U" --path="$WP_PATH"
+                [ "$RC" -eq 0 ] || PURGED=$RC
+              done
+            else
+              echo "SKIP: 'wp litespeed-purge url' is not listed in --help"
+            fi
+
+            [ "$PURGED" -eq 0 ] || { echo "ABORT: LiteSpeed purge failed (exit $PURGED)"; exit 1; }
+            echo "PURGE OK"
+          REMOTE
+
+      - name: Live check (no nocache, mobile User-Agent)
+        run: |
+          set -eo pipefail
+          sleep 3
+          python3 - <<'PY' 2>&1 | tee -a /tmp/run.log
+          import re, sys, json, html, urllib.request
+          base = "https://lunacibarcelona.com"
+          pages = {"EN": "/product/nail-polish-long-lasting/", "ES": "/es/producto/esmalte-de-unas-larga-duracion-lunaci/"}
+          ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1"
+          want = [f"Shade {i:02d}" for i in range(1, 9)]
+          old_white = re.compile(r"shade-0[1-8](-\d+x\d+)?\.(jpe?g|png|webp)", re.I)  # shade-0N.jpg without -dark
+          fail, report = 0, []
+          def check(ok, msg):
+              global fail
+              print(("PASS  " if ok else "FAIL  ") + msg); fail |= not ok
+          def cache_headers(h):
+              keep = ("cache-control", "age", "server", "via", "expires", "vary")
+              return {k: v for k, v in h.items() if k.lower() in keep or k.lower().startswith(("x-litespeed", "cf-", "x-cache", "x-hcdn", "x-qc"))}
+          for lang, path in pages.items():
+              for n in (1, 2):  # 1st after purge: miss (or a re-cache with new content); 2nd: hit is fine
+                  req = urllib.request.Request(base + path, headers={"User-Agent": ua})
+                  with urllib.request.urlopen(req, timeout=60) as r:
+                      hdr, page = dict(r.headers), r.read().decode("utf-8", "replace")
+                  lsc = next((v for k, v in hdr.items() if k.lower() == "x-litespeed-cache"), "(none)")
+                  m = re.search(r'data-product_variations="([^"]*)"', page)
+                  vs = json.loads(html.unescape(m.group(1))) if m and m.group(1) != "false" else []
+                  srcs = [v.get("image", {}).get("src", "") for v in vs]
+                  shades = sorted(v.get("attributes", {}).get("attribute_shade", "") for v in vs)
+                  fresh = (shades == want and len(srcs) == 8 and all("-dark" in s for s in srcs)
+                           and not any(old_white.search(s) for s in srcs))
+                  t = f"{lang} req{n}"
+                  print(f"{t}: x-litespeed-cache={lsc}")
+                  check(not (lsc.lower() == "hit" and not fresh), f"{t}: not an old pre-purge cache hit")
+                  check(shades == want, f"{t}: shades {shades}")
+                  check(len(srcs) == 8 and all("-dark" in s for s in srcs), f"{t}: every variation image src contains -dark")
+                  check(not any(old_white.search(s) for s in srcs), f"{t}: no old white shade-0N image ({[s.rsplit('/',1)[-1] for s in srcs]})")
+                  check({str(v.get("display_price")) for v in vs} == {"16"}, f"{t}: price 16 ({sorted({str(v.get('display_price')) for v in vs})})")
+                  check("(placeholder)" not in page.lower(), f"{t}: no '(placeholder)' text")
+                  if not fresh:
+                      report.append(f"{t} headers: {json.dumps(cache_headers(hdr))}")
+          print("RESULT: ALL CHECKS PASSED" if not fail else "RESULT: SOME CHECKS FAILED")
+          if fail:
+              for line in report: print(line)
+              msg = ("Still stale after a successful purge -> another cache layer is likely involved "
+                     "(Hostinger CDN / Cloudflare / LiteSpeed mobile vary). Headers: " + " | ".join(report))
+              print("::error title=live-check::" + msg.replace("%", "%25").replace("\n", "%0A"))
+          sys.exit(1 if fail else 0)
+          PY
+
+      - name: Show remote log as annotation (the Actions log is not readable by Claude)
+        if: failure()
+        run: |
+          L=$(tail -n 60 /tmp/run.log 2>/dev/null | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')
+          echo "::error title=remote-log::$L"

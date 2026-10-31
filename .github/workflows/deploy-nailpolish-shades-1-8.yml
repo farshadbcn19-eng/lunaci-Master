@@ -1,0 +1,133 @@
+name: "Deploy - Nail Polish shades 01-08 with bottle photos (dry-run / apply / rollback)"
+
+# Runs assets/luna-import/nailpolish-shades-1-8.php on BOTH Nail Polish products
+# (EN 502, ES 742):
+#   dry-run  - checks the 12 placeholder variations per language, writes nothing
+#   apply    - full DB backup first; imports the 8 photos into the Media Library
+#              (idempotent by title), renames "Shade 0N (placeholder)" -> "Shade 0N"
+#              (N=1-8), sets each variation image, hides slots 09-12 (private,
+#              not deleted); purges cache; live check on /product/ and /es/producto/
+#   rollback - restores titles, status, shade values, images and the attribute list
+#              from the backup JSON (imported media files stay in the library)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run, apply or rollback"
+        required: true
+        default: "dry-run"
+        type: choice
+        options: ["dry-run", "apply", "rollback"]
+
+# One Hostinger deploy at a time: overlapping runs share /tmp files on the server.
+concurrency:
+  group: lunaci-hostinger-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+      SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+      SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+      SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
+      MODE: ${{ inputs.mode }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Run (with full backup before apply)
+        run: |
+          set -e
+          case "$MODE" in dry-run|apply|rollback) ;; *) echo "bad mode $MODE"; exit 1;; esac
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'rm -rf /tmp/nailpolish-shades && mkdir -p /tmp/nailpolish-shades'
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
+            scripts/db-backup.php assets/luna-import/nailpolish-shades-1-8.php \
+            assets/luna-import/uploads/nailpolish-shades/lunaci-nail-polish-shade-0*.jpg \
+            assets/luna-import/uploads/nailpolish-shades/alt.tsv \
+            "$SSH_USER@$SSH_HOST:/tmp/nailpolish-shades/"
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "MODE=$MODE"' bash -s' <<'REMOTE'
+            set -e
+            T=/tmp/nailpolish-shades
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            php -l $T/nailpolish-shades-1-8.php
+            MAP=""
+            if [ "$MODE" = "rollback" ]; then
+              BK=$(cat "$HOME/lunaci-backups/LATEST-nailpolish-shades" 2>/dev/null || true)
+              [ -n "$BK" ] && [ -f "$BK/nailpolish-shades-backup.json" ] || { echo "ABORT: no apply backup found"; exit 1; }
+            elif [ "$MODE" = "apply" ]; then
+              BK="$HOME/lunaci-backups/pre-nailpolish-shades-$(date -u +%Y%m%d-%H%M%S)"
+              mkdir -p "$BK"
+              php -l $T/db-backup.php
+              LIVE=$(wp db tables --all-tables --path="$WP_PATH" | wc -l)
+              LUNACI_BACKUP_FILE="$BK/database.sql.gz" wp eval-file $T/db-backup.php --path="$WP_PATH" || { echo "ABORT: database backup failed"; exit 1; }
+              gzip -t "$BK/database.sql.gz"
+              TABLES=$(zcat "$BK/database.sql.gz" | grep -c "^CREATE TABLE" || true)
+              [ "$TABLES" -ge "$LIVE" ] && [ "$TABLES" -gt 10 ] || { echo "ABORT: backup has $TABLES tables, database has $LIVE"; exit 1; }
+              echo "$BK" > "$HOME/lunaci-backups/LATEST-nailpolish-shades"
+              echo "BACKUP OK: $BK ($TABLES tables)"
+              # dry-run the plan first: abort before importing anything if the products differ from what we expect
+              LUNACI_MODE=dry-run LUNACI_BACKUP_DIR="$BK" wp eval-file $T/nailpolish-shades-1-8.php --path="$WP_PATH"
+              while IFS="$(printf '\t')" read -r N ALT; do
+                TITLE="LUNACI Nail Polish Shade $N"
+                ID=$(wp post list --post_type=attachment --title="$TITLE" --field=ID --path="$WP_PATH" | head -1)
+                if [ -z "$ID" ]; then
+                  ID=$(wp media import "$T/lunaci-nail-polish-shade-$N.jpg" --title="$TITLE" --alt="$ALT" --porcelain --path="$WP_PATH")
+                  wp media regenerate "$ID" --yes --path="$WP_PATH"
+                fi
+                [ -n "$ID" ] || { echo "ABORT: media import failed for $N"; exit 1; }
+                echo "shade $N -> attachment $ID"
+                MAP="$MAP${MAP:+,}$((10#$N)):$ID"
+              done < $T/alt.tsv
+            else
+              BK=$(mktemp -d)
+            fi
+            LUNACI_MODE="$MODE" LUNACI_BACKUP_DIR="$BK" LUNACI_MEDIA_MAP="$MAP" wp eval-file $T/nailpolish-shades-1-8.php --path="$WP_PATH"
+            rm -rf $T
+          REMOTE
+
+      - name: Purge cache
+        if: inputs.mode != 'dry-run'
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+            'WP_PATH=""; for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done; wp litespeed-purge all --path="$WP_PATH" || true'
+
+      - name: Live check
+        if: inputs.mode != 'dry-run'
+        run: |
+          sleep 3
+          python3 - <<'PY'
+          import os, re, sys, json, html, time, urllib.request
+          mode = os.environ["MODE"]
+          base = "https://lunacibarcelona.com"
+          pages = {"EN": "/product/nail-polish-long-lasting/", "ES": "/es/producto/esmalte-de-unas-larga-duracion-lunaci/"}
+          fail = 0
+          def check(ok, msg):
+              global fail
+              print(("PASS  " if ok else "FAIL  ") + msg); fail |= not ok
+          for lang, path in pages.items():
+              req = urllib.request.Request(f"{base}{path}?nocache={int(time.time())}", headers={"User-Agent": "Mozilla/5.0 lunaci-check"})
+              page = urllib.request.urlopen(req, timeout=60).read().decode("utf-8", "replace")
+              m = re.search(r'data-product_variations="([^"]*)"', page)
+              vs = json.loads(html.unescape(m.group(1))) if m and m.group(1) != "false" else []
+              shades = sorted(v["attributes"].get("attribute_shade", "") for v in vs)
+              if mode == "apply":
+                  want = [f"Shade {i:02d}" for i in range(1, 9)]
+                  check(shades == want, f"{lang}: shades {shades}")
+                  check(all(v.get("image", {}).get("src") for v in vs), f"{lang}: every variation has an image")
+                  check(len({v["image"]["src"] for v in vs}) == 8, f"{lang}: 8 different images")
+                  check({str(v["display_price"]) for v in vs} == {"16"}, f"{lang}: price unchanged ({sorted({v['display_price'] for v in vs})})")
+                  check("placeholder" not in page.lower(), f"{lang}: no 'placeholder' text on the page")
+              else:
+                  check(len(shades) == 12 and all("placeholder" in s for s in shades), f"{lang}: back to 12 placeholder shades ({len(shades)})")
+          print("RESULT: ALL CHECKS PASSED" if not fail else "RESULT: SOME CHECKS FAILED")
+          sys.exit(1 if fail else 0)
+          PY

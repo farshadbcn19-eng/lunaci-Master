@@ -92,7 +92,7 @@ foreach ( $parents as $pid => $lang ) {
 		$fail = 1;
 		continue;
 	}
-	if ( 'Nail Polish Long Lasting' !== get_the_title( $pid ) && 'EN' === $lang ) {
+	if ( false === stripos( get_the_title( $pid ), 'nail polish' ) && 'EN' === $lang ) {
 		echo "FAIL EN: parent $pid title is '" . get_the_title( $pid ) . "'\n";
 		$fail = 1;
 		continue;

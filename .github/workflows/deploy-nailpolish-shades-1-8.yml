@@ -44,7 +44,7 @@ jobs:
 
       - name: Run (with full backup before apply)
         run: |
-          set -e
+          set -eo pipefail
           case "$MODE" in dry-run|apply|rollback) ;; *) echo "bad mode $MODE"; exit 1;; esac
           sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'rm -rf /tmp/nailpolish-shades && mkdir -p /tmp/nailpolish-shades'
           sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
@@ -52,7 +52,7 @@ jobs:
             assets/luna-import/uploads/nailpolish-shades/lunaci-nail-polish-shade-0*.jpg \
             assets/luna-import/uploads/nailpolish-shades/alt.tsv \
             "$SSH_USER@$SSH_HOST:/tmp/nailpolish-shades/"
-          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "MODE=$MODE"' bash -s' <<'REMOTE'
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "MODE=$MODE"' bash -s' <<'REMOTE' 2>&1 | tee /tmp/run.log
             set -e
             T=/tmp/nailpolish-shades
             WP_PATH="";
@@ -93,6 +93,12 @@ jobs:
             LUNACI_MODE="$MODE" LUNACI_BACKUP_DIR="$BK" LUNACI_MEDIA_MAP="$MAP" wp eval-file $T/nailpolish-shades-1-8.php --path="$WP_PATH"
             rm -rf $T
           REMOTE
+
+      - name: Show remote log as annotation (the Actions log is not readable by Claude)
+        if: failure()
+        run: |
+          L=$(tail -n 60 /tmp/run.log 2>/dev/null | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')
+          echo "::error title=remote-log::$L"
 
       - name: Purge cache
         if: inputs.mode != 'dry-run'

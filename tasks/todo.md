@@ -136,6 +136,15 @@ Preview notes (CSS injected into the live pages before deploying):
 - [ ] Test-mode deploy + full `--mode=test --cart`
 - [ ] Manual check: mobile screenshots for 3 products in EN and ES
 
+**Progress (2026-11-13), CSS written, not deployed yet** (preview: CSS injected into the live pages):
+- The store snippet fades all below-the-fold text to cream 75 % with `!important`; answered with more specific `!important` rules.
+- **Review form was unreadable:** white fields with cream text (about 1.1:1) and a light-grey Submit with cream text. Now dark fields, gold frame, cream text: 17.9:1.
+- "Additional information": grey boxes removed; labels are gold captions, values in cream.
+- Tab, related-products and reviews headings: white Trade Gothic 300, 32 px (24 px on mobile).
+- **Related cards deliberately unchanged** (decision recorded in SPEC): same cards as /shop/.
+- Mobile pass: no horizontal scroll in any tab at 320/390/768/1024/1440 px, for 3 products.
+- Not in this task: the Spanish "Color" attribute has no value in WooCommerce (data, not CSS).
+
 **Dependencies:** T5
 **Files likely touched:** `mu-plugins/lunaci-product-page.php`
 **Estimated scope:** S

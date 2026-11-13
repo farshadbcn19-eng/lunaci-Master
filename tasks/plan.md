@@ -32,7 +32,7 @@ T4–T6 all edit the same CSS file, so they are done one after another, not in p
 ### Phase 1: Foundation (pipeline before styling, so failures show up early)
 - [x] T1: Baseline capture and check script
 - [x] T2: mu-plugin skeleton with mode switch and marker
-- [ ] T3: Deploy workflow with backup and live check
+- [x] T3: Deploy workflow with backup and live check
 
 ### Checkpoint A: pipeline proven
 - [ ] Workflow run with `test` (your OK first): marker present on the 13 EN + 13 ES product pages with `?lunaci_perf=1`; absent for visitors; absent on non-product pages

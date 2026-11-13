@@ -52,13 +52,18 @@ Every task also meets [the Definition of Done](../.claude/references/definition-
 **Description:** `.github/workflows/deploy-product-page.yml`, cloned from `deploy-wc-style.yml`: full backup (database, mu-plugins, .htaccess, current mode values), deploy the file, set `lunaci_product_page_mode`, purge LiteSpeed, then a live check for the `lunaci-product-page` marker.
 
 **Acceptance criteria:**
-- [ ] Inputs `test` / `on` / `off`; same `concurrency` group as the other Hostinger deploys
-- [ ] The run stops if the backup fails or is incomplete
-- [ ] Live check covers 2 EN + 2 ES product pages, `/products/`, `/cart/` and `/`: marker only on product pages; in `test` mode absent for visitors
+- [x] Inputs `test` / `on` / `off`; same `concurrency` group as the other Hostinger deploys
+- [x] The run stops if the backup fails or is incomplete
+- [x] Live check covers 2 EN + 2 ES product pages, `/products/`, `/cart/` and `/`: marker only on product pages; in `test` mode absent for visitors
 
 **Verification:**
-- [ ] The YAML parses (`python3 -c "import yaml…"`); the diff against `deploy-wc-style.yml` shows only the intended changes
+- [x] The YAML parses (`python3 -c "import yaml…"`); the diff against `deploy-wc-style.yml` shows only the intended changes
 - [ ] **Checkpoint A run (with your OK):** workflow `test` → "ALL CHECKS PASSED"; T1 script reports 0 differences
+
+**Notes (2026-11-13):**
+- Generated from `deploy-wc-style.yml`. The backup also records `lunaci_wc_gold_mode` and `lunaci_product_page_mode`, and stops if `lunaci-perf.php` (the mode helper) is missing on the server.
+- Dry run of the live check against the live site (nothing deployed): `off` = ALL PASSED; `on` and `test` = FAIL on the 4 product pages (marker missing). So the check detects both states.
+- `workflow_dispatch` only runs once the file is on `main`. Merging deploys nothing: no workflow on `main` triggers on push.
 
 **Dependencies:** T2
 **Files likely touched:** `.github/workflows/deploy-product-page.yml`

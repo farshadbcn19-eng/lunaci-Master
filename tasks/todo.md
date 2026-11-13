@@ -128,15 +128,19 @@ Preview notes (CSS injected into the live pages before deploying):
 **Description:** Related products and upsells cards in the /products/ card style, the reviews block, then a mobile pass at 390 px. The tabs are already styled (`lunaci-perf.php` item 6) and stay as they are.
 
 **Acceptance criteria:**
-- [ ] Related and upsell cards match /products/ (tokens, gold text only)
-- [ ] No horizontal scroll at 390 px on all 26 URLs
-- [ ] Item 6 tab styling still applies, without conflict
+- [x] Related and upsell cards match /products/ (tokens, gold text only)
+- [x] No horizontal scroll at 390 px on all 26 URLs
+- [x] Item 6 tab styling still applies, without conflict
 
 **Verification:**
-- [ ] Test-mode deploy + full `--mode=test --cart`
-- [ ] Manual check: mobile screenshots for 3 products in EN and ES
+- [x] Test-mode deploy + full `--mode=test --cart`
+- [x] Manual check: mobile screenshots for 3 products in EN and ES
 
-**Progress (2026-11-13), CSS written, not deployed yet** (preview: CSS injected into the live pages):
+**Done (2026-11-13):** PR #565, [run #4](https://github.com/farshadbcn19-eng/lunaci-Master/actions/runs/43491440222) in `test` mode. Backup OK (`pre-product-page-20261113-192152`, 103 tables, 33,504 rows). Check script (re-run at 19:38 UTC, after the deploy): 26/26 pages, 0 copy differences, 0 failed checks, add to cart 4/4. Visitors unchanged.
+
+Note: the first automatic check matched `shop_attributes` in the page HTML (a table class), not only in the new CSS, so it may have started before the deploy; it was discarded and re-run.
+
+Preview notes:
 - The store snippet fades all below-the-fold text to cream 75 % with `!important`; answered with more specific `!important` rules.
 - **Review form was unreadable:** white fields with cream text (about 1.1:1) and a light-grey Submit with cream text. Now dark fields, gold frame, cream text: 17.9:1.
 - "Additional information": grey boxes removed; labels are gold captions, values in cream.

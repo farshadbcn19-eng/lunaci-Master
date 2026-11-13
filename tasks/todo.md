@@ -31,13 +31,17 @@ Every task also meets [the Definition of Done](../.claude/references/definition-
 **Description:** `mu-plugins/lunaci-product-page.php` prints `<style id="lunaci-product-page">` on `is_product()` pages when `lunaci_perf_mode_active('lunaci_product_page_mode')` is true. A header comment states the purpose, the modes and the rollback. It holds one harmless placeholder rule, so the deploy can be proven before any visible change.
 
 **Acceptance criteria:**
-- [ ] Nothing is printed when the mode is off, on non-product pages, in admin, REST or Elementor preview (handled by the reused helper)
-- [ ] If `lunaci_perf_mode_active` doesn't exist, the plugin does nothing
-- [ ] No HTML or copy changes
+- [x] Nothing is printed when the mode is off, on non-product pages, in admin, REST or Elementor preview (handled by the reused helper)
+- [x] If `lunaci_perf_mode_active` doesn't exist, the plugin does nothing
+- [x] No HTML or copy changes
 
 **Verification:**
-- [ ] `php -l mu-plugins/lunaci-product-page.php` passes
-- [ ] Small self-check: a PHP snippet with WordPress functions stubbed covers on, off, non-product page and missing helper
+- [x] `php -l mu-plugins/lunaci-product-page.php` passes
+- [x] Small self-check: a PHP snippet with WordPress functions stubbed covers on, off, non-product page and missing helper
+
+**Notes (done 2026-11-13):**
+- Prints at `wp_head` priority 1001, after `lunaci-perf.php` items 6 and 7 (999 and 1000).
+- Self-check: `php scripts/test-product-page-plugin.php` covers 6 cases. A mutation test showed that without the `function_exists` guard, a missing `lunaci-perf.php` would cause a site-wide fatal error.
 
 **Dependencies:** None
 **Files likely touched:** `mu-plugins/lunaci-product-page.php`

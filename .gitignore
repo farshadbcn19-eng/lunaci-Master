@@ -27,3 +27,7 @@ tools/longcat-video/outputs/
 tools/google-flow/.env
 tools/google-flow/output/
 output/
+
+# agent-skills hook caches (local runtime state)
+.claude/sdd-cache/
+.claude/.simplify-ignore-cache/

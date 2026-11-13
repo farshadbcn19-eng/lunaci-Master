@@ -100,15 +100,17 @@ Every task also meets [the Definition of Done](../.claude/references/definition-
 **Description:** CSS for the shade dropdown and its label, the "Clear" link, quantity box, Add to Cart (transparent with a gold border, as in `lunaci-perf.php` item 7), the in-stock message and the selected-variation price.
 
 **Acceptance criteria:**
-- [ ] `--cart` passes for Lipstick and Eye Pencil, in EN and ES
-- [ ] Add to Cart is visible without scrolling sideways at 390 px; touch targets are at least 44 px
-- [ ] Visible keyboard focus on the dropdown, quantity and button
+- [x] `--cart` passes for Lipstick and Eye Pencil, in EN and ES
+- [x] Add to Cart is visible without scrolling sideways at 390 px; touch targets are at least 44 px
+- [x] Visible keyboard focus on the dropdown, quantity and button
 
 **Verification:**
-- [ ] Test-mode deploy + `--mode=test --cart`
-- [ ] Manual check: keyboard-only walkthrough on one product
+- [x] Test-mode deploy + `--mode=test --cart`
+- [x] Manual check: keyboard-only walkthrough on one product
 
-**Progress (2026-11-13), CSS written, not deployed yet** (preview: CSS injected into the live pages):
+**Done (2026-11-13):** PR #564, [run #3](https://github.com/farshadbcn19-eng/lunaci-Master/actions/runs/43485920263) in `test` mode. Backup OK (`pre-product-page-20261113-184705`, 103 tables, 33,476 rows). Check script: 26/26 pages, 0 copy differences, 0 failed checks, add to cart 4/4, no horizontal scroll, no gold fills. Visitors unchanged.
+
+Preview notes (CSS injected into the live pages before deploying):
 - Quantity box was white on black; the "Clear" link was theme pink (#CC3366); the shade row had grey boxes. All now in the /products/ style.
 - Field borders at gold 60 %: 3.94:1 (WCAG 1.4.11; was 1.41:1). All controls 46 px tall.
 - Keyboard only: choosing a shade, visible focus ring, Tab to the button, Enter adds to cart: 8/8 over two runs (EN + ES, shade + simple).

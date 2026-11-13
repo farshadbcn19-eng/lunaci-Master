@@ -86,6 +86,11 @@ Every task also meets [the Definition of Done](../.claude/references/definition-
 - [ ] Test-mode deploy + `node scripts/check-product-pages.mjs --mode=test`
 - [ ] Manual check: desktop screenshot of Lipstick in EN and ES next to /products/
 
+**Progress (2026-11-13), CSS written, not deployed yet:**
+- Previewed by injecting the CSS into the live EN and ES pages (desktop + 390 px): every target value applies.
+- The store WPCode snippet sets an older palette through the `--lk` (#0D0D0D), `--lc` (#F5F0E8) and `--lg` (#C4A35A) variables. On product pages they are pointed at the brand values instead of overriding each rule. `!important` is used only against that snippet's own `!important` rules on the breadcrumb and title.
+- Existing bug fixed: up to 768 px the header covered the top 9 px of the breadcrumb.
+
 **Dependencies:** Checkpoint A
 **Files likely touched:** `mu-plugins/lunaci-product-page.php`
 **Estimated scope:** S

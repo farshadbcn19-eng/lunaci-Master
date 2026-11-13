@@ -35,8 +35,8 @@ T4–T6 all edit the same CSS file, so they are done one after another, not in p
 - [x] T3: Deploy workflow with backup and live check
 
 ### Checkpoint A: pipeline proven
-- [ ] Workflow run with `test` (your OK first): marker present on the 13 EN + 13 ES product pages with `?lunaci_perf=1`; absent for visitors; absent on non-product pages
-- [ ] Check script reports **0 differences** from the baseline (the skeleton changes nothing visible)
+- [x] Workflow run with `test` (your OK first): marker present on the 13 EN + 13 ES product pages with `?lunaci_perf=1`; absent for visitors; absent on non-product pages
+- [x] Check script reports **0 differences** from the baseline (the skeleton changes nothing visible)
 
 ### Phase 2: Styling, one slice per task
 - [ ] T4: Layout and typography (gallery and summary, title, price, short description, breadcrumb)

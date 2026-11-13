@@ -33,7 +33,7 @@ async function productUrls() {
     const url = `${BASE}/wp-json/wc/store/v1/products?per_page=50${lang === 'es' ? '&lang=es' : ''}`;
     let res;
     // Hostinger returns an occasional one-off 503; retry before giving up.
-    for (let i = 0; i < 3 && !(res = await fetch(url)).ok; i++) await new Promise(r => setTimeout(r, 3000 * (i + 1)));
+    for (let i = 0; i < 5 && !(res = await fetch(url)).ok; i++) await new Promise(r => setTimeout(r, 5000 * 2 ** i)); // up to ~2.5 min
     if (!res.ok) throw new Error(`Store API ${lang}: HTTP ${res.status}`);
     for (const p of await res.json()) urls.push({ lang, slug: p.slug, url: p.permalink, type: p.type });
   }

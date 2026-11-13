@@ -108,6 +108,15 @@ Every task also meets [the Definition of Done](../.claude/references/definition-
 - [ ] Test-mode deploy + `--mode=test --cart`
 - [ ] Manual check: keyboard-only walkthrough on one product
 
+**Progress (2026-11-13), CSS written, not deployed yet** (preview: CSS injected into the live pages):
+- Quantity box was white on black; the "Clear" link was theme pink (#CC3366); the shade row had grey boxes. All now in the /products/ style.
+- Field borders at gold 60 %: 3.94:1 (WCAG 1.4.11; was 1.41:1). All controls 46 px tall.
+- Keyboard only: choosing a shade, visible focus ring, Tab to the button, Enter adds to cart: 8/8 over two runs (EN + ES, shade + simple).
+- One row for quantity + button at 320/360/390/768/1024/1440 px, inside the content, no horizontal scroll.
+- **T4 correction:** T4's width rule never applied (the theme's `.site-main` rules were more specific; content stayed 1140 px from x = 190). Fixed here with `main.site-main` and the measured /products/ margin formula `8vw + 9px`: within 1 px of /products/ at 390–1920 px.
+- Related-products grid minimum `min(260px, 100%)`, so the store snippet's 260 px cards no longer overflow at 320 px.
+- Gotcha: the theme animates form fields (`transition`), so values read right after injecting CSS are mid-animation. Wait about 1 s before measuring.
+
 **Dependencies:** T4
 **Files likely touched:** `mu-plugins/lunaci-product-page.php`
 **Estimated scope:** S

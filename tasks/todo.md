@@ -154,6 +154,17 @@ Preview notes:
 **Estimated scope:** S
 
 ## Checkpoint B: ready for visitors
+
+**Run 2026-11-13 (test mode, after T6):**
+- Full-page before/after captures (desktop + mobile, EN + ES) sent for review.
+- Lighthouse, 3 runs each, local, same pages and conditions (visitor version vs `?lunaci_perf=1`):
+  - EN: accessibility 100 → **97**, performance 78 → 76, LCP 4.7 → 4.8 s.
+  - ES: accessibility 100 → **97**, performance 78 → 73, LCP 4.6 → 5.4 s. Same LCP element (product photo) in both versions; run-to-run spread 70–81.
+- **Regression found:** `link-in-text-block`. The T4 breadcrumb links lost their underline (colour-only links). Fixed (thin underline), and the same fix was applied to the product-meta category link, which already failed on ES before this work.
+- axe-core with the fix injected: **no violations** on EN/ES × 390/1440 (the current visitor ES page has 1).
+- Not ours: `label-content-name-mismatch` on the ES related-card buttons, present before and after (store card design, left unchanged).
+- Next: deploy the fix in test mode, then Lighthouse 5 runs each to confirm accessibility 100 and that performance is within noise.
+
 - [ ] Every row of the SPEC testing table passes in test mode
 - [ ] Before/after screenshots shown to you; you approve `on`
 

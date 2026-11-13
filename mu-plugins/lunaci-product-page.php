@@ -52,7 +52,8 @@ function lunaci_product_page_css() {
 		. "$b main.site-main{width:100%;max-width:none;margin-left:0;margin-right:0;padding-inline:calc(8vw + 9px);box-sizing:border-box}"
 		// Breadcrumb as a /products/ section label: small uppercase, wide tracking, gold links.
 		. "$b nav.woocommerce-breadcrumb{font-family:$sans!important;font-size:10px!important;line-height:1.7;letter-spacing:4px!important;text-transform:uppercase;color:rgba(247,244,238,.62)!important;margin:0 0 32px}"
-		. "html $b nav.woocommerce-breadcrumb a{color:#D4AF37!important;text-decoration:none!important}"
+		// Thin underline kept: without it the links differ from the surrounding text by colour only (WCAG 1.4.1, Lighthouse link-in-text-block).
+		. "html $b nav.woocommerce-breadcrumb a{color:#D4AF37!important;text-decoration:underline!important;text-decoration-thickness:1px;text-underline-offset:3px}"
 		. "html $b nav.woocommerce-breadcrumb a:hover,html $b nav.woocommerce-breadcrumb a:focus-visible{color:#F7F4EE!important}"
 		// Title as a /products/ heading (cat-name scale), white like every /products/ heading.
 		. "$b div.product h1.product_title{font-family:$head!important;font-size:42px;font-weight:300!important;line-height:1.15;letter-spacing:normal!important;color:#FFFFFF!important;margin:0 0 20px}"
@@ -63,6 +64,8 @@ function lunaci_product_page_css() {
 		. "$b .woocommerce-product-details__short-description{margin:0 0 32px}"
 		// SKU / category as /products/ cat-count.
 		. "$b div.product .product_meta{font-family:$sans;font-size:12px;line-height:1.7;letter-spacing:1px;color:rgba(247,244,238,.62)}"
+		// Category link: underlined for the same reason as the breadcrumb (colour alone is not enough; it already failed on ES pages).
+		. "$b div.product .product_meta a{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}"
 		// T5: purchase controls. Square corners, Helvetica, /products/ CTA type
 		// (11 px uppercase, 3 px tracking); the button's gold border and transparent
 		// fill stay as lunaci-perf item 7 sets them.

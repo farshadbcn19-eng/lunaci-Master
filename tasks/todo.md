@@ -58,7 +58,7 @@ Every task also meets [the Definition of Done](../.claude/references/definition-
 
 **Verification:**
 - [x] The YAML parses (`python3 -c "import yaml…"`); the diff against `deploy-wc-style.yml` shows only the intended changes
-- [ ] **Checkpoint A run (with your OK):** workflow `test` → "ALL CHECKS PASSED"; T1 script reports 0 differences
+- [x] **Checkpoint A run (with your OK):** workflow `test` → "ALL CHECKS PASSED"; T1 script reports 0 differences
 
 **Notes (2026-11-13):**
 - Generated from `deploy-wc-style.yml`. The backup also records `lunaci_wc_gold_mode` and `lunaci_product_page_mode`, and stops if `lunaci-perf.php` (the mode helper) is missing on the server.
@@ -70,7 +70,7 @@ Every task also meets [the Definition of Done](../.claude/references/definition-
 **Estimated scope:** S
 
 ## Checkpoint A: pipeline proven
-- [ ] Test-mode deploy green; visitors unchanged; 0 differences from the baseline
+- [x] Test-mode deploy green; visitors unchanged; 0 differences from the baseline (2026-11-13: PR #562 merged; [run #1](https://github.com/farshadbcn19-eng/lunaci-Master/actions/runs/43461946203) 9/9 live checks; check script: block present on 26/26 pages, 0 copy differences, add to cart 4/4; the only failures are the expected background difference that T4 fixes)
 - [ ] Review with you before any styling
 
 ## Task 4: Layout and typography

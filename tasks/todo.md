@@ -8,14 +8,19 @@ Every task also meets [the Definition of Done](../.claude/references/definition-
 **Description:** A Playwright script that, for the 13 EN + 13 ES product URLs (taken from the WooCommerce Store API, not hardcoded), records HTTP status, the visible copy (title, price, short description, tabs), computed tokens (background, text colour, fonts) and desktop and 390 px screenshots. It also reads the design tokens from the live /products/ page. Run it once now to save the **baseline** that later runs are compared against.
 
 **Acceptance criteria:**
-- [ ] `--baseline` writes `output/product-pages/baseline.json` and screenshots (`output/` is already gitignored)
-- [ ] `--mode=test|on` compares against the baseline: copy diff, token match with /products/, no `#D4AF37` background on any element, no horizontal scroll at 390 px
-- [ ] `--cart` adds Lipstick (shade product) and Eye Pencil (no shades) to the cart in EN and ES and checks the cart count
+- [x] `--baseline` writes `output/product-pages/baseline.json` and screenshots (`output/` is already gitignored)
+- [x] `--mode=test|on` compares against the baseline: copy diff, token match with /products/, no `#D4AF37` background on any element, no horizontal scroll at 390 px
+- [x] `--cart` adds Lipstick (shade product) and Eye Pencil (no shades) to the cart in EN and ES and checks the cart count
 
 **Verification:**
-- [ ] Baseline run: 26 × HTTP 200, 26 copy records, /products/ tokens captured
-- [ ] Comparing the baseline against itself reports 0 differences
-- [ ] Manual check: open 2 screenshots and confirm they show the real page
+- [x] Baseline run: 26 × HTTP 200, 26 copy records, /products/ tokens captured
+- [x] Comparing the baseline against itself reports 0 differences
+- [x] Manual check: open 2 screenshots and confirm they show the real page
+
+**Notes (done 2026-11-13):**
+- Above-the-fold shots (`*-fold.png`) were added: a full-page capture can blank the mobile product photo, even though it shows on the live site (checked).
+- The cart check uses explicit ES slugs (`pintalabios`, `lapiz-de-ojos-lunaci`), because the Store API lists the languages in different orders.
+- Baseline finding: every product page has background `#0D0D0D`, /products/ has `#0B0B0B` (that is T4's job). Product body text is gold, 20 px, family name `Raleway` (aliased to Helvetica LUNACI).
 
 **Dependencies:** None
 **Files likely touched:** `scripts/check-product-pages.mjs`

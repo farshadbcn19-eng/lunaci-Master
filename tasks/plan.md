@@ -30,7 +30,7 @@ T4–T6 all edit the same CSS file, so they are done one after another, not in p
 ## Task list
 
 ### Phase 1: Foundation (pipeline before styling, so failures show up early)
-- [ ] T1: Baseline capture and check script
+- [x] T1: Baseline capture and check script
 - [ ] T2: mu-plugin skeleton with mode switch and marker
 - [ ] T3: Deploy workflow with backup and live check
 

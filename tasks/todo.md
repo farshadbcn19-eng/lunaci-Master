@@ -78,15 +78,15 @@ Every task also meets [the Definition of Done](../.claude/references/definition-
 **Description:** CSS for the top of the page: gallery and summary grid, product title, price, short description, breadcrumb. Values taken from the /products/ tokens captured in T1.
 
 **Acceptance criteria:**
-- [ ] Fonts, colours and spacing match /products/ (script token check)
-- [ ] Gold used only for text and rules, never as a fill
-- [ ] Copy diff 0 on all 26 URLs
+- [x] Fonts, colours and spacing match /products/ (script token check)
+- [x] Gold used only for text and rules, never as a fill
+- [x] Copy diff 0 on all 26 URLs
 
 **Verification:**
-- [ ] Test-mode deploy + `node scripts/check-product-pages.mjs --mode=test`
-- [ ] Manual check: desktop screenshot of Lipstick in EN and ES next to /products/
+- [x] Test-mode deploy + `node scripts/check-product-pages.mjs --mode=test`
+- [x] Manual check: desktop screenshot of Lipstick in EN and ES next to /products/
 
-**Progress (2026-11-13), CSS written, not deployed yet:**
+**Done (2026-11-13):** PR #563, [run #2](https://github.com/farshadbcn19-eng/lunaci-Master/actions/runs/43465455748) in `test` mode. Check script: 26/26 pages, background = /products/, 0 copy differences, 0 failed checks, add to cart 4/4. Visitors unchanged.
 - Previewed by injecting the CSS into the live EN and ES pages (desktop + 390 px): every target value applies.
 - The store WPCode snippet sets an older palette through the `--lk` (#0D0D0D), `--lc` (#F5F0E8) and `--lg` (#C4A35A) variables. On product pages they are pointed at the brand values instead of overriding each rule. `!important` is used only against that snippet's own `!important` rules on the breadcrumb and title.
 - Existing bug fixed: up to 768 px the header covered the top 9 px of the breadcrumb.
@@ -107,6 +107,15 @@ Every task also meets [the Definition of Done](../.claude/references/definition-
 **Verification:**
 - [ ] Test-mode deploy + `--mode=test --cart`
 - [ ] Manual check: keyboard-only walkthrough on one product
+
+**Progress (2026-11-13), CSS written, not deployed yet** (preview: CSS injected into the live pages):
+- Quantity box was white on black; the "Clear" link was theme pink (#CC3366); the shade row had grey boxes. All now in the /products/ style.
+- Field borders at gold 60 %: 3.94:1 (WCAG 1.4.11; was 1.41:1). All controls 46 px tall.
+- Keyboard only: choosing a shade, visible focus ring, Tab to the button, Enter adds to cart: 8/8 over two runs (EN + ES, shade + simple).
+- One row for quantity + button at 320/360/390/768/1024/1440 px, inside the content, no horizontal scroll.
+- **T4 correction:** T4's width rule never applied (the theme's `.site-main` rules were more specific; content stayed 1140 px from x = 190). Fixed here with `main.site-main` and the measured /products/ margin formula `8vw + 9px`: within 1 px of /products/ at 390–1920 px.
+- Related-products grid minimum `min(260px, 100%)`, so the store snippet's 260 px cards no longer overflow at 320 px.
+- Gotcha: the theme animates form fields (`transition`), so values read right after injecting CSS are mid-animation. Wait about 1 s before measuring.
 
 **Dependencies:** T4
 **Files likely touched:** `mu-plugins/lunaci-product-page.php`

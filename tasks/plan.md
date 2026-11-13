@@ -39,7 +39,7 @@ T4–T6 all edit the same CSS file, so they are done one after another, not in p
 - [x] Check script reports **0 differences** from the baseline (the skeleton changes nothing visible)
 
 ### Phase 2: Styling, one slice per task
-- [ ] T4: Layout and typography (gallery and summary, title, price, short description, breadcrumb)
+- [x] T4: Layout and typography (gallery and summary, title, price, short description, breadcrumb)
 - [ ] T5: Purchase controls (shade dropdown, quantity, Add to Cart, stock and reset messages)
 - [ ] T6: Below the fold and mobile (related products, upsells, reviews, 390 px)
 

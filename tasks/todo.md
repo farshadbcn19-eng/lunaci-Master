@@ -78,15 +78,15 @@ Every task also meets [the Definition of Done](../.claude/references/definition-
 **Description:** CSS for the top of the page: gallery and summary grid, product title, price, short description, breadcrumb. Values taken from the /products/ tokens captured in T1.
 
 **Acceptance criteria:**
-- [ ] Fonts, colours and spacing match /products/ (script token check)
-- [ ] Gold used only for text and rules, never as a fill
-- [ ] Copy diff 0 on all 26 URLs
+- [x] Fonts, colours and spacing match /products/ (script token check)
+- [x] Gold used only for text and rules, never as a fill
+- [x] Copy diff 0 on all 26 URLs
 
 **Verification:**
-- [ ] Test-mode deploy + `node scripts/check-product-pages.mjs --mode=test`
-- [ ] Manual check: desktop screenshot of Lipstick in EN and ES next to /products/
+- [x] Test-mode deploy + `node scripts/check-product-pages.mjs --mode=test`
+- [x] Manual check: desktop screenshot of Lipstick in EN and ES next to /products/
 
-**Progress (2026-11-13), CSS written, not deployed yet:**
+**Done (2026-11-13):** PR #563, [run #2](https://github.com/farshadbcn19-eng/lunaci-Master/actions/runs/43465455748) in `test` mode. Check script: 26/26 pages, background = /products/, 0 copy differences, 0 failed checks, add to cart 4/4. Visitors unchanged.
 - Previewed by injecting the CSS into the live EN and ES pages (desktop + 390 px): every target value applies.
 - The store WPCode snippet sets an older palette through the `--lk` (#0D0D0D), `--lc` (#F5F0E8) and `--lg` (#C4A35A) variables. On product pages they are pointed at the brand values instead of overriding each rule. `!important` is used only against that snippet's own `!important` rules on the breadcrumb and title.
 - Existing bug fixed: up to 768 px the header covered the top 9 px of the breadcrumb.

@@ -135,6 +135,12 @@ There is no test framework in this repo, so verification is a script plus the ex
 3. Not one word of copy has changed.
 4. Switching `lunaci_product_page_mode` to `off` returns the site to exactly its current state (one-step rollback).
 
+## Decisions (2026-11-13)
+
+- **Product names:** all current WooCommerce names are correct and stay as they are (closes Open Question 2).
+- **Shadow and Concealer:** stay exactly as they are (not created in WooCommerce, no change on /products/).
+- **Related-product cards:** left as the store snippet draws them (the same cards as /shop/ and the category pages), so the product page doesn't depart from the existing store design. Only the 320 px grid fix applies.
+
 ## Open questions
 
 1. ~~**Delivery: mu-plugin or WPCode?**~~ **Decided: mu-plugin** (approved 2026-11-13). `CLAUDE.md` says custom CSS goes through WPCode snippets. Recent store styling (items 6 and 7) was done in a mu-plugin instead, because it gives the off/test/on switch and a one-step rollback. **Recommendation: mu-plugin.** I need your OK to depart from `CLAUDE.md` here.

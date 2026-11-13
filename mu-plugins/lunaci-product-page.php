@@ -98,7 +98,30 @@ function lunaci_product_page_css() {
 		. "$b div.product .woocommerce-variation-availability p.stock,$b div.product .summary p.stock{font-family:$sans;font-size:12px;letter-spacing:1px;color:rgba(247,244,238,.62)}"
 		// Visible keyboard focus on every purchase control.
 		. "$b div.product form.cart select:focus-visible,$b div.product form.cart input.qty:focus-visible,$b div.product .reset_variations:focus-visible{outline:1px solid #F7F4EE;outline-offset:3px}"
+		// T6: below the fold. Tab buttons stay as lunaci-perf item 6 styles them.
+		// The store snippet fades all text below the fold to cream 75 % with !important; the more specific
+		// selectors here answer it with !important on the same properties.
+		// Section headings (tab panels, related products, reviews) as /products/ headings: white Trade Gothic 300.
+		. "$b div.product .woocommerce-tabs .panel h2,$b div.product section.related>h2,$b div.product section.upsells>h2,$b #reviews .woocommerce-Reviews-title{font-family:$head!important;font-size:32px;font-weight:300!important;line-height:1.15;letter-spacing:normal;color:#FFFFFF!important;margin:0 0 24px}"
+		// Tab text as /products/ section-text.
+		. "$b div.product .woocommerce-tabs .panel,$b div.product .woocommerce-tabs .panel p,$b div.product .woocommerce-tabs .panel li,$b div.product .woocommerce-tabs .panel strong,$b div.product .woocommerce-tabs .panel em{font-family:$sans!important;font-size:14px;line-height:1.9;color:#F7F4EE!important}"
+		. "$b div.product .woocommerce-tabs .panel p,$b div.product .woocommerce-tabs .panel ul{max-width:720px}"
+		// "Additional information" table: no grey boxes, label as a small gold caption.
+		. "$b div.product table.shop_attributes,$b div.product table.shop_attributes th,$b div.product table.shop_attributes td{background:transparent!important;border:0;border-bottom:1px solid rgba(247,244,238,.12)}"
+		. "$b div.product table.shop_attributes th{font-family:$sans;font-size:10px;font-weight:400;letter-spacing:4px;text-transform:uppercase;color:#D4AF37!important;text-align:left;padding:14px 24px 14px 0;width:160px}"
+		. "$b div.product table.shop_attributes td{font-family:$sans;font-size:14px;letter-spacing:1px;color:#F7F4EE!important;padding:14px 0;font-style:normal}"
+		. "$b div.product table.shop_attributes td p{margin:0;padding:0}"
+		// Related-product cards stay exactly as the store snippet draws them: the same cards as /shop/ and the
+		// category pages (only the 320 px grid fix above applies).
+		// Review form: fields were white with faded cream text (unreadable) and the Submit button light grey with cream text.
+		. "$b #reviews #reply-title{font-family:$head!important;font-size:24px;font-weight:300!important;color:#FFFFFF!important;display:block;margin:0 0 20px}"
+		. "$b #reviews .woocommerce-noreviews,$b #reviews #commentform label,$b #reviews #commentform p{font-family:$sans!important;font-size:14px;line-height:1.9;color:#F7F4EE!important}"
+		. "$b #reviews #commentform textarea,$b #reviews #commentform input[type=text],$b #reviews #commentform input[type=email]{font-family:$sans!important;font-size:14px;color:#F7F4EE!important;background-color:transparent!important;border:1px solid rgba(212,175,55,.6)!important;border-radius:0;min-height:46px;box-sizing:border-box}"
+		. "$b #reviews #commentform input#submit{font-family:$sans!important;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#F7F4EE!important;background:transparent!important;border:1px solid #D4AF37!important;border-radius:0;padding:16px 36px;min-height:46px}"
+		. "$b #reviews #commentform input#submit:hover{color:#D4AF37!important}"
+		. "$b #reviews #commentform textarea:focus-visible,$b #reviews #commentform input:focus-visible,$b #reviews .stars a:focus-visible{outline:1px solid #F7F4EE;outline-offset:3px}"
 		. "@media (max-width:768px){"
+		. "$b div.product .woocommerce-tabs .panel h2,$b div.product section.related>h2,$b div.product section.upsells>h2,$b #reviews .woocommerce-Reviews-title{font-size:24px}"
 		. "$b div.product h1.product_title{font-size:32px}"
 		// Existing bug: up to 768 px the fixed header covers the top 9 px of the breadcrumb.
 		. "$b nav.woocommerce-breadcrumb{padding-top:16px}"

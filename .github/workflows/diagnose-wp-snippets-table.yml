@@ -16,10 +16,10 @@ jobs:
 
       - name: Transfer diagnostic script and run it
         env:
-          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
-          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
-          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
-          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
         run: |
           set -e
 

@@ -138,7 +138,8 @@ jobs:
             done
             get "/product/lipstick/$Q"; C=$(count 'attribute_pa_color')
             [ "$ON" = "1" ] && { [ "$C" = "0" ] && pass "Color row hidden on /product/lipstick/" || fail "Color row still shown on /product/lipstick/"; } || { [ "$C" -gt 0 ] && pass "Color row shown again (off)" || fail "Color row missing while off"; }
-            get "/es/categoria-producto/labios/$Q"; L=$(count 'Elige las opciones'); F=$(count 'Seleccionar opciones –')
+            # aria-label only: the same words also appear in a WooCommerce JS message on the page.
+            get "/es/categoria-producto/labios/$Q"; L=$(count 'aria-label="Elige las opciones'); F=$(count 'aria-label="Seleccionar opciones –')
             [ "$ON" = "1" ] && { [ "$L" = "0" ] && [ "$F" -gt 0 ] && pass "ES card button labels contain the visible text ($F)" || fail "ES card button labels not fixed (old $L, new $F)"; } || { [ "$L" -gt 0 ] && pass "ES card button labels back to WooCommerce default (off)" || fail "ES labels unexpected while off"; }
             VISIT="/product/lipstick/ /es/categoria-producto/labios/"; MARK='id="lunaci-product-extras"'
           fi

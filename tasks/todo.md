@@ -163,7 +163,13 @@ Preview notes:
 - **Regression found:** `link-in-text-block`. The T4 breadcrumb links lost their underline (colour-only links). Fixed (thin underline), and the same fix was applied to the product-meta category link, which already failed on ES before this work.
 - axe-core with the fix injected: **no violations** on EN/ES × 390/1440 (the current visitor ES page has 1).
 - Not ours: `label-content-name-mismatch` on the ES related-card buttons, present before and after (store card design, left unchanged).
-- Next: deploy the fix in test mode, then Lighthouse 5 runs each to confirm accessibility 100 and that performance is within noise.
+- Fix deployed: PR #566, [run #5](https://github.com/farshadbcn19-eng/lunaci-Master/actions/runs/43609955915). Backup OK (`pre-product-page-20261114-152400`, 103 tables, 33,546 rows). Check script: 26/26, 0 copy differences, 0 failed checks, add to cart 4/4.
+- Lighthouse, 5 runs each (2026-11-14, visitor vs test version):
+  - EN: accessibility 100 → **100**, performance median 69 → 71, LCP 5.6 → 5.3 s, CLS 0 → 0.
+  - ES: accessibility 100 → **100**, performance median 70 → 70, LCP 5.5 → 5.5 s, CLS 0 → 0.
+  - No regression; differences are within run-to-run spread (65–78).
+- [x] Every row of the SPEC testing table passes in test mode.
+- [ ] Your approval to switch to `on` (T7).
 
 - [ ] Every row of the SPEC testing table passes in test mode
 - [ ] Before/after screenshots shown to you; you approve `on`

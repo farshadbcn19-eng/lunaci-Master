@@ -44,7 +44,7 @@ T4–T6 all edit the same CSS file, so they are done one after another, not in p
 - [x] T6: Below the fold and mobile (related products, upsells, reviews, 390 px)
 
 ### Checkpoint B: ready for visitors
-- [ ] Test-mode deploy; check script passes every row of the SPEC testing table
+- [x] Test-mode deploy; check script passes every row of the SPEC testing table
 - [ ] Before/after screenshots (desktop + mobile, EN + ES) shown to you, and you approve `on`
 
 ### Phase 3: Go live

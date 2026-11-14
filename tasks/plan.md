@@ -45,13 +45,13 @@ T4–T6 all edit the same CSS file, so they are done one after another, not in p
 
 ### Checkpoint B: ready for visitors
 - [x] Test-mode deploy; check script passes every row of the SPEC testing table
-- [ ] Before/after screenshots (desktop + mobile, EN + ES) shown to you, and you approve `on`
+- [x] Before/after screenshots (desktop + mobile, EN + ES) shown to you, and you approve `on`
 
 ### Phase 3: Go live
-- [ ] T7: Switch to `on`, run Lighthouse and accessibility audits, confirm rollback
+- [x] T7: Switch to `on`, run Lighthouse and accessibility audits, confirm rollback
 
 ### Checkpoint C: done
-- [ ] SPEC success criteria 1–4 met; PR merged
+- [x] SPEC success criteria 1–4 met; PR merged
 
 ## Risks and mitigations
 

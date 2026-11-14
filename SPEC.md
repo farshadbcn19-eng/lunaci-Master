@@ -1,6 +1,6 @@
 # Spec: Consistent single-product pages (WooCommerce)
 
-Status: **Approved 2026-11-13** (delivery: mu-plugin). Revised the same day: reference corrected to the live /products/ page (see Revision 1).
+Status: **Live since 2026-11-14** (mode `on`; delivery: mu-plugin). Approved 2026-11-13. Revised the same day: reference corrected to the live /products/ page (see Revision 1).
 Date: 2026-11-13
 
 > **Revision 1 (planning):** the repo file `pages/products.html` is **not** what is live at /products/. The live page is a different Elementor HTML widget (sections *The LUNACI Portfolio*, *Signature Pieces*, *Crafted with Intention*). It uses `#0B0B0B` + `#D4AF37` and already links to product and category pages. So the reference is the **live** page, and scope item 2 (fixing `/shop/#id` links) is dropped because the problem does not exist live.

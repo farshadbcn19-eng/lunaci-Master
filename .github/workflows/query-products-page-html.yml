@@ -1,0 +1,56 @@
+name: "Query - /products/ page Elementor HTML widget (read-only)"
+
+# Prints the stored HTML of the Elementor HTML widget(s) on the live /products/
+# page (EN) so the repo copy pages/products.html can be synced with the site.
+# Read-only: no writes, no option changes, no cache purge.
+# Output: base64 between BEGIN/END markers plus a sha256 to verify the copy.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  query:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+      SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+      SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+      SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Read /products/ HTML widget (read-only)
+        run: |
+          set -e
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+            set -e
+            WP_PATH="";
+            for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
+            [ -z "$WP_PATH" ] && WP_PATH=$(dirname "$(find -L "$HOME" -maxdepth 8 -name wp-config.php -not -path "*/wp-content/*" 2>/dev/null | head -1)");
+            cat > /tmp/lunaci-query-products-html.php <<'PHP'
+          <?php
+          $id = url_to_postid( home_url( '/products/' ) );
+          if ( ! $id ) { echo "ABORT: /products/ not found\n"; return; }
+          $raw = get_post_meta( $id, '_elementor_data', true );
+          $data = is_string( $raw ) ? json_decode( $raw, true ) : $raw;
+          if ( ! is_array( $data ) ) { echo "ABORT: no Elementor data for page {$id}\n"; return; }
+          $found = array();
+          $walk = function ( $nodes ) use ( &$walk, &$found ) {
+            foreach ( $nodes as $n ) {
+              if ( ( $n['widgetType'] ?? '' ) === 'html' && isset( $n['settings']['html'] ) ) { $found[] = array( $n['id'], $n['settings']['html'] ); }
+              if ( ! empty( $n['elements'] ) ) { $walk( $n['elements'] ); }
+            }
+          };
+          $walk( $data );
+          echo "page_id={$id} title=" . get_the_title( $id ) . " html_widgets=" . count( $found ) . "\n";
+          foreach ( $found as $i => list( $wid, $html ) ) {
+            echo "widget[{$i}] id={$wid} bytes=" . strlen( $html ) . " sha256=" . hash( 'sha256', $html ) . " has_lunaci_products_page=" . ( false !== strpos( $html, 'lunaci-products-page' ) ? 'yes' : 'no' ) . "\n";
+            echo "BEGIN_WIDGET_{$i}\n" . chunk_split( base64_encode( $html ), 76, "\n" ) . "END_WIDGET_{$i}\n";
+          }
+          PHP
+            php -l /tmp/lunaci-query-products-html.php
+            wp eval-file /tmp/lunaci-query-products-html.php --path="$WP_PATH"
+            rm -f /tmp/lunaci-query-products-html.php
+          REMOTE

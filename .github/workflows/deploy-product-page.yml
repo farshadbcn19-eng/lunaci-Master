@@ -1,6 +1,10 @@
 name: "Deploy - product page template (mu-plugin)"
 
-# Deploys mu-plugins/lunaci-product-page.php and sets lunaci_product_page_mode:
+# Deploys mu-plugins/lunaci-product-page.php and sets one of its two switches
+# (input "switch"): lunaci_product_page_mode (the product page layer) or
+# lunaci_product_extras_mode (store-card text, hidden legacy Color row, card
+# button screen-reader labels). The other switch is left as it is.
+# Product page layer:
 # product pages styled like the live /products/ page (SPEC.md, tasks/plan.md).
 # CSS only; no HTML or copy changes. Needs lunaci-perf.php (mode helper); if it
 # is missing the layer stays off and the live check below fails.
@@ -20,6 +24,12 @@ on:
         default: "test"
         type: choice
         options: ["test", "on", "off"]
+      switch:
+        description: "which switch to set"
+        required: true
+        default: "product_page"
+        type: choice
+        options: ["product_page", "product_extras"]
 
 # One Hostinger deploy at a time: overlapping runs share /tmp files on the server.
 concurrency:
@@ -36,6 +46,7 @@ jobs:
       SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
       SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
       MODE: ${{ inputs.mode }}
+      OPT: lunaci_${{ inputs.switch }}_mode
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -72,6 +83,7 @@ jobs:
             echo "lunaci_wc_style_mode: $(wp option get lunaci_wc_style_mode --path="$WP_PATH" 2>/dev/null || echo "(not set)")" | tee -a "$BK/perf-modes-before.txt";
             echo "lunaci_wc_gold_mode: $(wp option get lunaci_wc_gold_mode --path="$WP_PATH" 2>/dev/null || echo "(not set)")" | tee -a "$BK/perf-modes-before.txt";
             echo "lunaci_product_page_mode: $(wp option get lunaci_product_page_mode --path="$WP_PATH" 2>/dev/null || echo "(not set)")" | tee -a "$BK/perf-modes-before.txt";
+            echo "lunaci_product_extras_mode: $(wp option get lunaci_product_extras_mode --path="$WP_PATH" 2>/dev/null || echo "(not set)")" | tee -a "$BK/perf-modes-before.txt";
             [ -f "$WP_PATH/wp-content/mu-plugins/lunaci-perf.php" ] || { echo "ABORT: lunaci-perf.php (mode helper) not on the server"; exit 1; };
             echo "BACKUP OK: $BK ($TABLES tables)"
           '
@@ -80,9 +92,10 @@ jobs:
         run: |
           set -e
           case "$MODE" in test|on|off) ;; *) echo "bad mode $MODE"; exit 1;; esac
+          case "$OPT" in lunaci_product_page_mode|lunaci_product_extras_mode) ;; *) echo "bad switch $OPT"; exit 1;; esac
           sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -P "$SSH_PORT" \
             "mu-plugins/lunaci-product-page.php" "$SSH_USER@$SSH_HOST:/tmp/lunaimport-product-page.php"
-          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "MODE=$MODE"' bash -s' <<'REMOTE'
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "MODE=$MODE OPT=$OPT"' bash -s' <<'REMOTE'
             set -e
             WP_PATH="";
             for c in "$HOME/public_html" "$HOME" "$(pwd)"; do [ -f "$c/wp-config.php" ] && { WP_PATH="$c"; break; }; done;
@@ -92,8 +105,8 @@ jobs:
             [ -f "$DEST" ] && cp -p "$DEST" "$HOME/lunaci-backups/lunaci-product-page.php.prev-$(date -u +%Y%m%d-%H%M%S)"
             cp /tmp/lunaimport-product-page.php "$DEST" && rm -f /tmp/lunaimport-product-page.php
             echo "deployed: $DEST"
-            [ "$(wp option get lunaci_product_page_mode --path="$WP_PATH" 2>/dev/null)" = "$MODE" ] && echo "lunaci_product_page_mode already $MODE" || wp option update lunaci_product_page_mode "$MODE" --autoload=yes --path="$WP_PATH"
-            echo "lunaci_perf_mode: $(wp option get lunaci_perf_mode --path="$WP_PATH")  lunaci_perf_payments_mode: $(wp option get lunaci_perf_payments_mode --path="$WP_PATH")  lunaci_brand_fonts_mode: $(wp option get lunaci_brand_fonts_mode --path="$WP_PATH")  lunaci_wc_style_mode: $(wp option get lunaci_wc_style_mode --path="$WP_PATH")  lunaci_product_page_mode: $(wp option get lunaci_product_page_mode --path="$WP_PATH")"
+            [ "$(wp option get "$OPT" --path="$WP_PATH" 2>/dev/null)" = "$MODE" ] && echo "$OPT already $MODE" || wp option update "$OPT" "$MODE" --autoload=yes --path="$WP_PATH"
+            echo "lunaci_perf_mode: $(wp option get lunaci_perf_mode --path="$WP_PATH")  lunaci_perf_payments_mode: $(wp option get lunaci_perf_payments_mode --path="$WP_PATH")  lunaci_brand_fonts_mode: $(wp option get lunaci_brand_fonts_mode --path="$WP_PATH")  lunaci_wc_style_mode: $(wp option get lunaci_wc_style_mode --path="$WP_PATH")  lunaci_product_page_mode: $(wp option get lunaci_product_page_mode --path="$WP_PATH" 2>/dev/null)  lunaci_product_extras_mode: $(wp option get lunaci_product_extras_mode --path="$WP_PATH" 2>/dev/null || echo "(not set)")"
             wp litespeed-purge all --path="$WP_PATH" || true
           REMOTE
 
@@ -103,20 +116,36 @@ jobs:
           FAIL=0
           pass() { echo "PASS  $1"; }
           fail() { echo "FAIL  $1"; FAIL=1; }
+          count() { grep -c -- "$1" page.html || true; }
+          get() { curl -sS -m 60 -o page.html -w "%{http_code}" "$BASE$1" > code.txt; [ "$(cat code.txt)" = "200" ] || fail "$1 status $(cat code.txt)"; }
           sleep 3
           case "$MODE" in test) Q="?lunaci_perf=1";; *) Q="";; esac
-          # Marker only on product pages (EN + ES); never on other pages.
-          for p in /product/lipstick/ /product/eye-pencil/ /es/producto/pintalabios/ /es/producto/lapiz-de-ojos-lunaci/ /products/ /cart/ /; do
-            curl -sS -m 60 -o page.html -w "%{http_code}" "$BASE$p$Q" > code.txt
-            [ "$(cat code.txt)" = "200" ] || fail "$p$Q status $(cat code.txt)"
-            ST=$(grep -c 'id="lunaci-product-page"' page.html || true)
-            case "$p" in /product/*|/es/producto/*) WANT=$([ "$MODE" = "off" ] && echo 0 || echo 1);; *) WANT=0;; esac
-            [ "$ST" = "$WANT" ] && pass "$p$Q marker count $ST (expected $WANT)" || fail "$p$Q marker count $ST, expected $WANT"
-          done
+          ON=$([ "$MODE" = "off" ] && echo 0 || echo 1)
+          if [ "$OPT" = "lunaci_product_page_mode" ]; then
+            # Product page layer: marker only on product pages (EN + ES); never on other pages.
+            for p in /product/lipstick/ /product/eye-pencil/ /es/producto/pintalabios/ /es/producto/lapiz-de-ojos-lunaci/ /products/ /cart/ /; do
+              get "$p$Q"; ST=$(count 'id="lunaci-product-page"')
+              case "$p" in /product/*|/es/producto/*) WANT=$ON;; *) WANT=0;; esac
+              [ "$ST" = "$WANT" ] && pass "$p$Q marker count $ST (expected $WANT)" || fail "$p$Q marker count $ST, expected $WANT"
+            done
+            VISIT="/product/lipstick/ /es/producto/pintalabios/"; MARK='id="lunaci-product-page"'
+          else
+            # Extras: card CSS on product + category pages; Color row hidden; ES card button label fixed.
+            for p in /product/lipstick/ /es/producto/pintalabios/ /product-category/lips/ /es/categoria-producto/labios/ /products/ /cart/ /; do
+              get "$p$Q"; ST=$(count 'id="lunaci-product-extras"')
+              case "$p" in /product/*|/es/producto/*|/product-category/*|/es/categoria-producto/*) WANT=$ON;; *) WANT=0;; esac
+              [ "$ST" = "$WANT" ] && pass "$p$Q extras marker count $ST (expected $WANT)" || fail "$p$Q extras marker count $ST, expected $WANT"
+            done
+            get "/product/lipstick/$Q"; C=$(count 'attribute_pa_color')
+            [ "$ON" = "1" ] && { [ "$C" = "0" ] && pass "Color row hidden on /product/lipstick/" || fail "Color row still shown on /product/lipstick/"; } || { [ "$C" -gt 0 ] && pass "Color row shown again (off)" || fail "Color row missing while off"; }
+            get "/es/categoria-producto/labios/$Q"; L=$(count 'Elige las opciones'); F=$(count 'Seleccionar opciones –')
+            [ "$ON" = "1" ] && { [ "$L" = "0" ] && [ "$F" -gt 0 ] && pass "ES card button labels contain the visible text ($F)" || fail "ES card button labels not fixed (old $L, new $F)"; } || { [ "$L" -gt 0 ] && pass "ES card button labels back to WooCommerce default (off)" || fail "ES labels unexpected while off"; }
+            VISIT="/product/lipstick/ /es/categoria-producto/labios/"; MARK='id="lunaci-product-extras"'
+          fi
           if [ "$MODE" = "test" ]; then
-            for p in /product/lipstick/ /es/producto/pintalabios/; do
+            for p in $VISIT; do
               curl -sS -m 60 "$BASE$p" -o page.html
-              [ "$(grep -c 'id="lunaci-product-page"' page.html || true)" = "0" ] && pass "$p visitors (no ?lunaci_perf) unchanged" || fail "$p visitors already get the product page layer in test mode"
+              [ "$(count "$MARK")" = "0" ] && pass "$p visitors (no ?lunaci_perf) unchanged" || fail "$p visitors already get it in test mode"
             done
           fi
           if [ "$FAIL" = "0" ]; then echo "RESULT: ALL CHECKS PASSED"; else echo "RESULT: SOME CHECKS FAILED"; exit 1; fi

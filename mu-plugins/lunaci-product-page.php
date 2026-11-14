@@ -146,3 +146,61 @@ add_action(
 	},
 	1001
 );
+
+/*
+ * Extras (2026-11-14), behind their own switch so they can be tested while the
+ * product page layer above stays on for visitors:
+ * option lunaci_product_extras_mode = "off" (default) / "test" / "on".
+ *  1. Store cards (related products, category pages): the card link is a
+ *     z-index 0 stacking context, so the store snippet's dark gradient
+ *     (li::after, z-index 1) sits on top of the title and price and fades them.
+ *  2. The legacy "Color" attribute (pa_color) is hidden from "Additional
+ *     information": its values do not match the selectable shades, and it is
+ *     empty in Spanish. Display only; the product data is not touched.
+ *  3. Card buttons: when the screen-reader label does not contain the visible
+ *     text (Spanish: "Elige las opciones…" vs "SELECCIONAR OPCIONES"), it
+ *     becomes "<visible text> – <product name>" (WCAG 2.5.3). English labels
+ *     already contain their visible text and stay unchanged.
+ */
+function lunaci_product_extras_active() {
+	return function_exists( 'lunaci_perf_mode_active' ) && lunaci_perf_mode_active( 'lunaci_product_extras_mode' );
+}
+
+add_action(
+	'wp_head',
+	function () {
+		if ( ! lunaci_product_extras_active() || ! function_exists( 'is_product' ) || ! ( is_product() || is_product_taxonomy() ) ) {
+			return;
+		}
+		// No new stacking context on the card link: the title and price (z-index 2) rise above the gradient (z-index 1).
+		echo '<style id="lunaci-product-extras">ul.products li.product a.woocommerce-LoopProduct-link{z-index:auto!important}</style>' . "\n";
+	},
+	1002
+);
+
+add_filter(
+	'woocommerce_display_product_attributes',
+	function ( $attributes ) {
+		if ( lunaci_product_extras_active() ) {
+			unset( $attributes['attribute_pa_color'] );
+		}
+		return $attributes;
+	}
+);
+
+add_filter(
+	'woocommerce_loop_add_to_cart_args',
+	function ( $args, $product ) {
+		if ( ! lunaci_product_extras_active() || ! is_object( $product ) ) {
+			return $args;
+		}
+		$visible = trim( wp_strip_all_tags( $product->add_to_cart_text() ) );
+		$label   = isset( $args['attributes']['aria-label'] ) ? (string) $args['attributes']['aria-label'] : '';
+		if ( '' !== $visible && false === mb_stripos( $label, $visible ) ) {
+			$args['attributes']['aria-label'] = $visible . ' – ' . wp_strip_all_tags( $product->get_name() );
+		}
+		return $args;
+	},
+	20,
+	2
+);

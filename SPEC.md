@@ -140,6 +140,7 @@ There is no test framework in this repo, so verification is a script plus the ex
 - **Product names:** all current WooCommerce names are correct and stay as they are (closes Open Question 2).
 - **Shadow and Concealer:** stay exactly as they are (not created in WooCommerce, no change on /products/).
 - **Related-product cards:** left as the store snippet draws them (the same cards as /shop/ and the category pages), so the product page doesn't depart from the existing store design. Only the 320 px grid fix applies.
+- **2026-11-14 follow-ups (user decisions):** hide the legacy "Color" attribute row in EN and ES; fix the store-card stacking bug (title and price under the gradient) on product **and** category pages; fix the ES card button screen-reader label; sync `pages/products.html` from the live /products/ widget. Delivered behind `lunaci_product_extras_mode`.
 
 ## Open questions
 

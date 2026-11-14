@@ -163,7 +163,13 @@ Preview notes:
 - **Regression found:** `link-in-text-block`. The T4 breadcrumb links lost their underline (colour-only links). Fixed (thin underline), and the same fix was applied to the product-meta category link, which already failed on ES before this work.
 - axe-core with the fix injected: **no violations** on EN/ES × 390/1440 (the current visitor ES page has 1).
 - Not ours: `label-content-name-mismatch` on the ES related-card buttons, present before and after (store card design, left unchanged).
-- Next: deploy the fix in test mode, then Lighthouse 5 runs each to confirm accessibility 100 and that performance is within noise.
+- Fix deployed: PR #566, [run #5](https://github.com/farshadbcn19-eng/lunaci-Master/actions/runs/43609955915). Backup OK (`pre-product-page-20261114-152400`, 103 tables, 33,546 rows). Check script: 26/26, 0 copy differences, 0 failed checks, add to cart 4/4.
+- Lighthouse, 5 runs each (2026-11-14, visitor vs test version):
+  - EN: accessibility 100 → **100**, performance median 69 → 71, LCP 5.6 → 5.3 s, CLS 0 → 0.
+  - ES: accessibility 100 → **100**, performance median 70 → 70, LCP 5.5 → 5.5 s, CLS 0 → 0.
+  - No regression; differences are within run-to-run spread (65–78).
+- [x] Every row of the SPEC testing table passes in test mode.
+- [x] Your approval to switch to `on` (T7), given 2026-11-14.
 
 - [ ] Every row of the SPEC testing table passes in test mode
 - [ ] Before/after screenshots shown to you; you approve `on`
@@ -173,18 +179,24 @@ Preview notes:
 **Description:** Run the workflow with `on` (after your approval at Checkpoint B), re-run the check script without the test parameter, then run `audit-lighthouse.yml` and `audit-a11y-details.yml` and compare with the latest earlier runs.
 
 **Acceptance criteria:**
-- [ ] Live check green for visitors
-- [ ] Lighthouse performance and accessibility no lower than before on 2 product pages
-- [ ] Rollback documented in the PR: run the workflow with `off`
+- [x] Live check green for visitors
+- [x] Lighthouse performance and accessibility no lower than before on 2 product pages
+- [x] Rollback documented in the PR: run the workflow with `off`
 
 **Verification:**
-- [ ] `node scripts/check-product-pages.mjs --mode=on --cart` passes
-- [ ] Audit workflow results linked in the PR
+- [x] `node scripts/check-product-pages.mjs --mode=on --cart` passes
+- [x] Audit workflow results linked in the PR
+
+**Done (2026-11-14):** [run #6](https://github.com/farshadbcn19-eng/lunaci-Master/actions/runs/43611745026), mode `on`. Backup OK (`pre-product-page-20261114-154422`, 103 tables, 33,600 rows). Workflow live check 7/7 (layer on 4 product pages; absent on /products/, /cart/, /).
+- `check-product-pages.mjs --mode=on --cart` (visitor URLs): 26/26 pages, 0 copy differences, 0 failed checks, add to cart 4/4, no horizontal scroll, no gold fills.
+- Non-product pages unchanged: /products/, /cart/, / → 200 and no layer (/shop/ redirects with 301, as before).
+- Lighthouse on the live visitor pages, 5 runs each: EN accessibility 100, performance median 73, LCP 5.4 s, CLS 0; ES accessibility 100, performance median 70, LCP 5.6 s, CLS 0. Same range as before the change (EN 69 / ES 70).
+- Rollback: run `deploy-product-page.yml` with mode `off`.
 
 **Dependencies:** Checkpoint B
 **Files likely touched:** none in the repo (workflow runs only); PR description
 **Estimated scope:** XS
 
 ## Checkpoint C: done
-- [ ] SPEC success criteria 1–4 met
+- [x] SPEC success criteria 1–4 met
 - [ ] PR reviewed and merged

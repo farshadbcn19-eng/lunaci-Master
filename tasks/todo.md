@@ -209,5 +209,7 @@ Decided with the user (see SPEC "Decisions"):
 - [ ] **ES card button label:** "Elige las opciones para …" did not contain the visible "SELECCIONAR OPCIONES" (WCAG 2.5.3). It becomes "Seleccionar opciones – <product>". English labels already match and stay unchanged.
 - [x] **pages/products.html synced from the live /products/ Elementor HTML widget** (read-only [query run](https://github.com/farshadbcn19-eng/lunaci-Master/actions/runs/43613937556); sha256 verified); `products-demo.html` and the obsolete `diagnose-product-image-urls.yml` (which checked the old JS catalog) removed; `pages/README.md` documents the sync.
 
+Extras test deploy ([run #7](https://github.com/farshadbcn19-eng/lunaci-Master/actions/runs/43613941187), 2026-11-14): backup and deploy OK; the live check's ES label test failed as a **false positive**. It searched the whole page for "Elige las opciones", which also appears in a WooCommerce JS message. Narrowed to `aria-label` only; dry run passes. Visitor check: 26/26, 0 copy differences, 0 failed, add to cart 4/4; visitors unchanged; ES product Color rows 0; ES category labels "Seleccionar opciones – …".
+
 All three code fixes sit behind a separate switch `lunaci_product_extras_mode` (the product page layer stays `on`). The deploy workflow takes `switch: product_extras`.
 Verified before deploy: self-check 11/11 (mutation test catches both filters); card fix previewed on product (EN) and category (ES) pages, cards still clickable; workflow live check dry-run correct against the live site.

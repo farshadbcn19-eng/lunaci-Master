@@ -219,3 +219,9 @@ Extras test deploy ([run #7](https://github.com/farshadbcn19-eng/lunaci-Master/a
 
 All three code fixes sit behind a separate switch `lunaci_product_extras_mode` (the product page layer stays `on`). The deploy workflow takes `switch: product_extras`.
 Verified before deploy: self-check 11/11 (mutation test catches both filters); card fix previewed on product (EN) and category (ES) pages, cards still clickable; workflow live check dry-run correct against the live site.
+
+### Category banner landmark (2026-11-14)
+- [ ] `.lunaci-category-banner` sat directly in `<body>`, outside every landmark (axe `region` on category pages). **Source:** Code Snippets snippet **id=7 "Lunaci Category Banners"** (`wp_snippets` table) on `woocommerce_before_main_content` priority 5, before the theme opens `<main>` (priority 10). Found with the read-only diagnoses after switching them to the current SSH secrets (the old `HOSTINGER_SSH_*` ones are rejected).
+- Fix (extras switch): output captured between priorities 4 and 6; the banner `div` gets `role="region"` and `aria-label` = its image's existing alt ("LUNACI Lips/Face/Nails"…). Server-side, no JS, the snippet and the layout are untouched.
+- Verified before deploy: self-check 11/11 (mutations "no buffer" and "no aria-label" are caught); the same markup applied in the browser on 4 category pages × 390/1440 gives **no axe violations**.
+

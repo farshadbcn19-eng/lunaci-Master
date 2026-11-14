@@ -200,3 +200,14 @@ Preview notes:
 ## Checkpoint C: done
 - [x] SPEC success criteria 1–4 met
 - [ ] PR reviewed and merged
+
+## Follow-ups (2026-11-14, after go-live)
+
+Decided with the user (see SPEC "Decisions"):
+- [ ] **Store cards:** title and price were under the store snippet's dark gradient (the card link is a z-index 0 stacking context; the gradient is z-index 1). Fix: `z-index:auto` on the card link, on product and category pages.
+- [ ] **Legacy "Color" row** (pa_color) hidden from "Additional information" in EN and ES. Display filter only; product data untouched. Its values don't match the selectable shades and it's empty in Spanish.
+- [ ] **ES card button label:** "Elige las opciones para …" did not contain the visible "SELECCIONAR OPCIONES" (WCAG 2.5.3). It becomes "Seleccionar opciones – <product>". English labels already match and stay unchanged.
+- [ ] **pages/products.html synced from the live /products/ Elementor HTML widget** (read-only query); `products-demo.html` removed.
+
+All three code fixes sit behind a separate switch `lunaci_product_extras_mode` (the product page layer stays `on`). The deploy workflow takes `switch: product_extras`.
+Verified before deploy: self-check 11/11 (mutation test catches both filters); card fix previewed on product (EN) and category (ES) pages, cards still clickable; workflow live check dry-run correct against the live site.

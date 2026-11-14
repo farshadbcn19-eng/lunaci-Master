@@ -13,10 +13,10 @@ jobs:
 
       - name: SSH in and grep theme/plugin files for the category banner markup
         env:
-          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASS }}
-          SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
-          SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
-          SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          SSH_PASS: ${{ secrets.HOSTINGER_LUNACI_SSH_PASS }}
+          SSH_PORT: ${{ secrets.HOSTINGER_LUNACI_SSH_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_LUNACI_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOSTINGER_LUNACI_SSH_HOST }}
         run: |
           set -e
           sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no \
@@ -49,4 +49,13 @@ jobs:
                grep -n -B3 -A15 "lunaci-category-banner" "$f";
                echo "";
              done;
-             echo "OK: theme/plugin scan complete"'
+             echo "--- database: WPCode snippets (post_type wpcode) containing lunaci-category-banner ---";
+             for id in $(wp post list --post_type=wpcode --post_status=any --field=ID --path="$WP_PATH" 2>/dev/null); do
+               if wp post get "$id" --field=post_content --path="$WP_PATH" 2>/dev/null | grep -q "lunaci-category-banner"; then
+                 echo "===== wpcode snippet $id: $(wp post get "$id" --field=post_title --path="$WP_PATH") (status $(wp post get "$id" --field=post_status --path="$WP_PATH")) =====";
+                 wp post get "$id" --field=post_content --path="$WP_PATH" | grep -n -B3 -A15 "lunaci-category-banner";
+               fi;
+             done;
+             echo "--- database: options containing lunaci-category-banner ---";
+             wp db query "SELECT option_name, LENGTH(option_value) FROM $(wp db prefix --path="$WP_PATH")options WHERE option_value LIKE \"%lunaci-category-banner%\"" --path="$WP_PATH" 2>/dev/null || true;
+             echo "OK: theme/plugin/database scan complete (read-only)"'

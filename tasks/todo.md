@@ -204,12 +204,18 @@ Preview notes:
 ## Follow-ups (2026-11-14, after go-live)
 
 Decided with the user (see SPEC "Decisions"):
-- [ ] **Store cards:** title and price were under the store snippet's dark gradient (the card link is a z-index 0 stacking context; the gradient is z-index 1). Fix: `z-index:auto` on the card link, on product and category pages.
-- [ ] **Legacy "Color" row** (pa_color) hidden from "Additional information" in EN and ES. Display filter only; product data untouched. Its values don't match the selectable shades and it's empty in Spanish.
-- [ ] **ES card button label:** "Elige las opciones para …" did not contain the visible "SELECCIONAR OPCIONES" (WCAG 2.5.3). It becomes "Seleccionar opciones – <product>". English labels already match and stay unchanged.
+- [x] **Store cards:** title and price were under the store snippet's dark gradient (the card link is a z-index 0 stacking context; the gradient is z-index 1). Fix: `z-index:auto` on the card link, on product and category pages.
+- [x] **Legacy "Color" row** (pa_color) hidden from "Additional information" in EN and ES. Display filter only; product data untouched. Its values don't match the selectable shades and it's empty in Spanish.
+- [x] **ES card button label:** "Elige las opciones para …" did not contain the visible "SELECCIONAR OPCIONES" (WCAG 2.5.3). It becomes "Seleccionar opciones – <product>". English labels already match and stay unchanged.
 - [x] **pages/products.html synced from the live /products/ Elementor HTML widget** (read-only [query run](https://github.com/farshadbcn19-eng/lunaci-Master/actions/runs/43613937556); sha256 verified); `products-demo.html` and the obsolete `diagnose-product-image-urls.yml` (which checked the old JS catalog) removed; `pages/README.md` documents the sync.
 
 Extras test deploy ([run #7](https://github.com/farshadbcn19-eng/lunaci-Master/actions/runs/43613941187), 2026-11-14): backup and deploy OK; the live check's ES label test failed as a **false positive**. It searched the whole page for "Elige las opciones", which also appears in a WooCommerce JS message. Narrowed to `aria-label` only; dry run passes. Visitor check: 26/26, 0 copy differences, 0 failed, add to cart 4/4; visitors unchanged; ES product Color rows 0; ES category labels "Seleccionar opciones – …".
+
+**Extras switched on** ([run #8](https://github.com/farshadbcn19-eng/lunaci-Master/actions/runs/43615005579), 2026-11-14): backup OK (`pre-product-page-20261114-162001`, 103 tables, 33,671 rows); `lunaci_product_extras_mode` on (`lunaci_product_page_mode` still on); live check 9/9.
+- Visitor check: 26/26 pages, 0 failed checks, add to cart 4/4. The 12 "copy differences" are exactly the hidden Color row on the 6 products that have it × EN/ES (text only removed, nothing added; in ES it was the empty label "Color"). Baseline refreshed afterwards (old baseline kept as `baseline-2026-11-13.json`).
+- ES card labels now "Seleccionar opciones – <product>" (4/4 on /es/categoria-producto/labios/).
+- axe: no violations on EN/ES product pages (390 + 1440). Category pages: one existing `region` item, `.lunaci-category-banner` outside the page landmarks. Present without these changes, so not caused by them; not fixed here.
+- Rollback: `deploy-product-page.yml` with `switch: product_extras`, `mode: off`.
 
 All three code fixes sit behind a separate switch `lunaci_product_extras_mode` (the product page layer stays `on`). The deploy workflow takes `switch: product_extras`.
 Verified before deploy: self-check 11/11 (mutation test catches both filters); card fix previewed on product (EN) and category (ES) pages, cards still clickable; workflow live check dry-run correct against the live site.

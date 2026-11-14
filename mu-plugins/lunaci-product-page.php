@@ -204,3 +204,36 @@ add_filter(
 	20,
 	2
 );
+
+/*
+ * 4. Category banner (2026-11-14): Code Snippets snippet id=7 "Lunaci Category
+ *    Banners" prints .lunaci-category-banner on woocommerce_before_main_content
+ *    at priority 5, before the theme opens <main> (priority 10), so the banner
+ *    sits outside every landmark (axe "region"). Its output is captured between
+ *    priorities 4 and 6 and the banner becomes a named region. The name is the
+ *    banner image's existing alt text (e.g. "LUNACI Lips"), so no new copy.
+ *    Server-side, no JS; the snippet and the banner's position are untouched.
+ */
+add_action(
+	'woocommerce_before_main_content',
+	function () {
+		if ( lunaci_product_extras_active() && function_exists( 'is_product_taxonomy' ) && is_product_taxonomy() ) {
+			ob_start();
+		}
+	},
+	4
+);
+add_action(
+	'woocommerce_before_main_content',
+	function () {
+		if ( ! lunaci_product_extras_active() || ! function_exists( 'is_product_taxonomy' ) || ! is_product_taxonomy() ) {
+			return;
+		}
+		$html = (string) ob_get_clean();
+		if ( preg_match( '/<img\b[^>]*\balt="([^"]+)"/', $html, $m ) ) {
+			$html = preg_replace( '/<div class="lunaci-category-banner">/', '<div class="lunaci-category-banner" role="region" aria-label="' . $m[1] . '">', $html, 1 );
+		}
+		echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- re-emits the snippet's own markup; the alt value is already HTML-escaped by wp_get_attachment_image().
+	},
+	6
+);

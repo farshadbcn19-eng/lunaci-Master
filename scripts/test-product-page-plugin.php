@@ -34,6 +34,12 @@ if ( getenv( 'LPP_CASE' ) ) {
 		foreach ( $hooks['wp_head'] as $cbs ) { foreach ( $cbs as $cb ) { $cb(); } }
 	}
 	$head  = ob_get_clean();
+	// Code Snippets id=7 prints the banner on woocommerce_before_main_content at priority 5.
+	$hooks['woocommerce_before_main_content'][5][] = function () { echo '<div class="lunaci-category-banner"><img src="x.webp" class="lunaci-category-banner__img" alt="LUNACI Lips" /></div>'; };
+	ob_start();
+	ksort( $hooks['woocommerce_before_main_content'] );
+	foreach ( $hooks['woocommerce_before_main_content'] as $cbs ) { foreach ( $cbs as $cb ) { $cb(); } }
+	$foot  = ob_get_clean();
 	$attrs = array( 'attribute_pa_color' => 1, 'attribute_shade' => 1 );
 	foreach ( $filters['woocommerce_display_product_attributes'] ?? array() as $cb ) { $attrs = $cb( $attrs ); }
 	$labels = array();
@@ -42,7 +48,7 @@ if ( getenv( 'LPP_CASE' ) ) {
 		foreach ( $filters['woocommerce_loop_add_to_cart_args'] ?? array() as $cb ) { $args = $cb( $args, new Fake_Product( $text, $name ) ); }
 		$labels[] = $args['attributes']['aria-label'];
 	}
-	echo json_encode( array( 'head' => $head, 'attrs' => array_keys( $attrs ), 'labels' => $labels ) );
+	echo json_encode( array( 'head' => $head, 'foot' => $foot, 'attrs' => array_keys( $attrs ), 'labels' => $labels ) );
 	exit( 0 );
 }
 
@@ -74,8 +80,10 @@ foreach ( $cases as $name => list( $case, $want_page, $want_extras, $want_hidden
 		! in_array( 'attribute_pa_color', $out['attrs'], true ) && in_array( 'attribute_shade', $out['attrs'], true ),
 		$out['labels'][0],
 		$out['labels'][1],
+		1 === substr_count( $out['foot'], '<div class="lunaci-category-banner"' ) ? ( false !== strpos( $out['foot'], '<div class="lunaci-category-banner" role="region" aria-label="LUNACI Lips">' ) ) : 'banner count wrong',
 	) : null;
-	$want = array( $want_page, $want_extras, $want_hidden, $want_es, $en_orig ); // English label never changes.
+	// English label never changes; the banner becomes a named region only with extras on category pages (and is never lost or doubled).
+	$want = array( $want_page, $want_extras, $want_hidden, $want_es, $en_orig, $want_extras && 'category' === $case['page'] );
 	$ok   = $got === $want;
 	$fail += $ok ? 0 : 1;
 	printf( "%s  %s%s\n", $ok ? 'PASS' : 'FAIL', $name, $ok ? '' : ' -> got: ' . ( $got ? json_encode( $got, JSON_UNESCAPED_UNICODE ) : trim( (string) $raw ) ) );

@@ -141,6 +141,11 @@ jobs:
             # aria-label only: the same words also appear in a WooCommerce JS message on the page.
             get "/es/categoria-producto/labios/$Q"; L=$(count 'aria-label="Elige las opciones'); F=$(count 'aria-label="Seleccionar opciones –')
             [ "$ON" = "1" ] && { [ "$L" = "0" ] && [ "$F" -gt 0 ] && pass "ES card button labels contain the visible text ($F)" || fail "ES card button labels not fixed (old $L, new $F)"; } || { [ "$L" -gt 0 ] && pass "ES card button labels back to WooCommerce default (off)" || fail "ES labels unexpected while off"; }
+            # Category banner (Code Snippets id=7) becomes a named region.
+            for p in /product-category/lips/ /es/categoria-producto/labios/; do
+              get "$p$Q"; R=$(count '<div class="lunaci-category-banner" role="region" aria-label="LUNACI')
+              [ "$R" = "$ON" ] && pass "$p category banner region $R (expected $ON)" || fail "$p category banner region $R, expected $ON"
+            done
             VISIT="/product/lipstick/ /es/categoria-producto/labios/"; MARK='id="lunaci-product-extras"'
           fi
           if [ "$MODE" = "test" ]; then
